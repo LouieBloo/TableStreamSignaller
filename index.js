@@ -8,12 +8,12 @@ const roomState = new RoomState()
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: {
-      origin: 'http://localhost:3000', // Allow requests from your client
-      methods: ['GET', 'POST'],
-      allowedHeaders: ['Content-Type'],
-      credentials: true
-    }
+  cors: {
+    origin: true, // Allow requests from your client
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type'],
+    credentials: true
+  }
 });
 
 const PORT = process.env.PORT || 3001;
@@ -41,23 +41,26 @@ io.on('connection', (socket) => {
     }
 
     rooms[roomName].push(socket.id);
+    roomState.rooms[roomName].addPlayer(playerName, socket.id)
+
     socket.join(roomName);
     socket.emit('roomJoined', { roomName, socketId: socket.id });
     socket.to(roomName).emit('newPeer', { socketId: socket.id });
 
-    socket.emit('loadMessages', messages[roomName]);
+    //socket.emit('loadMessages', messages[roomName]);
 
     socket.on('signal', (data) => {
       io.to(data.to).emit('signal', { from: socket.id, signal: data.signal });
     });
 
     socket.on('message', (data) => {
-        console.log("on message: ", data)
-        const { roomName, message } = data;
-        const messageData = { socketId: socket.id, message };
-        messages[roomName].push(messageData);
-        io.in(roomName).emit('message', messageData);
-      });
+      console.log("on message: ", data)
+      console.log(roomName)
+      // const messageData = { socketId: socket.id, message };
+      // messages[roomName].push(messageData);
+      //roomState[roomName]
+      io.in(roomName).emit('message', data);
+    });
 
     socket.on('disconnect', () => {
       console.log('A user disconnected:', socket.id);

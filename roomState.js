@@ -1,27 +1,21 @@
+const Room = require("./room");
+
 module.exports = class RoomState {
 
-    constructor() {
-        this.rooms = {}
-    }
- 
-    addRoom(roomName) {
-        if(!this.rooms[roomName]){
-            this.rooms[roomName] = {
-                name: roomName,
-                messages: [],
-                players: [],
-                playerOrder: {}
-            }
-        }
-    }
+  constructor() {
+    this.rooms = {}
+  }
 
-    deleteRoom(roomName){
-        if(this.rooms[roomName]){
-            delete(this.rooms[roomName])
-        }
+  addRoom(roomName) {
+    if (!this.rooms[roomName]) {
+      this.rooms[roomName] = new Room(roomName);
     }
+  }
 
-    addPlayer(playerName, socketId){
-        
+  deleteRoom(roomName) {
+    if (this.rooms[roomName]) {
+      delete (this.rooms[roomName])
     }
- }
+  }
+
+}
