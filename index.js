@@ -27,7 +27,7 @@ const rooms = {};
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
-  socket.on('joinRoom', ({ roomName, playerName }) => {
+  socket.on('joinRoom', ({ roomName, playerName }, callback) => {
     console.log("Join Room: " + " " + playerName + " - " + roomName)
 
     if (!rooms[roomName]) {
@@ -41,22 +41,23 @@ io.on('connection', (socket) => {
     }
 
     rooms[roomName].push(socket.id);
-    roomState.rooms[roomName].addPlayer(playerName, socket.id)
+
+    const newPlayer = roomState.rooms[roomName].addPlayer(playerName, socket.id)
 
     socket.join(roomName);
     socket.emit('roomJoined', { roomName, socketId: socket.id });
-    socket.to(roomName).emit('newPeer', { socketId: socket.id });
+    socket.to(roomName).emit('newPeer', { socketId: socket.id, player: newPlayer, room: rooms[roomName] });
 
     //socket.emit('loadMessages', messages[roomName]);
 
     socket.on('signal', (data) => {
-      io.to(data.to).emit('signal', { from: socket.id, signal: data.signal });
-    });
+      io.to(data.to).emit('signal', { from: socket.id, signal: data.signal, player: newPlayer });
+    }); 
 
     socket.on('message', (data) => {
       console.log("on message: ", data)
       console.log(roomName)
-      // const messageData = { socketId: socket.id, message };
+      // const messageData = { socketId: socket .id, message };
       // messages[roomName].push(messageData);
       //roomState[roomName]
       io.in(roomName).emit('message', data);
@@ -71,6 +72,8 @@ io.on('connection', (socket) => {
         roomState.deleteRoom(roomName)
       }
     });
+
+    callback(newPlayer)
   });
 });
 
