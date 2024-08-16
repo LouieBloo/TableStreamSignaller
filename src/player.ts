@@ -1,13 +1,15 @@
 const { v4: uuidv4 } = require('uuid');
 
-module.exports = class Player {
+export class Player {
+    name: string;
+    socketId: string;
+    id: string;
+    turnOrder: number;
 
-    constructor(name, socketId, turnOrder) {
+    constructor(name:string, socketId:string, turnOrder:number) {
         this.name = name;
         this.socketId = socketId;
         this.id = uuidv4();
         this.turnOrder = turnOrder;
     }
- 
-    
  }
