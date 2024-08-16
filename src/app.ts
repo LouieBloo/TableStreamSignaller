@@ -1,9 +1,10 @@
-// index.js
+
+import { IMessage } from "./interfaces/messaging";
+import { RoomState } from "./roomState";
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const RoomState = require('./roomState');
-const roomState = new RoomState()
 
 const app = express();
 const server = http.createServer(app);
@@ -18,16 +19,21 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3001;
 
-const rooms = {};
+let rooms: { [key: string | number | symbol]: any } = {};
 
+const roomState = new RoomState()
 
 // Middleware to serve static files (optional)
 // app.use(express.static('public'));
 
-io.on('connection', (socket) => {
+const getRoom = (roomName: string)=>{
+  return roomState.rooms[roomName]
+}
+
+io.on('connection', (socket:any) => {
   console.log('A user connected:', socket.id);
 
-  socket.on('joinRoom', ({ roomName, playerName }, callback) => {
+  socket.on('joinRoom', ({ roomName, playerName }:any, callback:any) => {
     console.log("Join Room: " + " " + playerName + " - " + roomName)
 
     if (!rooms[roomName]) {
@@ -50,22 +56,22 @@ io.on('connection', (socket) => {
 
     //socket.emit('loadMessages', messages[roomName]);
 
-    socket.on('signal', (data) => {
+    socket.on('signal', (data:any) => {
       io.to(data.to).emit('signal', { from: socket.id, signal: data.signal, player: newPlayer });
     }); 
 
-    socket.on('message', (data) => {
-      console.log("on message: ", data)
+    socket.on('message', (message:IMessage) => {
+      console.log("on message: ", message)
       console.log(roomName)
-      // const messageData = { socketId: socket .id, message };
-      // messages[roomName].push(messageData);
-      //roomState[roomName]
-      io.in(roomName).emit('message', data);
+      let newMessage = getRoom(roomName).addMessage(socket.id, message.text)
+      if(newMessage){
+        io.in(roomName).emit('message', newMessage);
+      }
     });
 
     socket.on('disconnect', () => {
       console.log('A user disconnected:', socket.id);
-      rooms[roomName] = rooms[roomName].filter(id => id !== socket.id);
+      rooms[roomName] = rooms[roomName].filter((id:any) => id !== socket.id);
       socket.to(roomName).emit('peerDisconnected', { socketId: socket.id });
       if (rooms[roomName].length === 0) {
         delete rooms[roomName];

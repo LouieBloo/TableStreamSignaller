@@ -1,18 +1,19 @@
-const Room = require("./room");
+import { Room } from "./room";
 
-module.exports = class RoomState {
+export class RoomState {
+  rooms: { [key: string]: Room };
 
   constructor() {
     this.rooms = {}
   }
 
-  addRoom(roomName) {
+  addRoom(roomName:string) {
     if (!this.rooms[roomName]) {
       this.rooms[roomName] = new Room(roomName);
     }
   }
 
-  deleteRoom(roomName) {
+  deleteRoom(roomName:string) {
     if (this.rooms[roomName]) {
       delete (this.rooms[roomName])
     }
