@@ -1,6 +1,7 @@
 
 import { IMessage } from "./interfaces/messaging";
 import { RoomState } from "./roomState";
+import {IGameEvent} from "./interfaces/game";
 
 const express = require('express');
 const http = require('http');
@@ -67,6 +68,12 @@ io.on('connection', (socket:any) => {
       if(newMessage){
         io.in(roomName).emit('message', newMessage);
       }
+    });
+
+    socket.on('gameEvent', (event:IGameEvent) => {
+      console.log("gameEvent: ", event)
+      event.response = getRoom(roomName).gameEvent(socket.id, event)
+      io.in(roomName).emit('gameEvent', event);
     });
 
     socket.on('disconnect', () => {
