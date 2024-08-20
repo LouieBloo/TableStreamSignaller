@@ -5,11 +5,14 @@ export class Player {
     socketId: string;
     id: string;
     turnOrder: number;
+    admin:boolean;
+    lifeTotal:number;
 
-    constructor(name:string, socketId:string, turnOrder:number) {
+    constructor(name:string, socketId:string, turnOrder:number, startingLifeTotal:number) {
         this.name = name;
         this.socketId = socketId;
         this.id = uuidv4();
         this.turnOrder = turnOrder;
+        this.lifeTotal = startingLifeTotal;
     }
  }

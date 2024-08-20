@@ -51,6 +51,11 @@ io.on('connection', (socket) => {
                 io.in(roomName).emit('message', newMessage);
             }
         });
+        socket.on('gameEvent', (event) => {
+            console.log("gameEvent: ", event);
+            event.response = getRoom(roomName).gameEvent(socket.id, event);
+            io.in(roomName).emit('gameEvent', event);
+        });
         socket.on('disconnect', () => {
             console.log('A user disconnected:', socket.id);
             rooms[roomName] = rooms[roomName].filter((id) => id !== socket.id);
