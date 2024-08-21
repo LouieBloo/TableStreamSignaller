@@ -9,6 +9,8 @@ class Player {
         this.id = uuidv4();
         this.turnOrder = turnOrder;
         this.lifeTotal = startingLifeTotal;
+        this.totalTurns = 0;
+        this.totalTurnTime = 0;
     }
 }
 exports.Player = Player;

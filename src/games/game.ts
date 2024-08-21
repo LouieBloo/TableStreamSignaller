@@ -12,7 +12,56 @@ export class Game {
                 return this.randomizePlayerOrder(room.players)
             case GameEvent.ModifyLifeTotal:
                 return this.modifyPlayerLifeTotal(gameEvent)
+            case GameEvent.StartGame:
+                return this.startGame(room);
+            case GameEvent.EndCurrentTurn:
+                return this.endCurrentTurn(room)
         }
+    }
+
+    startGame(room: Room){
+        for(let x = 0; x < room.players.length; x++){
+            room.players[x].isTakingTurn = false;
+            room.players[x].totalTurns = 0;
+            room.players[x].totalTurnTime = 0;
+            room.players[x].currentTurnStartTime = null;
+        }
+
+        let firstPlayer:Player = room.players.find(p=> p.turnOrder == 0);
+        this.startPlayerTurn(firstPlayer, room);
+
+        return room.players;
+    }
+
+    endCurrentTurn(room:Room){
+        let currentPlayer = room.players.find(p=>p.isTakingTurn == true);
+        let nextPlayer = room.players.find(p=>p.turnOrder == currentPlayer.turnOrder+1)
+        if(!nextPlayer){
+            nextPlayer = room.players.find(p=> p.turnOrder == 0);
+        }
+
+        this.startPlayerTurn(nextPlayer, room);
+
+        return room.players;
+    }
+
+    startPlayerTurn(nextPlayer: Player,room:Room){
+        let currentPlayer = room.players.find(p=>p.isTakingTurn == true);
+        currentPlayer.totalTurnTime += new Date().getTime() - currentPlayer.currentTurnStartTime.getTime();
+        currentPlayer.currentTurnStartTime = null;
+        currentPlayer.isTakingTurn = false;
+
+        nextPlayer.totalTurns += 1;
+        nextPlayer.currentTurnStartTime = new Date();
+        nextPlayer.isTakingTurn = true;
+    }
+
+    findPlayerWithLowestTurnOrder(players: Player[]): Player | undefined {
+        if (players.length === 0) return undefined;
+    
+        return players.reduce((lowest, player) => 
+            player.turnOrder < lowest.turnOrder ? player : lowest
+        );
     }
 
     modifyPlayerLifeTotal(gameEvent: IGameEvent): Player {
