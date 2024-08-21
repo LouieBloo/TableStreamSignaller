@@ -12,7 +12,45 @@ class Game {
                 return this.randomizePlayerOrder(room.players);
             case game_1.GameEvent.ModifyLifeTotal:
                 return this.modifyPlayerLifeTotal(gameEvent);
+            case game_1.GameEvent.StartGame:
+                return this.startGame(room);
+            case game_1.GameEvent.EndCurrentTurn:
+                return this.endCurrentTurn(room);
         }
+    }
+    startGame(room) {
+        for (let x = 0; x < room.players.length; x++) {
+            room.players[x].isTakingTurn = false;
+            room.players[x].totalTurns = 0;
+            room.players[x].totalTurnTime = 0;
+            room.players[x].currentTurnStartTime = null;
+        }
+        let firstPlayer = room.players.find(p => p.turnOrder == 0);
+        this.startPlayerTurn(firstPlayer, room);
+        return room.players;
+    }
+    endCurrentTurn(room) {
+        let currentPlayer = room.players.find(p => p.isTakingTurn == true);
+        let nextPlayer = room.players.find(p => p.turnOrder == currentPlayer.turnOrder + 1);
+        if (!nextPlayer) {
+            nextPlayer = room.players.find(p => p.turnOrder == 0);
+        }
+        this.startPlayerTurn(nextPlayer, room);
+        return room.players;
+    }
+    startPlayerTurn(nextPlayer, room) {
+        let currentPlayer = room.players.find(p => p.isTakingTurn == true);
+        currentPlayer.totalTurnTime += new Date().getTime() - currentPlayer.currentTurnStartTime.getTime();
+        currentPlayer.currentTurnStartTime = null;
+        currentPlayer.isTakingTurn = false;
+        nextPlayer.totalTurns += 1;
+        nextPlayer.currentTurnStartTime = new Date();
+        nextPlayer.isTakingTurn = true;
+    }
+    findPlayerWithLowestTurnOrder(players) {
+        if (players.length === 0)
+            return undefined;
+        return players.reduce((lowest, player) => player.turnOrder < lowest.turnOrder ? player : lowest);
     }
     modifyPlayerLifeTotal(gameEvent) {
         let modifyEvent = gameEvent.payload;

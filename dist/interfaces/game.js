@@ -5,6 +5,8 @@ var GameEvent;
 (function (GameEvent) {
     GameEvent[GameEvent["RandomizePlayerOrder"] = 0] = "RandomizePlayerOrder";
     GameEvent[GameEvent["ModifyLifeTotal"] = 1] = "ModifyLifeTotal";
+    GameEvent[GameEvent["StartGame"] = 2] = "StartGame";
+    GameEvent[GameEvent["EndCurrentTurn"] = 3] = "EndCurrentTurn";
 })(GameEvent || (exports.GameEvent = GameEvent = {}));
 var GameType;
 (function (GameType) {

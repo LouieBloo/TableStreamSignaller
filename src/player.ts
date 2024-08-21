@@ -8,11 +8,19 @@ export class Player {
     admin:boolean;
     lifeTotal:number;
 
+    isTakingTurn: boolean;
+    totalTurns: number;
+    currentTurnStartTime: Date;
+    totalTurnTime: number;
+
     constructor(name:string, socketId:string, turnOrder:number, startingLifeTotal:number) {
         this.name = name;
         this.socketId = socketId;
         this.id = uuidv4();
         this.turnOrder = turnOrder;
         this.lifeTotal = startingLifeTotal;
+
+        this.totalTurns = 0;
+        this.totalTurnTime = 0;
     }
  }

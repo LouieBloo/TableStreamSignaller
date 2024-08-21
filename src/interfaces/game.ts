@@ -13,7 +13,9 @@ export interface IModifyPlayerLifeTotal{
 
 export enum GameEvent{
     RandomizePlayerOrder,
-    ModifyLifeTotal
+    ModifyLifeTotal,
+    StartGame,
+    EndCurrentTurn
 }
 
 export enum GameType{
