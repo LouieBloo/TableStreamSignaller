@@ -5,6 +5,7 @@ import { Player } from "../player";
 export class Game {
 
     startingLifeTotal = 20;
+    active:boolean = false;
 
     public event(gameEvent: IGameEvent, room: Room): any {
         switch (gameEvent.event) {
@@ -20,6 +21,8 @@ export class Game {
     }
 
     startGame(room: Room){
+        if(this.active){return null;}
+
         for(let x = 0; x < room.players.length; x++){
             room.players[x].isTakingTurn = false;
             room.players[x].totalTurns = 0;
@@ -30,10 +33,14 @@ export class Game {
         let firstPlayer:Player = room.players.find(p=> p.turnOrder == 0);
         this.startPlayerTurn(firstPlayer, room);
 
+        this.active = true;
+
         return room.players;
     }
 
     endCurrentTurn(room:Room){
+        if(!this.active){return null;}
+
         let currentPlayer = room.players.find(p=>p.isTakingTurn == true);
         let nextPlayer = room.players.find(p=>p.turnOrder == currentPlayer.turnOrder+1)
         if(!nextPlayer){
@@ -47,11 +54,21 @@ export class Game {
 
     startPlayerTurn(nextPlayer: Player,room:Room){
         let currentPlayer = room.players.find(p=>p.isTakingTurn == true);
-        currentPlayer.totalTurnTime += new Date().getTime() - currentPlayer.currentTurnStartTime.getTime();
-        currentPlayer.currentTurnStartTime = null;
-        currentPlayer.isTakingTurn = false;
 
-        nextPlayer.totalTurns += 1;
+        if(currentPlayer){
+            //if the players turn was less than 500 ms dont count it as a turn and dont count the totalturntime, this is to prevent messing up averages when people are spamming pass turn
+            // if(new Date().getTime() - currentPlayer.currentTurnStartTime.getTime() < 500){
+            //     currentPlayer.totalTurns--;
+            // }else{
+            //     currentPlayer.totalTurnTime += new Date().getTime() - currentPlayer.currentTurnStartTime.getTime();
+            // }
+
+            currentPlayer.totalTurnTime += new Date().getTime() - currentPlayer.currentTurnStartTime.getTime();
+            currentPlayer.totalTurns++;
+            currentPlayer.currentTurnStartTime = null;
+            currentPlayer.isTakingTurn = false;
+        }
+
         nextPlayer.currentTurnStartTime = new Date();
         nextPlayer.isTakingTurn = true;
     }
