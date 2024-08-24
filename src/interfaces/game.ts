@@ -15,7 +15,9 @@ export enum GameEvent{
     RandomizePlayerOrder,
     ModifyLifeTotal,
     StartGame,
-    EndCurrentTurn
+    EndCurrentTurn,
+    ShareCard,
+    TakeMonarch
 }
 
 export enum GameType{

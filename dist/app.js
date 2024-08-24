@@ -52,7 +52,7 @@ io.on('connection', (socket) => {
             }
         });
         socket.on('gameEvent', (event) => {
-            console.log("gameEvent: ", event);
+            // console.log("gameEvent: ", event)
             event.response = getRoom(roomName).gameEvent(socket.id, event);
             io.in(roomName).emit('gameEvent', event);
         });

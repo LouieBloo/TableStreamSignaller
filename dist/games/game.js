@@ -6,6 +6,32 @@ class Game {
     constructor() {
         this.startingLifeTotal = 20;
         this.active = false;
+        this.sharedCards = [];
+        this.shareCard = (gameEvent) => {
+            let blockCard = false;
+            for (let x = 0; x < 3 && x < this.sharedCards.length; x++) {
+                if (this.sharedCards[x].id == gameEvent.payload.id) {
+                    blockCard = true;
+                    break;
+                }
+            }
+            if (blockCard) {
+                return null;
+            }
+            this.sharedCards.unshift(gameEvent.payload);
+            return gameEvent.payload;
+        };
+        this.takeMonarch = (gameEvent, room) => {
+            room.players.forEach(player => {
+                if (player.id == gameEvent.callingPlayer.id) {
+                    player.isMonarch = true;
+                }
+                else {
+                    player.isMonarch = false;
+                }
+            });
+            return room.players;
+        };
     }
     event(gameEvent, room) {
         switch (gameEvent.event) {
@@ -17,6 +43,10 @@ class Game {
                 return this.startGame(room);
             case game_1.GameEvent.EndCurrentTurn:
                 return this.endCurrentTurn(room);
+            case game_1.GameEvent.ShareCard:
+                return this.shareCard(gameEvent);
+            case game_1.GameEvent.TakeMonarch:
+                return this.takeMonarch(gameEvent, room);
         }
     }
     startGame(room) {

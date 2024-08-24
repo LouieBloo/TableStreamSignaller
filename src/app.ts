@@ -71,7 +71,7 @@ io.on('connection', (socket:any) => {
     });
 
     socket.on('gameEvent', (event:IGameEvent) => {
-      console.log("gameEvent: ", event)
+      // console.log("gameEvent: ", event)
       event.response = getRoom(roomName).gameEvent(socket.id, event)
       io.in(roomName).emit('gameEvent', event);
     });

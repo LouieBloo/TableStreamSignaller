@@ -4,6 +4,7 @@ exports.Player = void 0;
 const { v4: uuidv4 } = require('uuid');
 class Player {
     constructor(name, socketId, turnOrder, startingLifeTotal) {
+        this.isMonarch = false;
         this.name = name;
         this.socketId = socketId;
         this.id = uuidv4();
