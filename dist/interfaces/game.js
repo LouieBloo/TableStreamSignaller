@@ -7,6 +7,8 @@ var GameEvent;
     GameEvent[GameEvent["ModifyLifeTotal"] = 1] = "ModifyLifeTotal";
     GameEvent[GameEvent["StartGame"] = 2] = "StartGame";
     GameEvent[GameEvent["EndCurrentTurn"] = 3] = "EndCurrentTurn";
+    GameEvent[GameEvent["ShareCard"] = 4] = "ShareCard";
+    GameEvent[GameEvent["TakeMonarch"] = 5] = "TakeMonarch";
 })(GameEvent || (exports.GameEvent = GameEvent = {}));
 var GameType;
 (function (GameType) {

@@ -13,6 +13,8 @@ export class Player {
     currentTurnStartTime: Date;
     totalTurnTime: number;
 
+    isMonarch:boolean = false;
+
     constructor(name:string, socketId:string, turnOrder:number, startingLifeTotal:number) {
         this.name = name;
         this.socketId = socketId;

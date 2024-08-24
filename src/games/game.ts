@@ -1,22 +1,29 @@
 import { Room } from "../room";
 import { GameEvent, IGameEvent, IModifyPlayerLifeTotal } from "../interfaces/game";
 import { Player } from "../player";
+import { ScryfallCard } from "../interfaces/cards";
 
 export class Game {
 
     startingLifeTotal = 20;
     active:boolean = false;
 
+    sharedCards:ScryfallCard[] = [];
+
     public event(gameEvent: IGameEvent, room: Room): any {
         switch (gameEvent.event) {
             case GameEvent.RandomizePlayerOrder:
-                return this.randomizePlayerOrder(room.players)
+                return this.randomizePlayerOrder(room.players);
             case GameEvent.ModifyLifeTotal:
-                return this.modifyPlayerLifeTotal(gameEvent)
+                return this.modifyPlayerLifeTotal(gameEvent);
             case GameEvent.StartGame:
                 return this.startGame(room);
             case GameEvent.EndCurrentTurn:
-                return this.endCurrentTurn(room)
+                return this.endCurrentTurn(room);
+            case GameEvent.ShareCard:
+                return this.shareCard(gameEvent);
+            case GameEvent.TakeMonarch:
+                return this.takeMonarch(gameEvent, room);
         }
     }
 
@@ -116,4 +123,31 @@ export class Game {
         return numbers;
     }
     
+    shareCard = (gameEvent: IGameEvent)=>{
+        let blockCard = false;
+        for(let x = 0; x < 3 && x < this.sharedCards.length; x++){
+            if(this.sharedCards[x].id == gameEvent.payload.id){
+                blockCard = true;
+                break;
+            }
+        }
+
+        if(blockCard){return null}
+
+        this.sharedCards.unshift(gameEvent.payload);
+
+        return gameEvent.payload;
+    }
+
+    takeMonarch = (gameEvent: IGameEvent, room: Room)=>{
+        room.players.forEach(player=>{
+            if(player.id == gameEvent.callingPlayer.id){
+                player.isMonarch = true;
+            }else{
+                player.isMonarch = false;
+            }
+        })
+
+        return room.players;
+    }
 }
