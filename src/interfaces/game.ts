@@ -7,19 +7,31 @@ export interface IGameEvent {
     response?: any;
 }
 
-export interface IModifyPlayerLifeTotal{
+export interface IModifyPlayerProperty{
+    property:PlayerProperties;
     amountToModify:number;
+}
+
+export enum PlayerProperties{
+    lifeTotal,
+    poisonTotal
 }
 
 export enum GameEvent{
     RandomizePlayerOrder,
-    ModifyLifeTotal,
+    ModifyPlayerProperty,
     StartGame,
     EndCurrentTurn,
     ShareCard,
-    TakeMonarch
+    ToggleMonarch,
+    ModifyPlayerCommanderDamage
 }
 
 export enum GameType{
     MTGCommander
+}
+
+export interface CommanderDamage{
+    playerId:string;
+    damage:number;
 }
