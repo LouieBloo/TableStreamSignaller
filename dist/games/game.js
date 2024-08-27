@@ -7,6 +7,25 @@ class Game {
         this.startingLifeTotal = 20;
         this.active = false;
         this.sharedCards = [];
+        this.findNextPlayer = (currentPlayer, room, tries = 1) => {
+            let tr = currentPlayer.turnOrder + tries;
+            if (tr >= room.players.length) {
+                //tr = (tr - currentPlayer.turnOrder) - tries;
+                tr = tr - room.players.length;
+            }
+            let nextPlayer = room.players.find(p => (p.turnOrder == tr && p.lifeTotal > 0));
+            if (!nextPlayer) {
+                if (tries >= room.players.length) {
+                    return null;
+                }
+                else {
+                    return this.findNextPlayer(currentPlayer, room, tries + 1);
+                }
+            }
+            else {
+                return nextPlayer;
+            }
+        };
         this.shareCard = (gameEvent) => {
             let blockCard = false;
             for (let x = 0; x < 3 && x < this.sharedCards.length; x++) {
@@ -21,15 +40,20 @@ class Game {
             this.sharedCards.unshift(gameEvent.payload);
             return gameEvent.payload;
         };
-        this.takeMonarch = (gameEvent, room) => {
-            room.players.forEach(player => {
-                if (player.id == gameEvent.callingPlayer.id) {
-                    player.isMonarch = true;
-                }
-                else {
-                    player.isMonarch = false;
-                }
-            });
+        this.toggleMonarch = (gameEvent, room) => {
+            if (gameEvent.callingPlayer.isMonarch) {
+                gameEvent.callingPlayer.isMonarch = false;
+            }
+            else {
+                room.players.forEach(player => {
+                    if (player.id == gameEvent.callingPlayer.id) {
+                        player.isMonarch = true;
+                    }
+                    else {
+                        player.isMonarch = false;
+                    }
+                });
+            }
             return room.players;
         };
     }
@@ -37,27 +61,29 @@ class Game {
         switch (gameEvent.event) {
             case game_1.GameEvent.RandomizePlayerOrder:
                 return this.randomizePlayerOrder(room.players);
-            case game_1.GameEvent.ModifyLifeTotal:
-                return this.modifyPlayerLifeTotal(gameEvent);
+            case game_1.GameEvent.ModifyPlayerProperty:
+                return this.modifyPlayerProperty(gameEvent);
             case game_1.GameEvent.StartGame:
                 return this.startGame(room);
             case game_1.GameEvent.EndCurrentTurn:
                 return this.endCurrentTurn(room);
             case game_1.GameEvent.ShareCard:
                 return this.shareCard(gameEvent);
-            case game_1.GameEvent.TakeMonarch:
-                return this.takeMonarch(gameEvent, room);
+            case game_1.GameEvent.ToggleMonarch:
+                return this.toggleMonarch(gameEvent, room);
         }
     }
+    addPlayer(newPlayer, room) {
+    }
     startGame(room) {
-        if (this.active) {
-            return null;
-        }
+        //if(this.active){return null;}
         for (let x = 0; x < room.players.length; x++) {
             room.players[x].isTakingTurn = false;
             room.players[x].totalTurns = 0;
             room.players[x].totalTurnTime = 0;
             room.players[x].currentTurnStartTime = null;
+            room.players[x].isMonarch = false;
+            room.players[x].poisonTotal = 0;
         }
         let firstPlayer = room.players.find(p => p.turnOrder == 0);
         this.startPlayerTurn(firstPlayer, room);
@@ -69,24 +95,23 @@ class Game {
             return null;
         }
         let currentPlayer = room.players.find(p => p.isTakingTurn == true);
-        let nextPlayer = room.players.find(p => p.turnOrder == currentPlayer.turnOrder + 1);
-        if (!nextPlayer) {
-            nextPlayer = room.players.find(p => p.turnOrder == 0);
+        let nextPlayer = this.findNextPlayer(currentPlayer, room);
+        if (nextPlayer != null) {
+            this.startPlayerTurn(nextPlayer, room);
         }
-        this.startPlayerTurn(nextPlayer, room);
         return room.players;
     }
     startPlayerTurn(nextPlayer, room) {
         let currentPlayer = room.players.find(p => p.isTakingTurn == true);
         if (currentPlayer) {
-            //if the players turn was less than 500 ms dont count it as a turn and dont count the totalturntime, this is to prevent messing up averages when people are spamming pass turn
-            // if(new Date().getTime() - currentPlayer.currentTurnStartTime.getTime() < 500){
-            //     currentPlayer.totalTurns--;
-            // }else{
-            //     currentPlayer.totalTurnTime += new Date().getTime() - currentPlayer.currentTurnStartTime.getTime();
-            // }
-            currentPlayer.totalTurnTime += new Date().getTime() - currentPlayer.currentTurnStartTime.getTime();
-            currentPlayer.totalTurns++;
+            // if the players turn was less than 500 ms dont count it as a turn and dont count the totalturntime, this is to prevent messing up averages when people are spamming pass turn
+            if (new Date().getTime() - currentPlayer.currentTurnStartTime.getTime() < 1500) {
+                // currentPlayer.totalTurns--;
+            }
+            else {
+                currentPlayer.totalTurnTime += new Date().getTime() - currentPlayer.currentTurnStartTime.getTime();
+                currentPlayer.totalTurns++;
+            }
             currentPlayer.currentTurnStartTime = null;
             currentPlayer.isTakingTurn = false;
         }
@@ -98,9 +123,16 @@ class Game {
             return undefined;
         return players.reduce((lowest, player) => player.turnOrder < lowest.turnOrder ? player : lowest);
     }
-    modifyPlayerLifeTotal(gameEvent) {
+    modifyPlayerProperty(gameEvent) {
         let modifyEvent = gameEvent.payload;
-        gameEvent.callingPlayer.lifeTotal += modifyEvent.amountToModify;
+        switch (modifyEvent.property) {
+            case game_1.PlayerProperties.lifeTotal:
+                gameEvent.callingPlayer.lifeTotal += modifyEvent.amountToModify;
+                break;
+            case game_1.PlayerProperties.poisonTotal:
+                gameEvent.callingPlayer.poisonTotal += modifyEvent.amountToModify;
+                break;
+        }
         return gameEvent.callingPlayer;
     }
     randomizePlayerOrder(players) {
