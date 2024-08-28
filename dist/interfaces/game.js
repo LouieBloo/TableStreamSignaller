@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GameType = exports.GameEvent = exports.PlayerProperties = void 0;
+exports.GameErrorType = exports.GameError = exports.GameType = exports.GameEvent = exports.PlayerProperties = void 0;
 var PlayerProperties;
 (function (PlayerProperties) {
     PlayerProperties[PlayerProperties["lifeTotal"] = 0] = "lifeTotal";
@@ -20,4 +20,15 @@ var GameType;
 (function (GameType) {
     GameType[GameType["MTGCommander"] = 0] = "MTGCommander";
 })(GameType || (exports.GameType = GameType = {}));
+class GameError extends Error {
+    constructor(type, message) {
+        super(message); // Pass the message to the base Error class
+        this.type = type;
+    }
+}
+exports.GameError = GameError;
+var GameErrorType;
+(function (GameErrorType) {
+    GameErrorType[GameErrorType["GameNotStarted"] = 0] = "GameNotStarted";
+})(GameErrorType || (exports.GameErrorType = GameErrorType = {}));
 //# sourceMappingURL=game.js.map

@@ -1,5 +1,5 @@
 import { Room } from "../room";
-import { GameEvent, IGameEvent, IModifyPlayerProperty, PlayerProperties } from "../interfaces/game";
+import { GameError, GameErrorType, GameEvent, IGameEvent, IModifyPlayerProperty, PlayerProperties } from "../interfaces/game";
 import { Player } from "../player";
 import { ScryfallCard } from "../interfaces/cards";
 
@@ -112,6 +112,10 @@ export class Game {
     }
 
     modifyPlayerProperty(gameEvent: IGameEvent): Player {
+        if(!this.active){
+            throw new GameError(GameErrorType.GameNotStarted, "The game has not started yet. Please start the game.");
+        }
+
         let modifyEvent:IModifyPlayerProperty = gameEvent.payload;
 
         switch(modifyEvent.property){
@@ -171,6 +175,10 @@ export class Game {
     }
 
     toggleMonarch = (gameEvent: IGameEvent, room: Room)=>{
+
+        if(!this.active){
+            throw new GameError(GameErrorType.GameNotStarted, "The game has not started yet. Please start the game.");
+        }
 
         if(gameEvent.callingPlayer.isMonarch){
             gameEvent.callingPlayer.isMonarch = false;
