@@ -52,9 +52,14 @@ io.on('connection', (socket) => {
             }
         });
         socket.on('gameEvent', (event) => {
-            console.log("gameEvent: ", event);
-            event.response = getRoom(roomName).gameEvent(socket.id, event);
-            io.in(roomName).emit('gameEvent', event);
+            // console.log("gameEvent: ", event)
+            try {
+                event.response = getRoom(roomName).gameEvent(socket.id, event);
+                io.in(roomName).emit('gameEvent', event);
+            }
+            catch (error) {
+                socket.emit('errorResponse', { type: error.type, message: error.message });
+            }
         });
         socket.on('disconnect', () => {
             console.log('A user disconnected:', socket.id);

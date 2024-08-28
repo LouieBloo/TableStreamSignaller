@@ -36,6 +36,7 @@ export class Room {
       if(this.players.length == 0){
         player.admin = true;
       }
+
       this.players.push(player)
     }else{
       player.socketId = socketId;

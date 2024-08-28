@@ -1,7 +1,7 @@
 
 import { IMessage } from "./interfaces/messaging";
 import { RoomState } from "./roomState";
-import {IGameEvent} from "./interfaces/game";
+import {GameError, IGameEvent} from "./interfaces/game";
 
 const express = require('express');
 const http = require('http');
@@ -71,9 +71,14 @@ io.on('connection', (socket:any) => {
     });
 
     socket.on('gameEvent', (event:IGameEvent) => {
-      console.log("gameEvent: ", event)
-      event.response = getRoom(roomName).gameEvent(socket.id, event)
-      io.in(roomName).emit('gameEvent', event);
+      // console.log("gameEvent: ", event)
+      try{
+        event.response = getRoom(roomName).gameEvent(socket.id, event)
+        io.in(roomName).emit('gameEvent', event);
+      }
+      catch(error){
+        socket.emit('errorResponse', {type: error.type, message: error.message});
+      }
     });
 
     socket.on('disconnect', () => {
