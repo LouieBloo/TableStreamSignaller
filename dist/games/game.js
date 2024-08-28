@@ -41,6 +41,9 @@ class Game {
             return gameEvent.payload;
         };
         this.toggleMonarch = (gameEvent, room) => {
+            if (!this.active) {
+                throw new game_1.GameError(game_1.GameErrorType.GameNotStarted, "The game has not started yet. Please start the game.");
+            }
             if (gameEvent.callingPlayer.isMonarch) {
                 gameEvent.callingPlayer.isMonarch = false;
             }
@@ -124,6 +127,9 @@ class Game {
         return players.reduce((lowest, player) => player.turnOrder < lowest.turnOrder ? player : lowest);
     }
     modifyPlayerProperty(gameEvent) {
+        if (!this.active) {
+            throw new game_1.GameError(game_1.GameErrorType.GameNotStarted, "The game has not started yet. Please start the game.");
+        }
         let modifyEvent = gameEvent.payload;
         switch (modifyEvent.property) {
             case game_1.PlayerProperties.lifeTotal:

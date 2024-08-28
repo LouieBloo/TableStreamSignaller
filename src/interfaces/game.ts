@@ -35,3 +35,16 @@ export interface CommanderDamage{
     playerId:string;
     damage:number;
 }
+
+export class GameError extends Error {
+    type: GameErrorType;
+
+    constructor(type: GameErrorType, message: string) {
+        super(message); // Pass the message to the base Error class
+        this.type = type;
+    }
+}
+
+export enum GameErrorType{
+    GameNotStarted
+}
