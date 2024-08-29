@@ -68,6 +68,8 @@ class Game {
                 return this.modifyPlayerProperty(gameEvent);
             case game_1.GameEvent.StartGame:
                 return this.startGame(room);
+            case game_1.GameEvent.ResetGame:
+                return this.startGame(room);
             case game_1.GameEvent.EndCurrentTurn:
                 return this.endCurrentTurn(room);
             case game_1.GameEvent.ShareCard:
@@ -87,6 +89,8 @@ class Game {
             room.players[x].currentTurnStartTime = null;
             room.players[x].isMonarch = false;
             room.players[x].poisonTotal = 0;
+            room.players[x].commanderDamages = {};
+            room.players[x].lifeTotal = this.startingLifeTotal;
         }
         let firstPlayer = room.players.find(p => p.turnOrder == 0);
         this.startPlayerTurn(firstPlayer, room);
