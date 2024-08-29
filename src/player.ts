@@ -8,8 +8,8 @@ export class Player {
     id: string;
     turnOrder: number;
     admin:boolean;
-    lifeTotal:number;
 
+    lifeTotal:number;
     isTakingTurn: boolean;
     totalTurns: number;
     currentTurnStartTime: Date;
