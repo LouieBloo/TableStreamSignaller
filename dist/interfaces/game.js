@@ -11,10 +11,11 @@ var GameEvent;
     GameEvent[GameEvent["RandomizePlayerOrder"] = 0] = "RandomizePlayerOrder";
     GameEvent[GameEvent["ModifyPlayerProperty"] = 1] = "ModifyPlayerProperty";
     GameEvent[GameEvent["StartGame"] = 2] = "StartGame";
-    GameEvent[GameEvent["EndCurrentTurn"] = 3] = "EndCurrentTurn";
-    GameEvent[GameEvent["ShareCard"] = 4] = "ShareCard";
-    GameEvent[GameEvent["ToggleMonarch"] = 5] = "ToggleMonarch";
-    GameEvent[GameEvent["ModifyPlayerCommanderDamage"] = 6] = "ModifyPlayerCommanderDamage";
+    GameEvent[GameEvent["ResetGame"] = 3] = "ResetGame";
+    GameEvent[GameEvent["EndCurrentTurn"] = 4] = "EndCurrentTurn";
+    GameEvent[GameEvent["ShareCard"] = 5] = "ShareCard";
+    GameEvent[GameEvent["ToggleMonarch"] = 6] = "ToggleMonarch";
+    GameEvent[GameEvent["ModifyPlayerCommanderDamage"] = 7] = "ModifyPlayerCommanderDamage";
 })(GameEvent || (exports.GameEvent = GameEvent = {}));
 var GameType;
 (function (GameType) {
