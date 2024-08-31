@@ -5,6 +5,7 @@ var PlayerProperties;
 (function (PlayerProperties) {
     PlayerProperties[PlayerProperties["lifeTotal"] = 0] = "lifeTotal";
     PlayerProperties[PlayerProperties["poisonTotal"] = 1] = "poisonTotal";
+    PlayerProperties[PlayerProperties["energyTotal"] = 2] = "energyTotal";
 })(PlayerProperties || (exports.PlayerProperties = PlayerProperties = {}));
 var GameEvent;
 (function (GameEvent) {

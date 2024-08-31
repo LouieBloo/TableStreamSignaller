@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const roomState_1 = require("./roomState");
+const game_1 = require("./interfaces/game");
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -30,7 +31,7 @@ io.on('connection', (socket) => {
             rooms[roomName] = [];
             roomState.addRoom(roomName);
         }
-        if (rooms[roomName].length >= 4) {
+        if (rooms[roomName].length >= 1) {
             socket.emit('roomFull');
             return;
         }
@@ -52,7 +53,10 @@ io.on('connection', (socket) => {
             }
         });
         socket.on('gameEvent', (event) => {
-            // console.log("gameEvent: ", event)
+            if (event.event == game_1.GameEvent.EndCurrentTurn) {
+                console.log("Ending turn: ", new Date());
+                console.log("Player: ", socket.id);
+            }
             try {
                 event.response = getRoom(roomName).gameEvent(socket.id, event);
                 io.in(roomName).emit('gameEvent', event);
