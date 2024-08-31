@@ -18,6 +18,7 @@ export class Player {
     isMonarch:boolean = false;
 
     poisonTotal:number;
+    energyTotal:number;
 
     commanderDamages: { [playerId: string]: CommanderDamage } = {};
 
@@ -28,6 +29,7 @@ export class Player {
         this.turnOrder = turnOrder;
         this.lifeTotal = startingLifeTotal;
         this.poisonTotal = 0;
+        this.energyTotal = 0;
 
         this.totalTurns = 0;
         this.totalTurnTime = 0;
@@ -35,6 +37,7 @@ export class Player {
 
 
     takeCommanderDamage = (damagingPlayer: Player, amount: number)=>{
+        //add or create the commander damage for this player
         if(this.commanderDamages[damagingPlayer.id]){
             this.commanderDamages[damagingPlayer.id].damage += amount;
         }else{
@@ -44,9 +47,16 @@ export class Player {
             }
         }
 
-        this.lifeTotal -= amount;
+        //prevent negative commander damage
+        if(this.commanderDamages[damagingPlayer.id].damage < 0){
+            this.commanderDamages[damagingPlayer.id].damage = 0;
+        }else{
+            //remove lifetotal on commander damage
+            this.lifeTotal -= amount;
+        }
 
-        if(this.commanderDamages[damagingPlayer.id].damage >= 20){
+        //kill player if threshold met
+        if(this.commanderDamages[damagingPlayer.id].damage >= 21){
             this.lifeTotal = 0;
         }
 

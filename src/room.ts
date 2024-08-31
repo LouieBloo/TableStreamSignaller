@@ -11,6 +11,8 @@ export class Room {
   players: Player[];
   game: Game;
 
+  playerSockets: { [key: string | number | symbol]: any } = {};
+
   constructor(roomName:string, gameType:GameType) {
     this.name = roomName;
     this.messages = [];

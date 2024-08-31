@@ -89,6 +89,7 @@ class Game {
             room.players[x].currentTurnStartTime = null;
             room.players[x].isMonarch = false;
             room.players[x].poisonTotal = 0;
+            room.players[x].energyTotal = 0;
             room.players[x].commanderDamages = {};
             room.players[x].lifeTotal = this.startingLifeTotal;
         }
@@ -141,6 +142,15 @@ class Game {
                 break;
             case game_1.PlayerProperties.poisonTotal:
                 gameEvent.callingPlayer.poisonTotal += modifyEvent.amountToModify;
+                if (gameEvent.callingPlayer.poisonTotal < 0) {
+                    gameEvent.callingPlayer.poisonTotal = 0;
+                }
+                break;
+            case game_1.PlayerProperties.energyTotal:
+                gameEvent.callingPlayer.energyTotal += modifyEvent.amountToModify;
+                if (gameEvent.callingPlayer.energyTotal < 0) {
+                    gameEvent.callingPlayer.energyTotal = 0;
+                }
                 break;
         }
         return gameEvent.callingPlayer;

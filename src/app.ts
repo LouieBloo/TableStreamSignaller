@@ -1,7 +1,7 @@
 
 import { IMessage } from "./interfaces/messaging";
 import { RoomState } from "./roomState";
-import {GameError, IGameEvent} from "./interfaces/game";
+import {GameError, GameEvent, IGameEvent} from "./interfaces/game";
 
 const express = require('express');
 const http = require('http');
@@ -71,7 +71,10 @@ io.on('connection', (socket:any) => {
     });
 
     socket.on('gameEvent', (event:IGameEvent) => {
-      // console.log("gameEvent: ", event)
+      if(event.event == GameEvent.EndCurrentTurn){
+        console.log("Ending turn: ", new Date())
+        console.log("Player: ", socket.id)
+      }
       try{
         event.response = getRoom(roomName).gameEvent(socket.id, event)
         io.in(roomName).emit('gameEvent', event);
