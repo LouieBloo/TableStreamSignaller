@@ -1,10 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GameErrorType = exports.GameError = exports.GameType = exports.GameEvent = exports.PlayerProperties = void 0;
+exports.UserType = exports.GameErrorType = exports.GameError = exports.GameType = exports.GameEvent = exports.PlayerProperties = void 0;
 var PlayerProperties;
 (function (PlayerProperties) {
     PlayerProperties[PlayerProperties["lifeTotal"] = 0] = "lifeTotal";
     PlayerProperties[PlayerProperties["poisonTotal"] = 1] = "poisonTotal";
+    PlayerProperties[PlayerProperties["energyTotal"] = 2] = "energyTotal";
 })(PlayerProperties || (exports.PlayerProperties = PlayerProperties = {}));
 var GameEvent;
 (function (GameEvent) {
@@ -32,4 +33,9 @@ var GameErrorType;
 (function (GameErrorType) {
     GameErrorType[GameErrorType["GameNotStarted"] = 0] = "GameNotStarted";
 })(GameErrorType || (exports.GameErrorType = GameErrorType = {}));
+var UserType;
+(function (UserType) {
+    UserType[UserType["Player"] = 0] = "Player";
+    UserType[UserType["Spectator"] = 1] = "Spectator";
+})(UserType || (exports.UserType = UserType = {}));
 //# sourceMappingURL=game.js.map

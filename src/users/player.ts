@@ -1,11 +1,7 @@
-import { CommanderDamage } from "./interfaces/game";
+import { CommanderDamage, UserType } from "../interfaces/game";
+import { User } from "./user";
 
-const { v4: uuidv4 } = require('uuid');
-
-export class Player {
-    name: string;
-    socketId: string;
-    id: string;
+export class Player extends User {
     turnOrder: number;
     admin:boolean;
 
@@ -18,16 +14,17 @@ export class Player {
     isMonarch:boolean = false;
 
     poisonTotal:number;
+    energyTotal:number;
 
     commanderDamages: { [playerId: string]: CommanderDamage } = {};
 
     constructor(name:string, socketId:string, turnOrder:number, startingLifeTotal:number) {
-        this.name = name;
-        this.socketId = socketId;
-        this.id = uuidv4();
+        super(name,socketId,UserType.Player);
+
         this.turnOrder = turnOrder;
         this.lifeTotal = startingLifeTotal;
         this.poisonTotal = 0;
+        this.energyTotal = 0;
 
         this.totalTurns = 0;
         this.totalTurnTime = 0;
@@ -35,6 +32,7 @@ export class Player {
 
 
     takeCommanderDamage = (damagingPlayer: Player, amount: number)=>{
+        //add or create the commander damage for this player
         if(this.commanderDamages[damagingPlayer.id]){
             this.commanderDamages[damagingPlayer.id].damage += amount;
         }else{
@@ -44,9 +42,16 @@ export class Player {
             }
         }
 
-        this.lifeTotal -= amount;
+        //prevent negative commander damage
+        if(this.commanderDamages[damagingPlayer.id].damage < 0){
+            this.commanderDamages[damagingPlayer.id].damage = 0;
+        }else{
+            //remove lifetotal on commander damage
+            this.lifeTotal -= amount;
+        }
 
-        if(this.commanderDamages[damagingPlayer.id].damage >= 20){
+        //kill player if threshold met
+        if(this.commanderDamages[damagingPlayer.id].damage >= 21){
             this.lifeTotal = 0;
         }
 

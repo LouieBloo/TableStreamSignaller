@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const roomState_1 = require("./roomState");
+const game_1 = require("./interfaces/game");
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -15,7 +16,7 @@ const io = new Server(server, {
     }
 });
 const PORT = process.env.PORT || 3001;
-let rooms = {};
+//let rooms: { [key: string | number | symbol]: any } = {};
 const roomState = new roomState_1.RoomState();
 // Middleware to serve static files (optional)
 // app.use(express.static('public'));
@@ -24,24 +25,36 @@ const getRoom = (roomName) => {
 };
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
-    socket.on('joinRoom', ({ roomName, playerName }, callback) => {
+    socket.on('joinRoom', ({ roomName, playerName, userType }, callback) => {
         console.log("Join Room: " + " " + playerName + " - " + roomName);
-        if (!rooms[roomName]) {
-            rooms[roomName] = [];
+        if (!roomState.rooms[roomName]) {
             roomState.addRoom(roomName);
         }
-        if (rooms[roomName].length >= 4) {
+        let newUser = null;
+        if (userType == game_1.UserType.Player && roomState.rooms[roomName].playerSockets.length >= 4) {
             socket.emit('roomFull');
             return;
         }
-        rooms[roomName].push(socket.id);
-        const newPlayer = roomState.rooms[roomName].addPlayer(playerName, socket.id);
+        else if (userType == game_1.UserType.Player) {
+            //new player
+            roomState.rooms[roomName].playerSockets.push(socket.id);
+            newUser = roomState.rooms[roomName].addPlayer(playerName, socket.id);
+        }
+        else if (userType == game_1.UserType.Spectator) {
+            //new spectator
+            roomState.rooms[roomName].spectatorSockets.push(socket.id);
+            newUser = roomState.rooms[roomName].addSpectator(playerName, socket.id);
+        }
+        else {
+            console.error("Idk whats happening here: ", roomName, playerName, userType);
+            socket.emit('error');
+            return;
+        }
         socket.join(roomName);
         socket.emit('roomJoined', { roomName, socketId: socket.id });
-        socket.to(roomName).emit('newPeer', { socketId: socket.id, player: newPlayer, room: rooms[roomName] });
-        //socket.emit('loadMessages', messages[roomName]);
+        socket.to(roomName).emit('newPeer', { socketId: socket.id, user: newUser, players: roomState.rooms[roomName].playerSockets, spectators: roomState.rooms[roomName].spectatorSockets });
         socket.on('signal', (data) => {
-            io.to(data.to).emit('signal', { from: socket.id, signal: data.signal, player: newPlayer });
+            io.to(data.to).emit('signal', { from: socket.id, signal: data.signal, user: newUser });
         });
         socket.on('message', (message) => {
             console.log("on message: ", message);
@@ -52,7 +65,10 @@ io.on('connection', (socket) => {
             }
         });
         socket.on('gameEvent', (event) => {
-            // console.log("gameEvent: ", event)
+            if (event.event == game_1.GameEvent.EndCurrentTurn) {
+                console.log("Ending turn: ", new Date());
+                console.log("Player: ", socket.id);
+            }
             try {
                 event.response = getRoom(roomName).gameEvent(socket.id, event);
                 io.in(roomName).emit('gameEvent', event);
@@ -63,14 +79,14 @@ io.on('connection', (socket) => {
         });
         socket.on('disconnect', () => {
             console.log('A user disconnected:', socket.id);
-            rooms[roomName] = rooms[roomName].filter((id) => id !== socket.id);
+            //rooms[roomName] = rooms[roomName].filter((id:any) => id !== socket.id);
+            roomState.rooms[roomName].userDisconnected(socket.id);
             socket.to(roomName).emit('peerDisconnected', { socketId: socket.id });
-            if (rooms[roomName].length === 0) {
-                delete rooms[roomName];
+            if (roomState.rooms[roomName].playerSockets.length === 0) {
                 roomState.deleteRoom(roomName);
             }
         });
-        callback(newPlayer);
+        callback(newUser);
     });
 });
 server.listen(PORT, () => {

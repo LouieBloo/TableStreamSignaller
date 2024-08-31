@@ -1,4 +1,4 @@
-import { Player } from "../player";
+import { Player } from "../users/player";
 
 export interface IMessage {
     text: string;

@@ -1,9 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Player = void 0;
-const { v4: uuidv4 } = require('uuid');
-class Player {
+const game_1 = require("../interfaces/game");
+const user_1 = require("./user");
+class Player extends user_1.User {
     constructor(name, socketId, turnOrder, startingLifeTotal) {
+        super(name, socketId, game_1.UserType.Player);
         this.isMonarch = false;
         this.commanderDamages = {};
         this.takeCommanderDamage = (damagingPlayer, amount) => {
@@ -31,9 +33,6 @@ class Player {
             }
             return this;
         };
-        this.name = name;
-        this.socketId = socketId;
-        this.id = uuidv4();
         this.turnOrder = turnOrder;
         this.lifeTotal = startingLifeTotal;
         this.poisonTotal = 0;

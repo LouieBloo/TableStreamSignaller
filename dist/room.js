@@ -2,13 +2,17 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Room = void 0;
 const game_1 = require("./interfaces/game");
-const player_1 = require("./player");
+const player_1 = require("./users/player");
 const mtg_commander_1 = require("./games/mtg-commander");
+const spectator_1 = require("./users/spectator");
 class Room {
     constructor(roomName, gameType) {
+        this.playerSockets = [];
+        this.spectatorSockets = [];
         this.name = roomName;
         this.messages = [];
         this.players = [];
+        this.spectators = [];
         this.game = this.createGame(gameType);
     }
     createGame(gameType) {
@@ -32,6 +36,25 @@ class Room {
             player.socketId = socketId;
         }
         return player;
+    }
+    addSpectator(spectatorName, socketId) {
+        //check for duplicate player names
+        let spectator = this.spectators.find(e => e.name === spectatorName);
+        if (!spectator) {
+            spectator = new spectator_1.Spectator(spectatorName, socketId);
+            this.spectators.push(spectator);
+        }
+        else {
+            spectator.socketId = socketId;
+        }
+        return spectator;
+    }
+    userDisconnected(socketId) {
+        this.playerSockets = this.playerSockets.filter((id) => id !== socketId);
+        this.spectatorSockets = this.spectatorSockets.filter((id) => id !== socketId);
+    }
+    getAllSocketIds() {
+        return this.playerSockets.concat(this.spectatorSockets);
     }
     addMessage(socketId, message) {
         const targetPlayer = this.getPlayer(socketId);
