@@ -1,4 +1,4 @@
-import { Player } from "../player";
+import { Player } from "../users/player";
 
 export interface IGameEvent {
     callingPlayer:Player;
@@ -49,4 +49,9 @@ export class GameError extends Error {
 
 export enum GameErrorType{
     GameNotStarted
+}
+
+export enum UserType{
+    Player,
+    Spectator
 }

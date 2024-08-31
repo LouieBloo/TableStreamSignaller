@@ -1,4 +1,4 @@
-import { Player } from "../player";
+import { Player } from "../users/player";
 import { IGameEvent, GameEvent, CommanderDamage } from "../interfaces/game";
 import { Room } from "../room";
 import { Game } from "./game";

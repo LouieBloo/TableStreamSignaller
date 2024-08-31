@@ -1,22 +1,26 @@
 import { Game } from "./games/game";
 import { GameType, IGameEvent } from "./interfaces/game";
 import { IMessage } from "./interfaces/messaging";
-import { Player } from "./player";
+import { Player } from "./users/player";
 import {MTGCommander} from "./games/mtg-commander";
+import { Spectator } from "./users/spectator";
 
 
 export class Room {
   name: string;
   messages: IMessage[];
   players: Player[];
+  spectators: Spectator[];
   game: Game;
 
-  playerSockets: { [key: string | number | symbol]: any } = {};
+  playerSockets: string[] = [];
+  spectatorSockets: string[] = [];
 
   constructor(roomName:string, gameType:GameType) {
     this.name = roomName;
     this.messages = [];
     this.players = [];
+    this.spectators = [];
 
     this.game = this.createGame(gameType);
   }
@@ -29,7 +33,7 @@ export class Room {
     }
   }
 
-  public addPlayer(playerName: string, socketId:string) {
+  public addPlayer(playerName: string, socketId:string):Player {
     //check for duplicate player names
     let player = this.players.find(e => e.name === playerName);
 
@@ -45,6 +49,29 @@ export class Room {
     }
 
     return player;
+  }
+
+  public addSpectator(spectatorName: string, socketId:string):Spectator {
+    //check for duplicate player names
+    let spectator = this.spectators.find(e => e.name === spectatorName);
+
+    if (!spectator) {
+      spectator = new Spectator(spectatorName, socketId);
+      this.spectators.push(spectator)
+    }else{
+      spectator.socketId = socketId;
+    }
+
+    return spectator;
+  }
+
+  public userDisconnected(socketId:string){
+    this.playerSockets = this.playerSockets.filter((id:any) => id !== socketId);
+    this.spectatorSockets = this.spectatorSockets.filter((id:any) => id !== socketId);
+  }
+
+  public getAllSocketIds():string[]{
+    return this.playerSockets.concat(this.spectatorSockets);
   }
 
   public addMessage(socketId:string, message:string):IMessage | null {

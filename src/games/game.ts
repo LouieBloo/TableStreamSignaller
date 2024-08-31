@@ -1,6 +1,6 @@
 import { Room } from "../room";
 import { GameError, GameErrorType, GameEvent, IGameEvent, IModifyPlayerProperty, PlayerProperties } from "../interfaces/game";
-import { Player } from "../player";
+import { Player } from "../users/player";
 import { ScryfallCard } from "../interfaces/cards";
 
 export class Game {
