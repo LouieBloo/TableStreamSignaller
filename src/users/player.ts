@@ -1,11 +1,7 @@
-import { CommanderDamage } from "./interfaces/game";
+import { CommanderDamage, UserType } from "../interfaces/game";
+import { User } from "./user";
 
-const { v4: uuidv4 } = require('uuid');
-
-export class Player {
-    name: string;
-    socketId: string;
-    id: string;
+export class Player extends User {
     turnOrder: number;
     admin:boolean;
 
@@ -23,9 +19,8 @@ export class Player {
     commanderDamages: { [playerId: string]: CommanderDamage } = {};
 
     constructor(name:string, socketId:string, turnOrder:number, startingLifeTotal:number) {
-        this.name = name;
-        this.socketId = socketId;
-        this.id = uuidv4();
+        super(name,socketId,UserType.Player);
+
         this.turnOrder = turnOrder;
         this.lifeTotal = startingLifeTotal;
         this.poisonTotal = 0;
