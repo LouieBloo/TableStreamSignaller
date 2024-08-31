@@ -51,7 +51,7 @@ io.on('connection', (socket) => {
             return;
         }
         socket.join(roomName);
-        socket.emit('roomJoined', { roomName, socketId: socket.id });
+        //socket.emit('roomJoined', { roomName, socketId: socket.id });
         socket.to(roomName).emit('newPeer', { socketId: socket.id, user: newUser, players: roomState.rooms[roomName].playerSockets, spectators: roomState.rooms[roomName].spectatorSockets });
         socket.on('signal', (data) => {
             io.to(data.to).emit('signal', { from: socket.id, signal: data.signal, user: newUser });
@@ -80,6 +80,9 @@ io.on('connection', (socket) => {
         socket.on('disconnect', () => {
             console.log('A user disconnected:', socket.id);
             //rooms[roomName] = rooms[roomName].filter((id:any) => id !== socket.id);
+            if (!roomState.rooms[roomName]) {
+                return;
+            }
             roomState.rooms[roomName].userDisconnected(socket.id);
             socket.to(roomName).emit('peerDisconnected', { socketId: socket.id });
             if (roomState.rooms[roomName].playerSockets.length === 0) {
