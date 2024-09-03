@@ -10,6 +10,10 @@ class MTGCommander extends game_2.Game {
         this.modifyPlayerCommanderDamage = (gameEvent) => {
             return gameEvent.callingPlayer.takeCommanderDamage(gameEvent.payload.damagingPlayer, gameEvent.payload.amount);
         };
+        this.setCommander = (gameEvent) => {
+            gameEvent.callingPlayer.commander = gameEvent.payload;
+            return gameEvent.callingPlayer;
+        };
     }
     event(gameEvent, room) {
         switch (gameEvent.event) {
@@ -17,6 +21,8 @@ class MTGCommander extends game_2.Game {
                 return this.startGame(room);
             case game_1.GameEvent.ModifyPlayerCommanderDamage:
                 return this.modifyPlayerCommanderDamage(gameEvent);
+            case game_1.GameEvent.SetCommander:
+                return this.setCommander(gameEvent);
         }
         return super.event(gameEvent, room);
     }

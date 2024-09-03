@@ -1,5 +1,5 @@
 import { Game } from "./games/game";
-import { GameType, IGameEvent } from "./interfaces/game";
+import { GameError, GameErrorType, GameType, IGameEvent } from "./interfaces/game";
 import { IMessage } from "./interfaces/messaging";
 import { Player } from "./users/player";
 import {MTGCommander} from "./games/mtg-commander";
@@ -96,6 +96,10 @@ export class Room {
 
   gameEvent(socketId: string, gameEvent: IGameEvent):any{
     gameEvent.callingPlayer = this.getPlayer(socketId);
-    return this.game.event(gameEvent,this);
+    if(gameEvent.callingPlayer){
+      return this.game.event(gameEvent,this);
+    }else{
+      throw new GameError(GameErrorType.InvalidAction, "You cant make that action");
+    }
   }
 }

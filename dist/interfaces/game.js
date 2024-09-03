@@ -17,6 +17,7 @@ var GameEvent;
     GameEvent[GameEvent["ShareCard"] = 5] = "ShareCard";
     GameEvent[GameEvent["ToggleMonarch"] = 6] = "ToggleMonarch";
     GameEvent[GameEvent["ModifyPlayerCommanderDamage"] = 7] = "ModifyPlayerCommanderDamage";
+    GameEvent[GameEvent["SetCommander"] = 8] = "SetCommander";
 })(GameEvent || (exports.GameEvent = GameEvent = {}));
 var GameType;
 (function (GameType) {
@@ -32,6 +33,7 @@ exports.GameError = GameError;
 var GameErrorType;
 (function (GameErrorType) {
     GameErrorType[GameErrorType["GameNotStarted"] = 0] = "GameNotStarted";
+    GameErrorType[GameErrorType["InvalidAction"] = 1] = "InvalidAction";
 })(GameErrorType || (exports.GameErrorType = GameErrorType = {}));
 var UserType;
 (function (UserType) {

@@ -76,7 +76,12 @@ class Room {
     }
     gameEvent(socketId, gameEvent) {
         gameEvent.callingPlayer = this.getPlayer(socketId);
-        return this.game.event(gameEvent, this);
+        if (gameEvent.callingPlayer) {
+            return this.game.event(gameEvent, this);
+        }
+        else {
+            throw new game_1.GameError(game_1.GameErrorType.InvalidAction, "You cant make that action");
+        }
     }
 }
 exports.Room = Room;

@@ -1,3 +1,4 @@
+import { ScryfallCard } from "../interfaces/cards";
 import { CommanderDamage, UserType } from "../interfaces/game";
 import { User } from "./user";
 
@@ -17,6 +18,8 @@ export class Player extends User {
     energyTotal:number;
 
     commanderDamages: { [playerId: string]: CommanderDamage } = {};
+
+    commander: ScryfallCard;
 
     constructor(name:string, socketId:string, turnOrder:number, startingLifeTotal:number) {
         super(name,socketId,UserType.Player);
