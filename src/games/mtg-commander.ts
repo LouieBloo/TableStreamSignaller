@@ -13,6 +13,8 @@ export class MTGCommander extends Game {
                 return this.startGame(room);
             case GameEvent.ModifyPlayerCommanderDamage:
                 return this.modifyPlayerCommanderDamage(gameEvent);
+            case GameEvent.SetCommander:
+                return this.setCommander(gameEvent);
         }
 
         return super.event(gameEvent, room);
@@ -20,6 +22,11 @@ export class MTGCommander extends Game {
 
     modifyPlayerCommanderDamage = (gameEvent: IGameEvent) => {
         return gameEvent.callingPlayer.takeCommanderDamage(gameEvent.payload.damagingPlayer, gameEvent.payload.amount);
+    }
+
+    setCommander = (gameEvent: IGameEvent)=>{
+        gameEvent.callingPlayer.commander = gameEvent.payload;
+        return gameEvent.callingPlayer;
     }
 
     //call the super startGame but also add our commander damage initialization
