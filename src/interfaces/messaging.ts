@@ -1,7 +1,7 @@
-import { Player } from "../users/player";
+import { IUser } from "./player";
 
 export interface IMessage {
     text: string;
     date: Date;
-    player:Player;
+    player:IUser;
 }
