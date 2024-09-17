@@ -28,8 +28,9 @@ const PORT = process.env.PORT || 3001;
 
 const roomState = new RoomState()
 
-// Middleware to serve static files (optional)
-// app.use(express.static('public'));
+app.get('/', (req:any, res:any) => {
+  res.status(200).send('Beating...');
+});
 
 // const getRoom = (roomName: string)=>{
 //   return roomState.rooms[roomName]
