@@ -4,17 +4,27 @@ import { IMessage } from "./interfaces/messaging";
 import { Player } from "./users/player";
 import {MTGCommander} from "./games/mtg-commander";
 import { Spectator } from "./users/spectator";
-
+import { saveRoomAndUnlock, unlockRoom } from "./redis";
+import { Type } from "class-transformer";
 
 export class Room {
   name: string;
+
   messages: IMessage[];
+
+  @Type(() => Player)
   players: Player[];
+
+  @Type(() => Spectator)
   spectators: Spectator[];
+
+  @Type(() => Game)
   game: Game;
 
   playerSockets: string[] = [];
   spectatorSockets: string[] = [];
+
+  redisLock:any;
 
   constructor(roomName:string, gameType:GameType) {
     this.name = roomName;
@@ -25,6 +35,14 @@ export class Room {
     this.game = this.createGame(gameType);
   }
 
+  saveAndClose = async()=>{
+    saveRoomAndUnlock(this);
+  }
+
+  close = async()=>{
+    unlockRoom(this.redisLock);
+  }
+
   createGame(gameType: GameType){
     switch(gameType){
       case GameType.MTGCommander:
@@ -33,9 +51,8 @@ export class Room {
     }
   }
 
-  public addPlayer(playerName: string, socketId:string):Player {
-    //check for duplicate player names
-    let player = this.players.find(e => e.name === playerName);
+  public addPlayer(playerId: string, playerName: string, socketId:string):Player {
+    let player = this.players.find(e => e.id === playerId);
 
     if (!player) {
       player = new Player(playerName, socketId, this.players.length, this.game.startingLifeTotal);
@@ -75,12 +92,12 @@ export class Room {
   }
 
   public addMessage(socketId:string, message:string):IMessage | null {
-    const targetPlayer = this.getPlayer(socketId);
+    const targetPlayer:Player = this.getPlayer(socketId);
 
     if(targetPlayer){
       let newMessage = {
         text: message,
-        player: targetPlayer,
+        player: {name: targetPlayer.name, id: targetPlayer.id},
         date: new Date()
       }
       this.messages.push(newMessage)

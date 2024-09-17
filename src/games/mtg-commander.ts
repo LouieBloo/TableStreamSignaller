@@ -1,11 +1,17 @@
 import { Player } from "../users/player";
-import { IGameEvent, GameEvent, CommanderDamage } from "../interfaces/game";
+import { IGameEvent, GameEvent, CommanderDamage, GameType } from "../interfaces/game";
 import { Room } from "../room";
 import { Game } from "./game";
+import { slimCard } from "../interfaces/cards";
 
 
 export class MTGCommander extends Game {
     startingLifeTotal = 40;
+
+    constructor(){
+        super();
+        this.gameType = GameType.MTGCommander;
+    }
 
     public event(gameEvent: IGameEvent, room: Room): any {
         switch (gameEvent.event) {
@@ -14,6 +20,7 @@ export class MTGCommander extends Game {
             case GameEvent.ModifyPlayerCommanderDamage:
                 return this.modifyPlayerCommanderDamage(gameEvent);
             case GameEvent.SetCommander:
+                console.log("setting commander!")
                 return this.setCommander(gameEvent);
         }
 
@@ -25,7 +32,7 @@ export class MTGCommander extends Game {
     }
 
     setCommander = (gameEvent: IGameEvent)=>{
-        gameEvent.callingPlayer.commander = gameEvent.payload;
+        gameEvent.callingPlayer.commander = slimCard(gameEvent.payload);
         return gameEvent.callingPlayer;
     }
 
