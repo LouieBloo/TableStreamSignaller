@@ -31,7 +31,10 @@ export enum GameEvent{
 }
 
 export enum GameType{
-    MTGCommander
+    Game,
+    MTGCommander,
+    MTGStandard,
+    MTGModern
 }
 
 export interface CommanderDamage{

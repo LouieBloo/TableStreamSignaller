@@ -1,7 +1,7 @@
 import { Room } from "../room";
-import { GameError, GameErrorType, GameEvent, IGameEvent, IModifyPlayerProperty, PlayerProperties } from "../interfaces/game";
+import { GameError, GameErrorType, GameEvent, GameType, IGameEvent, IModifyPlayerProperty, PlayerProperties } from "../interfaces/game";
 import { Player } from "../users/player";
-import { ScryfallCard } from "../interfaces/cards";
+import { ScryfallCard, slimCard } from "../interfaces/cards";
 
 export class Game {
 
@@ -9,6 +9,8 @@ export class Game {
     active:boolean = false;
 
     sharedCards:ScryfallCard[] = [];
+
+    gameType: GameType;
 
     public event(gameEvent: IGameEvent, room: Room): any {
         switch (gameEvent.event) {
@@ -179,7 +181,7 @@ export class Game {
 
         if(blockCard){return null}
 
-        this.sharedCards.unshift(gameEvent.payload);
+        this.sharedCards.unshift(slimCard(gameEvent.payload));
 
         return gameEvent.payload;
     }

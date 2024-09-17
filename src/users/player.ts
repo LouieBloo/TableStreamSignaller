@@ -1,6 +1,7 @@
 import { ScryfallCard } from "../interfaces/cards";
 import { CommanderDamage, UserType } from "../interfaces/game";
 import { User } from "./user";
+import { Type } from "class-transformer";
 
 export class Player extends User {
     turnOrder: number;
@@ -9,6 +10,7 @@ export class Player extends User {
     lifeTotal:number;
     isTakingTurn: boolean;
     totalTurns: number;
+    @Type(() => Date)
     currentTurnStartTime: Date;
     totalTurnTime: number;
 
