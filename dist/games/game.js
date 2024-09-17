@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Game = void 0;
 const game_1 = require("../interfaces/game");
+const cards_1 = require("../interfaces/cards");
 class Game {
     constructor() {
         this.startingLifeTotal = 20;
@@ -37,7 +38,7 @@ class Game {
             if (blockCard) {
                 return null;
             }
-            this.sharedCards.unshift(gameEvent.payload);
+            this.sharedCards.unshift((0, cards_1.slimCard)(gameEvent.payload));
             return gameEvent.payload;
         };
         this.toggleMonarch = (gameEvent, room) => {

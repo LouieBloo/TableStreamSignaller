@@ -21,7 +21,10 @@ var GameEvent;
 })(GameEvent || (exports.GameEvent = GameEvent = {}));
 var GameType;
 (function (GameType) {
-    GameType[GameType["MTGCommander"] = 0] = "MTGCommander";
+    GameType[GameType["Game"] = 0] = "Game";
+    GameType[GameType["MTGCommander"] = 1] = "MTGCommander";
+    GameType[GameType["MTGStandard"] = 2] = "MTGStandard";
+    GameType[GameType["MTGModern"] = 3] = "MTGModern";
 })(GameType || (exports.GameType = GameType = {}));
 class GameError extends Error {
     constructor(type, message) {
