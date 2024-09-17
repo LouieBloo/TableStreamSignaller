@@ -3,17 +3,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MTGCommander = void 0;
 const game_1 = require("../interfaces/game");
 const game_2 = require("./game");
+const cards_1 = require("../interfaces/cards");
 class MTGCommander extends game_2.Game {
     constructor() {
-        super(...arguments);
+        super();
         this.startingLifeTotal = 40;
         this.modifyPlayerCommanderDamage = (gameEvent) => {
             return gameEvent.callingPlayer.takeCommanderDamage(gameEvent.payload.damagingPlayer, gameEvent.payload.amount);
         };
         this.setCommander = (gameEvent) => {
-            gameEvent.callingPlayer.commander = gameEvent.payload;
+            gameEvent.callingPlayer.commander = (0, cards_1.slimCard)(gameEvent.payload);
             return gameEvent.callingPlayer;
         };
+        this.gameType = game_1.GameType.MTGCommander;
     }
     event(gameEvent, room) {
         switch (gameEvent.event) {
@@ -22,6 +24,7 @@ class MTGCommander extends game_2.Game {
             case game_1.GameEvent.ModifyPlayerCommanderDamage:
                 return this.modifyPlayerCommanderDamage(gameEvent);
             case game_1.GameEvent.SetCommander:
+                console.log("setting commander!");
                 return this.setCommander(gameEvent);
         }
         return super.event(gameEvent, room);
