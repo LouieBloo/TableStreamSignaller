@@ -3,9 +3,9 @@ import Redlock, { ResourceLockedError } from 'redlock';
 import { Room } from '../../domain/rooms/room';
 
 const redisClient = new Redis({
-  host: process.env.REDIS_HOST,  
+  host: process.env.REDIS_HOST,
   port: 19210,
-  password: process.env.REDIS_PASSWORD,       
+  password: process.env.REDIS_PASSWORD,
 });
 
 console.log("starting redis!!!!");
@@ -29,32 +29,23 @@ redlock.on("error", (error) => {
     return;
   }
 
-  // Log all other errors.
   console.error("Redlock error:", error);
 });
 
-// Function to lock a specific game room and return the game state
-export async function lockRoomAndGetState(roomId:string = null): Promise<{ lock: any, room: string }> {
+export async function lockAndGetRoomById(roomId:string = null): Promise<{ lock: any, room: string }> {
   const lockKey = `lock:${roomId}`;
   const key = `game_room:${roomId}`; 
-  const ttl = 3000;  // Time to live (TTL) for the lock in milliseconds (3 seconds)
+  const lengthOfLock = 3000;  // ms
 
   try {
-    // Acquire the lock
-    const lock = await redlock.acquire([lockKey], ttl);
-    //console.log(`Room ${roomName} locked successfully.`);
-
-    // Fetch the current game state from Redis using the same key
+    const lock = await redlock.acquire([lockKey], lengthOfLock);
     const room = await redisClient.get(key);
 
     if(!room){
       console.warn(`No existing room found for roomId=${roomId}`);
     }
 
-    // Parse the game state if it exists, or initialize it if not
-    //const room:string = gameStateJson ? JSON.parse(gameStateJson) : null;
-
-    // Return the lock and the game state
+    //TODO why does the lock leave this method
     return { lock, room };
 
   } catch (error) {
