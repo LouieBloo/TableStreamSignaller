@@ -26,6 +26,7 @@ const mtg_commander_1 = require("./games/mtg-commander");
 const spectator_1 = require("./users/spectator");
 const redis_1 = require("./redis");
 const class_transformer_1 = require("class-transformer");
+const { v4: uuidv4 } = require('uuid');
 class Room {
     constructor(roomName, gameType) {
         this.playerSockets = [];
@@ -36,6 +37,7 @@ class Room {
         this.close = () => __awaiter(this, void 0, void 0, function* () {
             (0, redis_1.unlockRoom)(this.redisLock);
         });
+        this.id = uuidv4();
         this.name = roomName;
         this.messages = [];
         this.players = [];

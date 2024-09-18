@@ -53,7 +53,8 @@ export class GameError extends Error {
 
 export enum GameErrorType{
     GameNotStarted,
-    InvalidAction
+    InvalidAction,
+    NoRoomName
 }
 
 export enum UserType{
