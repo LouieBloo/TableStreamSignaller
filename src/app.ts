@@ -66,51 +66,34 @@ app.use('/rooms',roomRouter);
 io.on('connection', (socket:any) => {
   console.log('A user connected:', socket.id);
 
-  const userIp:string = getClientIp(socket);
-
-  socket.on('joinRoom', async ({playerId, roomId, roomName, password, gameType, playerName, userType, maxPlayers, reactionsEnabled, isSharingImages, isPublic, joinerJwtToken, allowSpectators }:any, callback:any) => {
+  socket.on('joinRoom', async ({playerId, roomId, roomName, playerName, userType }:any, callback:any) => {
     try{
-      console.log("Join Room: " + " " + playerName + " - " + roomName + " - " + roomId + " - " + playerId)
+      console.log("Join Room: " + " " + playerName + " - " + roomName + " - " + roomId)
 
-      let currentRoom:Room = await RoomManager.getOrCreateRoom({roomName, roomId, password, gameType, maxPlayers, reactionsEnabled: reactionsEnabled, public: isPublic, creatorJwtToken: joinerJwtToken, allowSpectators });
+      let currentRoom:Room = await roomState.getOrCreateRoom(roomName, roomId);
+  
       let newUser:User = null;
   
-      if (userType == UserType.Player && !currentRoom.canAddPlayer(playerId,socket.id)) {
+      if (userType == UserType.Player && currentRoom.playerSockets.length >= 4) {
         socket.emit('roomFull');
-        callback(null,null,{type: GameErrorType.RoomFull, message: "Room full", severity: GameErrorSeverity.Error})
         return;
       }else if(userType == UserType.Player){
         //new player
-        try{
-          newUser = await currentRoom.addPlayer({playerId, playerName, socketId: socket.id, password, ipAddress: userIp, isSharingImages, jwtToken: joinerJwtToken})
-          currentRoom.playerSockets.push(socket.id);
-          socket.to(currentRoom.id).emit('historyEvent', currentRoom.logRoomEvent({
-            event: RoomEvent.PlayerAdded,
-            value: {
-              id: newUser.id,
-              name: newUser.name
-            }
-          }));
-        }catch(error){
-          throw error;
-        }finally{
-          await currentRoom.saveAndClose();
-        }
+        currentRoom.playerSockets.push(socket.id);
+        newUser = currentRoom.addPlayer(playerId, playerName, socket.id)
+        await currentRoom.saveAndClose();
       }else if(userType == UserType.Spectator){
         //new spectator
-        try{
-          newUser = await currentRoom.addSpectator(playerId, playerName, socket.id, password)
-          currentRoom.spectatorSockets.push(socket.id);
-        }catch(error){
-          throw error;
-        }finally{
-          await currentRoom.saveAndClose();
-        }
+        currentRoom.spectatorSockets.push(socket.id);
+        newUser = currentRoom.addSpectator(playerName, socket.id)
+        await currentRoom.saveAndClose();
       }else{
         console.error("Idk whats happening here: ", roomName, playerName, userType);
         socket.emit('error');
         return;
       }
+  
+      
   
       socket.join(currentRoom.id);
       //socket.emit('roomJoined', { roomName, socketId: socket.id });
@@ -121,7 +104,7 @@ io.on('connection', (socket:any) => {
       }); 
   
       socket.on('message', async(message:IMessage) => {
-        let room:Room = await RoomManager.getRoom(currentRoom.id);
+        let room:Room = await roomState.getRoom(currentRoom.id);
         let newMessage = room.addMessage(socket.id, message.text)
         if(newMessage){
           await room.saveAndClose();
@@ -129,75 +112,37 @@ io.on('connection', (socket:any) => {
         }
       });
   
-      //primary game events
       socket.on('gameEvent', async(event:IGameEvent) => {
-        let room:Room = await RoomManager.getRoom(currentRoom.id);
+        let room:Room = await roomState.getRoom(currentRoom.id);
         try{
           event.response = room.gameEvent(socket.id, event)
-          //if this event results in messages, add them
-          if(event.messages){
-            event.messages.forEach((message:IMessage)=>{
-              room.addMessage(event.callingPlayer.socketId, message.text)
-              //I dont like this flip coins check here but its fine for now
-              if(event.event == GameEvent.FlipCoins){
-                //for coin flips we add a delay so people can watch the animation instead of looking at chat
-                setTimeout(()=>{
-                  io.in(currentRoom.id).emit('message', message);
-                },2000)
-              }else{
-                io.in(currentRoom.id).emit('message', message);
-              }
-            })
-          }
-
-          io.in(currentRoom.id).emit('historyEvent', room.logGameEvent(event));
           await room.saveAndClose();
           io.in(currentRoom.id).emit('gameEvent', event);
         }
         catch(error){
-          console.log(error)
           await room.close();
-          socket.emit('errorResponse', {type: error.type, message: error.message, severity: error.severity});
-        }
-      });
-
-      //private game events such as personal settings
-      socket.on('privateGameEvent', async(event: IGameEvent, callback:any) => {
-        let room:Room = await RoomManager.getRoom(currentRoom.id);
-        try{
-          event.isPrivate = true;
-          event.response = room.gameEvent(socket.id, event)
-          await room.saveAndClose();
-          callback(event);
-        }
-        catch(error){
-          console.log(error)
-          await room.close();
-          socket.emit('errorResponse', {type: error.type, message: error.message, severity: error.severity});
+          socket.emit('errorResponse', {type: error.type, message: error.message});
         }
       });
   
       socket.on('disconnect', async() => {
         console.log('A user disconnected:', socket.id);
-        let room:Room = await RoomManager.getRoom(currentRoom.id);
+        let room:Room = await roomState.getRoom(currentRoom.id);
         if(!room){return;}
   
-        let history:IRoomHistoryEvent = room.userDisconnected(socket.id, null);
+        room.userDisconnected(socket.id);
         socket.to(currentRoom.id).emit('peerDisconnected', { socketId: socket.id });
-        //auto delete the room if its not a bot created room 
-        if (room.playerSockets.length === 0 && !room.scheduledRoom) {
+        if (room.playerSockets.length === 0) {
           console.log("deleting room")
-          await RoomManager.deleteRoom(room);
+          await roomState.deleteRoom(room)
         }else{
-          io.in(currentRoom.id).emit('historyEvent',history);
           await room.saveAndClose();
         }
       });
   
       callback(newUser,currentRoom);
     }catch(error){
-      console.log(error);
-      callback(null,null,{type: error.type, message: error.message, severity: error.severity})
+      callback(null,null,{type: error.type, message: error.message})
     }
     
   });
