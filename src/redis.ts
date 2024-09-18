@@ -5,9 +5,9 @@ import { Room } from './room';
 const roomInactivityExpirationInSeconds = 7200;//2 hours
 
 const redisClient = new Redis({
-  host: process.env.REDIS_HOST,  
+  host: 'redis-19210.c289.us-west-1-2.ec2.redns.redis-cloud.com',  
   port: 19210,          
-  password: process.env.REDIS_PASSWORD,       
+  password: 'c9glDwML0vY8q2WMELhBfi1ppAxBdqSG',       
 });
 
 console.log("starting redis!!!!");
@@ -36,9 +36,9 @@ redlock.on("error", (error) => {
 });
 
 // Function to lock a specific game room and return the game state
-export async function lockRoomAndGetState(roomName: string): Promise<{ lock: any, room: string }> {
-  const lockKey = `lock:${roomName}`;
-  const key = `game_room:${roomName}`; 
+export async function lockRoomAndGetState(roomId:string = null): Promise<{ lock: any, room: string }> {
+  const lockKey = `lock:${roomId}`;
+  const key = `game_room:${roomId}`; 
   const ttl = 2000;  // Time to live (TTL) for the lock in milliseconds (2 seconds)
 
   try {
@@ -49,6 +49,10 @@ export async function lockRoomAndGetState(roomName: string): Promise<{ lock: any
     // Fetch the current game state from Redis using the same key
     const room = await redisClient.get(key);
 
+    if(!room){
+
+    }
+
     // Parse the game state if it exists, or initialize it if not
     //const room:string = gameStateJson ? JSON.parse(gameStateJson) : null;
 
@@ -56,14 +60,14 @@ export async function lockRoomAndGetState(roomName: string): Promise<{ lock: any
     return { lock, room };
 
   } catch (error) {
-    console.error(`Failed to acquire lock for room ${roomName}:`, error);
+    console.error(`Failed to acquire lock for room ${roomId}:`, error);
     throw error;
   }
 }
 
 // Function to save the updated game state to Redis
 export async function saveRoomAndUnlock(room: Room): Promise<void> {
-  const key = `game_room:${room.name}`;  // Use the same key for saving the state
+  const key = `game_room:${room.id}`;  // Use the same key for saving the state
   try {
     // Save the game state back to Redis
     let lock = room.redisLock;
@@ -72,21 +76,21 @@ export async function saveRoomAndUnlock(room: Room): Promise<void> {
     //console.log(`Game state for room ${room.name} updated successfully.`);
     await unlockRoom(lock);
   } catch (error) {
-    console.error(`Failed to update game state for room ${room.name}:`, error);
+    console.error(`Failed to update game state for room ${room.id}:`, error);
     throw error;
   }
 }
 
 export async function deleteRoomAndUnlock(room: Room): Promise<void> {
-  const key = `game_room:${room.name}`;  // Use the same key for saving the state
+  const key = `game_room:${room.id}`;  // Use the same key for saving the state
   try {
     // Save the game state back to Redis
     let lock = room.redisLock;
     await redisClient.del(key);
-    console.log(`Room ${room.name} deleted successfully.`);
+    console.log(`Room ${room.id} deleted successfully.`);
     await unlockRoom(lock);
   } catch (error) {
-    console.error(`Failed to delete room ${room.name}:`, error);
+    console.error(`Failed to delete room ${room.id}:`, error);
     throw error;
   }
 }

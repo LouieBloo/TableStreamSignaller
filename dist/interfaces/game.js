@@ -37,6 +37,7 @@ var GameErrorType;
 (function (GameErrorType) {
     GameErrorType[GameErrorType["GameNotStarted"] = 0] = "GameNotStarted";
     GameErrorType[GameErrorType["InvalidAction"] = 1] = "InvalidAction";
+    GameErrorType[GameErrorType["NoRoomName"] = 2] = "NoRoomName";
 })(GameErrorType || (exports.GameErrorType = GameErrorType = {}));
 var UserType;
 (function (UserType) {

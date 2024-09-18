@@ -1,4 +1,4 @@
-import { GameType } from "./interfaces/game";
+import { GameError, GameErrorType, GameType } from "./interfaces/game";
 import { Room } from "./room";
 import { plainToInstance } from 'class-transformer';
 import {lockRoomAndGetState, saveRoomAndUnlock, deleteRoomAndUnlock} from './redis';
@@ -11,10 +11,14 @@ export class RoomState {
   }
 
 
-  async getOrCreateRoom(roomName:string):Promise<Room> {
-    let redisResult = await lockRoomAndGetState(roomName);
+  async getOrCreateRoom(roomName:string, roomId:string):Promise<Room> {
+    let redisResult = await lockRoomAndGetState(roomId);
     let room = null;
     if(!redisResult.room){
+      if(!roomName){
+        throw new GameError(GameErrorType.GameNotStarted, "Room name required");
+      }
+
       room = new Room(roomName, GameType.MTGCommander);
     }else{
       room = this.parseRoom(redisResult.room);
@@ -25,8 +29,8 @@ export class RoomState {
     return room;
   }
 
-  async getRoom(roomName:string):Promise<Room> {
-    let redisResult = await lockRoomAndGetState(roomName);
+  async getRoom(roomId:string):Promise<Room> {
+    let redisResult = await lockRoomAndGetState(roomId);
     let rawRoom = redisResult.room;
     if(!rawRoom){
       return null;

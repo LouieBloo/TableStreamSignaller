@@ -44,9 +44,9 @@ const ioredis_1 = __importDefault(require("ioredis"));
 const redlock_1 = __importStar(require("redlock"));
 const roomInactivityExpirationInSeconds = 7200; //2 hours
 const redisClient = new ioredis_1.default({
-    host: process.env.REDIS_HOST,
+    host: 'redis-19210.c289.us-west-1-2.ec2.redns.redis-cloud.com',
     port: 19210,
-    password: process.env.REDIS_PASSWORD,
+    password: 'c9glDwML0vY8q2WMELhBfi1ppAxBdqSG',
 });
 exports.redisClient = redisClient;
 console.log("starting redis!!!!");
@@ -68,10 +68,10 @@ redlock.on("error", (error) => {
     console.error(error);
 });
 // Function to lock a specific game room and return the game state
-function lockRoomAndGetState(roomName) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const lockKey = `lock:${roomName}`;
-        const key = `game_room:${roomName}`;
+function lockRoomAndGetState() {
+    return __awaiter(this, arguments, void 0, function* (roomId = null) {
+        const lockKey = `lock:${roomId}`;
+        const key = `game_room:${roomId}`;
         const ttl = 2000; // Time to live (TTL) for the lock in milliseconds (2 seconds)
         try {
             // Acquire the lock
@@ -79,13 +79,15 @@ function lockRoomAndGetState(roomName) {
             //console.log(`Room ${roomName} locked successfully.`);
             // Fetch the current game state from Redis using the same key
             const room = yield redisClient.get(key);
+            if (!room) {
+            }
             // Parse the game state if it exists, or initialize it if not
             //const room:string = gameStateJson ? JSON.parse(gameStateJson) : null;
             // Return the lock and the game state
             return { lock, room };
         }
         catch (error) {
-            console.error(`Failed to acquire lock for room ${roomName}:`, error);
+            console.error(`Failed to acquire lock for room ${roomId}:`, error);
             throw error;
         }
     });
@@ -93,7 +95,7 @@ function lockRoomAndGetState(roomName) {
 // Function to save the updated game state to Redis
 function saveRoomAndUnlock(room) {
     return __awaiter(this, void 0, void 0, function* () {
-        const key = `game_room:${room.name}`; // Use the same key for saving the state
+        const key = `game_room:${room.id}`; // Use the same key for saving the state
         try {
             // Save the game state back to Redis
             let lock = room.redisLock;
@@ -103,23 +105,23 @@ function saveRoomAndUnlock(room) {
             yield unlockRoom(lock);
         }
         catch (error) {
-            console.error(`Failed to update game state for room ${room.name}:`, error);
+            console.error(`Failed to update game state for room ${room.id}:`, error);
             throw error;
         }
     });
 }
 function deleteRoomAndUnlock(room) {
     return __awaiter(this, void 0, void 0, function* () {
-        const key = `game_room:${room.name}`; // Use the same key for saving the state
+        const key = `game_room:${room.id}`; // Use the same key for saving the state
         try {
             // Save the game state back to Redis
             let lock = room.redisLock;
             yield redisClient.del(key);
-            console.log(`Room ${room.name} deleted successfully.`);
+            console.log(`Room ${room.id} deleted successfully.`);
             yield unlockRoom(lock);
         }
         catch (error) {
-            console.error(`Failed to delete room ${room.name}:`, error);
+            console.error(`Failed to delete room ${room.id}:`, error);
             throw error;
         }
     });
