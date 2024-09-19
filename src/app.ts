@@ -5,6 +5,8 @@ import { RoomState } from "./roomState";
 import {GameError, GameEvent, IGameEvent, UserType} from "./interfaces/game";
 import { User } from "./users/user";
 import { Room } from "./room";
+import axios from 'axios';
+import cors from 'cors';
 
 const express = require('express');
 const http = require('http');
@@ -21,15 +23,40 @@ const io = new Server(server, {
   }
 });
 
-
 const PORT = process.env.PORT || 3001;
-
-//let rooms: { [key: string | number | symbol]: any } = {};
 
 const roomState = new RoomState()
 
+app.use(express.json());
+app.use(cors());
+
 app.get('/', (req:any, res:any) => {
   res.status(200).send('Beating...');
+});
+
+app.post('/report-issue', async (req:any, res:any) => {
+  const { title, body } = req.body;
+  try {
+    const response = await axios.post(
+      'https://api.github.com/repos/louiebloo/TableStreamUI/issues',
+      {
+        title: title,
+        body: body,
+        labels:['user_submitted_issues']
+      },
+      {
+        headers: {
+          Authorization: `token ${process.env.REPORT_GITHUB_CODE}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    res.status(200).json({ message: 'Issue created successfully!', data: response.data });
+  } catch (error) {
+    console.error('Error creating issue:', error);
+    res.status(500).json({ message: 'Failed to create issue', error: error.response.data });
+  }
 });
 
 // const getRoom = (roomName: string)=>{

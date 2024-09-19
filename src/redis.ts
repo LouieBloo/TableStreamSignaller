@@ -5,9 +5,9 @@ import { Room } from './room';
 const roomInactivityExpirationInSeconds = 7200;//2 hours
 
 const redisClient = new Redis({
-  host: 'redis-19210.c289.us-west-1-2.ec2.redns.redis-cloud.com',  
+  host: process.env.REDIS_HOST,  
   port: 19210,          
-  password: 'c9glDwML0vY8q2WMELhBfi1ppAxBdqSG',       
+  password: process.env.REDIS_PASSWORD,       
 });
 
 console.log("starting redis!!!!");

@@ -44,9 +44,9 @@ const ioredis_1 = __importDefault(require("ioredis"));
 const redlock_1 = __importStar(require("redlock"));
 const roomInactivityExpirationInSeconds = 7200; //2 hours
 const redisClient = new ioredis_1.default({
-    host: 'redis-19210.c289.us-west-1-2.ec2.redns.redis-cloud.com',
+    host: process.env.REDIS_HOST,
     port: 19210,
-    password: 'c9glDwML0vY8q2WMELhBfi1ppAxBdqSG',
+    password: process.env.REDIS_PASSWORD,
 });
 exports.redisClient = redisClient;
 console.log("starting redis!!!!");

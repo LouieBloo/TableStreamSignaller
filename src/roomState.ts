@@ -21,7 +21,7 @@ export class RoomState {
 
       room = new Room(roomName, GameType.MTGCommander);
     }else{
-      room = this.parseRoom(redisResult.room);
+      room = this.parseRoom(redisResult.room);  
     }
 
     room.redisLock = redisResult.lock;
