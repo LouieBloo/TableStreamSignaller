@@ -6,6 +6,7 @@ import {MTGCommander} from "./games/mtg-commander";
 import { Spectator } from "./users/spectator";
 import { saveRoomAndUnlock, unlockRoom } from "./redis";
 import { Type } from "class-transformer";
+const { v4: uuidv4 } = require('uuid');
 
 export class Room {
   name: string;
@@ -26,7 +27,10 @@ export class Room {
 
   redisLock:any;
 
+  id:string;
+
   constructor(roomName:string, gameType:GameType) {
+    this.id = uuidv4();
     this.name = roomName;
     this.messages = [];
     this.players = [];
