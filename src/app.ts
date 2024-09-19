@@ -1,33 +1,12 @@
 
 import "reflect-metadata";
-import { IMessage } from "./domain/interfaces/IMessaging";
-import RoomManager from "./services/room-manager";
-import { GameErrorSeverity, GameErrorType, GameEvent, IGameEvent, UserType} from "./domain/interfaces/IGame";
-import { User } from "./domain/users/user";
-import { Room } from "./domain/rooms/room";
+import { IMessage } from "./interfaces/messaging";
+import { RoomState } from "./roomState";
+import {GameError, GameEvent, IGameEvent, UserType} from "./interfaces/game";
+import { User } from "./users/user";
+import { Room } from "./room";
+import axios from 'axios';
 import cors from 'cors';
-import router from './presentation/router/router';
-import userRouter from './presentation/router/user-router';
-import roomRouter from './presentation/router/room-router';
-import classifierTrainRouter from './presentation/router/classifier-router';
-import sttRouter from './presentation/router/stt-router';
-import "./infrastructure/mongo/mongo";
-import { checkBearerToken } from "./presentation/router/bearer-token-check";
-import { getClientIp } from "./presentation/socket/socket-service";
-import { IRoomHistoryEvent, RoomEvent } from "./domain/interfaces/IRoom";
-const swaggerJSDoc = require('swagger-jsdoc');
-
-const options = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'TableStream',
-      version: '1.0.0',
-      description: 'API documentation for your Node.js application',
-    },
-  },
-  apis: ['src/presentation/router/router.ts'], // Path to the API routes
-};
 
 const swaggerSpec = swaggerJSDoc(options);
 const express = require('express');
@@ -49,19 +28,43 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3001;
 
+const roomState = new RoomState()
 
-//app.use('/swagger', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use(express.json());
 app.use(cors());
 
-app.use(router)
+app.get('/', (req:any, res:any) => {
+  res.status(200).send('Beating...');
+});
 
-//very careful with exposing this
-app.use('/classify/train', checkBearerToken, classifierTrainRouter);
+app.post('/report-issue', async (req:any, res:any) => {
+  const { title, body } = req.body;
+  try {
+    const response = await axios.post(
+      'https://api.github.com/repos/louiebloo/TableStreamUI/issues',
+      {
+        title: title,
+        body: body,
+        labels:['user_submitted_issues']
+      },
+      {
+        headers: {
+          Authorization: `token ${process.env.REPORT_GITHUB_CODE}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
-app.use('/transcribe', sttRouter);
-app.use('/users',userRouter);
-app.use('/rooms',roomRouter);
+    res.status(200).json({ message: 'Issue created successfully!', data: response.data });
+  } catch (error) {
+    console.error('Error creating issue:', error);
+    res.status(500).json({ message: 'Failed to create issue', error: error.response.data });
+  }
+});
+
+// const getRoom = (roomName: string)=>{
+//   return roomState.rooms[roomName]
+// }
 
 io.on('connection', (socket:any) => {
   console.log('A user connected:', socket.id);
