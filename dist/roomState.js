@@ -19,11 +19,14 @@ class RoomState {
     // rooms: { [key: string]: Room };
     constructor() {
     }
-    getOrCreateRoom(roomName) {
+    getOrCreateRoom(roomName, roomId) {
         return __awaiter(this, void 0, void 0, function* () {
-            let redisResult = yield (0, redis_1.lockRoomAndGetState)(roomName);
+            let redisResult = yield (0, redis_1.lockRoomAndGetState)(roomId);
             let room = null;
             if (!redisResult.room) {
+                if (!roomName) {
+                    throw new game_1.GameError(game_1.GameErrorType.GameNotStarted, "Room name required");
+                }
                 room = new room_1.Room(roomName, game_1.GameType.MTGCommander);
             }
             else {
@@ -34,9 +37,9 @@ class RoomState {
             return room;
         });
     }
-    getRoom(roomName) {
+    getRoom(roomId) {
         return __awaiter(this, void 0, void 0, function* () {
-            let redisResult = yield (0, redis_1.lockRoomAndGetState)(roomName);
+            let redisResult = yield (0, redis_1.lockRoomAndGetState)(roomId);
             let rawRoom = redisResult.room;
             if (!rawRoom) {
                 return null;
