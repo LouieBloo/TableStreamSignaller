@@ -8,10 +8,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
 const roomState_1 = require("./roomState");
 const game_1 = require("./interfaces/game");
+const axios_1 = __importDefault(require("axios"));
+const cors_1 = __importDefault(require("cors"));
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -26,11 +31,32 @@ const io = new Server(server, {
     }
 });
 const PORT = process.env.PORT || 3001;
-//let rooms: { [key: string | number | symbol]: any } = {};
 const roomState = new roomState_1.RoomState();
+app.use(express.json());
+app.use((0, cors_1.default)());
 app.get('/', (req, res) => {
     res.status(200).send('Beating...');
 });
+app.post('/report-issue', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { title, body } = req.body;
+    try {
+        const response = yield axios_1.default.post('https://api.github.com/repos/louiebloo/TableStreamUI/issues', {
+            title: title,
+            body: body,
+            labels: ['user_submitted_issues']
+        }, {
+            headers: {
+                Authorization: `token ${process.env.REPORT_GITHUB_CODE}`,
+                'Content-Type': 'application/json',
+            },
+        });
+        res.status(200).json({ message: 'Issue created successfully!', data: response.data });
+    }
+    catch (error) {
+        console.error('Error creating issue:', error);
+        res.status(500).json({ message: 'Failed to create issue', error: error.response.data });
+    }
+}));
 // const getRoom = (roomName: string)=>{
 //   return roomState.rooms[roomName]
 // }
