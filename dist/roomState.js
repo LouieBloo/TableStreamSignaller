@@ -14,12 +14,11 @@ const game_1 = require("./interfaces/game");
 const room_1 = require("./room");
 const class_transformer_1 = require("class-transformer");
 const redis_1 = require("./redis");
-const mtg_commander_1 = require("./games/mtg-commander");
 class RoomState {
     // rooms: { [key: string]: Room };
     constructor() {
     }
-    getOrCreateRoom(roomName, roomId) {
+    getOrCreateRoom(roomName, roomId, gameType) {
         return __awaiter(this, void 0, void 0, function* () {
             let redisResult = yield (0, redis_1.lockRoomAndGetState)(roomId);
             let room = null;
@@ -27,7 +26,7 @@ class RoomState {
                 if (!roomName) {
                     throw new game_1.GameError(game_1.GameErrorType.GameNotStarted, "Room name required");
                 }
-                room = new room_1.Room(roomName, game_1.GameType.MTGCommander);
+                room = new room_1.Room(roomName, gameType);
             }
             else {
                 room = this.parseRoom(redisResult.room);
@@ -52,15 +51,7 @@ class RoomState {
     }
     parseRoom(roomString) {
         let rawJSON = JSON.parse(roomString);
-        let game = null;
-        switch (rawJSON.game.gameType) {
-            case game_1.GameType.Game:
-                console.error("GENERIC GAME OH NO!");
-                break;
-            case game_1.GameType.MTGCommander:
-                game = new mtg_commander_1.MTGCommander();
-                break;
-        }
+        let game = room_1.Room.createGame(rawJSON.game.gameType);
         Object.assign(game, rawJSON.game);
         const room = (0, class_transformer_1.plainToInstance)(room_1.Room, JSON.parse(roomString));
         room.game = game;

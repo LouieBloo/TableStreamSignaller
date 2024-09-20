@@ -66,11 +66,11 @@ app.post('/report-issue', async (req:any, res:any) => {
 io.on('connection', (socket:any) => {
   console.log('A user connected:', socket.id);
 
-  socket.on('joinRoom', async ({playerId, roomId, roomName, playerName, userType }:any, callback:any) => {
+  socket.on('joinRoom', async ({playerId, roomId, roomName, gameType, playerName, userType }:any, callback:any) => {
     try{
       console.log("Join Room: " + " " + playerName + " - " + roomName + " - " + roomId)
 
-      let currentRoom:Room = await roomState.getOrCreateRoom(roomName, roomId);
+      let currentRoom:Room = await roomState.getOrCreateRoom(roomName, roomId, gameType);
   
       let newUser:User = null;
   
@@ -142,6 +142,7 @@ io.on('connection', (socket:any) => {
   
       callback(newUser,currentRoom);
     }catch(error){
+      console.log(error);
       callback(null,null,{type: error.type, message: error.message})
     }
     

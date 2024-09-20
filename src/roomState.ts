@@ -3,6 +3,7 @@ import { Room } from "./room";
 import { plainToInstance } from 'class-transformer';
 import {lockRoomAndGetState, saveRoomAndUnlock, deleteRoomAndUnlock} from './redis';
 import { MTGCommander } from "./games/mtg-commander";
+import { MTGStandard } from "./games/mtg-standard";
 
 export class RoomState {
   // rooms: { [key: string]: Room };
@@ -11,7 +12,7 @@ export class RoomState {
   }
 
 
-  async getOrCreateRoom(roomName:string, roomId:string):Promise<Room> {
+  async getOrCreateRoom(roomName:string, roomId:string, gameType:GameType):Promise<Room> {
     let redisResult = await lockRoomAndGetState(roomId);
     let room = null;
     if(!redisResult.room){
@@ -19,7 +20,7 @@ export class RoomState {
         throw new GameError(GameErrorType.GameNotStarted, "Room name required");
       }
 
-      room = new Room(roomName, GameType.MTGCommander);
+      room = new Room(roomName, gameType);
     }else{
       room = this.parseRoom(redisResult.room);  
     }
@@ -46,16 +47,8 @@ export class RoomState {
 
   parseRoom(roomString:string):Room{
     let rawJSON = JSON.parse(roomString);
-    let game = null;
-    switch(rawJSON.game.gameType){
-      case GameType.Game:
-        console.error("GENERIC GAME OH NO!");
-        break;
-      case GameType.MTGCommander:
-        game = new MTGCommander();
-        break;
-      
-    }
+
+    let game = Room.createGame(rawJSON.game.gameType);
 
     Object.assign(game,rawJSON.game);
     const room:Room = plainToInstance(Room, JSON.parse(roomString));
