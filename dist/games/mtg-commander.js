@@ -8,6 +8,7 @@ class MTGCommander extends game_2.Game {
     constructor() {
         super();
         this.startingLifeTotal = 40;
+        this.gameType = game_1.GameType.MTGCommander;
         this.modifyPlayerCommanderDamage = (gameEvent) => {
             return gameEvent.callingPlayer.takeCommanderDamage(gameEvent.payload.damagingPlayer, gameEvent.payload.amount);
         };
@@ -15,7 +16,6 @@ class MTGCommander extends game_2.Game {
             gameEvent.callingPlayer.commander = (0, cards_1.slimCard)(gameEvent.payload);
             return gameEvent.callingPlayer;
         };
-        this.gameType = game_1.GameType.MTGCommander;
     }
     event(gameEvent, room) {
         switch (gameEvent.event) {

@@ -26,6 +26,8 @@ const mtg_commander_1 = require("./games/mtg-commander");
 const spectator_1 = require("./users/spectator");
 const redis_1 = require("./redis");
 const class_transformer_1 = require("class-transformer");
+const mtg_standard_1 = require("./games/mtg-standard");
+const mtg_modern_1 = require("./games/mtg-modern");
 const { v4: uuidv4 } = require('uuid');
 class Room {
     constructor(roomName, gameType) {
@@ -42,12 +44,22 @@ class Room {
         this.messages = [];
         this.players = [];
         this.spectators = [];
-        this.game = this.createGame(gameType);
+        this.game = Room.createGame(gameType);
     }
-    createGame(gameType) {
+    static createGame(gameType) {
+        if (typeof gameType === 'string') {
+            gameType = Number(gameType);
+        }
         switch (gameType) {
             case game_2.GameType.MTGCommander:
+                console.log("oh yeah");
                 return new mtg_commander_1.MTGCommander();
+                break;
+            case game_2.GameType.MTGStandard:
+                return new mtg_standard_1.MTGStandard();
+                break;
+            case game_2.GameType.MTGModern:
+                return new mtg_modern_1.MTGModern();
                 break;
         }
     }

@@ -62,10 +62,10 @@ app.post('/report-issue', (req, res) => __awaiter(void 0, void 0, void 0, functi
 // }
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
-    socket.on('joinRoom', (_a, callback_1) => __awaiter(void 0, [_a, callback_1], void 0, function* ({ playerId, roomId, roomName, playerName, userType }, callback) {
+    socket.on('joinRoom', (_a, callback_1) => __awaiter(void 0, [_a, callback_1], void 0, function* ({ playerId, roomId, roomName, gameType, playerName, userType }, callback) {
         try {
             console.log("Join Room: " + " " + playerName + " - " + roomName + " - " + roomId);
-            let currentRoom = yield roomState.getOrCreateRoom(roomName, roomId);
+            let currentRoom = yield roomState.getOrCreateRoom(roomName, roomId, gameType);
             let newUser = null;
             if (userType == game_1.UserType.Player && currentRoom.playerSockets.length >= 4) {
                 socket.emit('roomFull');
@@ -133,6 +133,7 @@ io.on('connection', (socket) => {
             callback(newUser, currentRoom);
         }
         catch (error) {
+            console.log(error);
             callback(null, null, { type: error.type, message: error.message });
         }
     }));
