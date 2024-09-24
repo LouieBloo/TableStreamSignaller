@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
 const roomState_1 = require("./roomState");
 const game_1 = require("./interfaces/game");
+const redis_1 = require("./redis");
 const axios_1 = __importDefault(require("axios"));
 const cors_1 = __importDefault(require("cors"));
 const express = require('express');
@@ -57,15 +58,20 @@ app.post('/report-issue', (req, res) => __awaiter(void 0, void 0, void 0, functi
         res.status(500).json({ message: 'Failed to create issue', error: error.response.data });
     }
 }));
+app.post('/password-check', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { roomId } = req.body;
+    let isPasswordPro = yield (0, redis_1.isRoomPasswordProtected)(roomId);
+    res.status(200).json({ result: isPasswordPro });
+}));
 // const getRoom = (roomName: string)=>{
 //   return roomState.rooms[roomName]
 // }
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
-    socket.on('joinRoom', (_a, callback_1) => __awaiter(void 0, [_a, callback_1], void 0, function* ({ playerId, roomId, roomName, gameType, playerName, userType }, callback) {
+    socket.on('joinRoom', (_a, callback_1) => __awaiter(void 0, [_a, callback_1], void 0, function* ({ playerId, roomId, roomName, password, gameType, playerName, userType }, callback) {
         try {
             console.log("Join Room: " + " " + playerName + " - " + roomName + " - " + roomId);
-            let currentRoom = yield roomState.getOrCreateRoom(roomName, roomId, gameType);
+            let currentRoom = yield roomState.getOrCreateRoom(roomName, roomId, password, gameType);
             let newUser = null;
             if (userType == game_1.UserType.Player && currentRoom.playerSockets.length >= 4) {
                 socket.emit('roomFull');
@@ -73,15 +79,29 @@ io.on('connection', (socket) => {
             }
             else if (userType == game_1.UserType.Player) {
                 //new player
-                currentRoom.playerSockets.push(socket.id);
-                newUser = currentRoom.addPlayer(playerId, playerName, socket.id);
-                yield currentRoom.saveAndClose();
+                try {
+                    newUser = currentRoom.addPlayer(playerId, playerName, socket.id, password);
+                    currentRoom.playerSockets.push(socket.id);
+                }
+                catch (error) {
+                    throw error;
+                }
+                finally {
+                    yield currentRoom.saveAndClose();
+                }
             }
             else if (userType == game_1.UserType.Spectator) {
                 //new spectator
-                currentRoom.spectatorSockets.push(socket.id);
-                newUser = currentRoom.addSpectator(playerName, socket.id);
-                yield currentRoom.saveAndClose();
+                try {
+                    newUser = currentRoom.addSpectator(playerId, playerName, socket.id, password);
+                    currentRoom.spectatorSockets.push(socket.id);
+                }
+                catch (error) {
+                    throw error;
+                }
+                finally {
+                    yield currentRoom.saveAndClose();
+                }
             }
             else {
                 console.error("Idk whats happening here: ", roomName, playerName, userType);

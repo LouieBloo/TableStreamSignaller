@@ -8,6 +8,8 @@ import { saveRoomAndUnlock, unlockRoom } from "./redis";
 import { Type } from "class-transformer";
 import { MTGStandard } from "./games/mtg-standard";
 import { MTGModern } from "./games/mtg-modern";
+import { MTGVintage } from "./games/mtg-vintage";
+import { MTGLegacy } from "./games/mtg-legacy";
 const { v4: uuidv4 } = require('uuid');
 
 export class Room {
@@ -30,13 +32,15 @@ export class Room {
   redisLock: any;
 
   id: string;
+  password:string;
 
-  constructor(roomName: string, gameType: GameType) {
+  constructor(roomName: string,password:string, gameType: GameType) {
     this.id = uuidv4();
     this.name = roomName;
     this.messages = [];
     this.players = [];
     this.spectators = [];
+    this.password = password;
 
     this.game = Room.createGame(gameType);
   }
@@ -55,7 +59,6 @@ export class Room {
     }
     switch (gameType) {
       case GameType.MTGCommander:
-        console.log("oh yeah")
         return new MTGCommander();
         break;
       case GameType.MTGStandard:
@@ -64,13 +67,28 @@ export class Room {
       case GameType.MTGModern:
         return new MTGModern();
         break;
+      case GameType.MTGVintage:
+        return new MTGVintage();
+        break;
+      case GameType.MTGLegacy:
+        return new MTGLegacy();
+        break;
     }
   }
 
-  public addPlayer(playerId: string, playerName: string, socketId: string): Player {
+  public verifyPassword(password:string): boolean{
+    return this.password === password;
+  }
+
+  public addPlayer(playerId: string, playerName: string, socketId: string, password:string): Player {
     let player = this.players.find(e => e.id === playerId);
 
     if (!player) {
+      //we only check password on new players
+      if(this.password && !this.verifyPassword(password)){
+        throw new GameError(GameErrorType.InvalidPassword, "Invalid Password");
+      }
+
       player = new Player(playerName, socketId, this.players.length, this.game.startingLifeTotal);
       if (this.players.length == 0) {
         player.admin = true;
@@ -84,11 +102,15 @@ export class Room {
     return player;
   }
 
-  public addSpectator(spectatorName: string, socketId: string): Spectator {
-    //check for duplicate player names
-    let spectator = this.spectators.find(e => e.name === spectatorName);
+  public addSpectator(playerId: string, spectatorName: string, socketId: string, password:string): Spectator {
+    let spectator = this.spectators.find(e => e.id === playerId);
 
     if (!spectator) {
+      //we only check password on new spectators
+      if(this.password && !this.verifyPassword(password)){
+        throw new GameError(GameErrorType.InvalidPassword, "Invalid Password");
+      }
+
       spectator = new Spectator(spectatorName, socketId);
       this.spectators.push(spectator)
     } else {

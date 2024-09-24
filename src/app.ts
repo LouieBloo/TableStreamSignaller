@@ -5,6 +5,7 @@ import { RoomState } from "./roomState";
 import {GameError, GameEvent, IGameEvent, UserType} from "./interfaces/game";
 import { User } from "./users/user";
 import { Room } from "./room";
+import {isRoomPasswordProtected} from "./redis";
 import axios from 'axios';
 import cors from 'cors';
 
@@ -59,6 +60,14 @@ app.post('/report-issue', async (req:any, res:any) => {
   }
 });
 
+app.post('/password-check', async(req:any,res:any)=>{
+  const { roomId } = req.body;
+
+  let isPasswordPro = await isRoomPasswordProtected(roomId);
+
+  res.status(200).json({result: isPasswordPro})
+})
+
 // const getRoom = (roomName: string)=>{
 //   return roomState.rooms[roomName]
 // }
@@ -66,11 +75,11 @@ app.post('/report-issue', async (req:any, res:any) => {
 io.on('connection', (socket:any) => {
   console.log('A user connected:', socket.id);
 
-  socket.on('joinRoom', async ({playerId, roomId, roomName, gameType, playerName, userType }:any, callback:any) => {
+  socket.on('joinRoom', async ({playerId, roomId, roomName, password, gameType, playerName, userType }:any, callback:any) => {
     try{
       console.log("Join Room: " + " " + playerName + " - " + roomName + " - " + roomId)
 
-      let currentRoom:Room = await roomState.getOrCreateRoom(roomName, roomId, gameType);
+      let currentRoom:Room = await roomState.getOrCreateRoom(roomName, roomId, password, gameType);
   
       let newUser:User = null;
   
@@ -79,21 +88,29 @@ io.on('connection', (socket:any) => {
         return;
       }else if(userType == UserType.Player){
         //new player
-        currentRoom.playerSockets.push(socket.id);
-        newUser = currentRoom.addPlayer(playerId, playerName, socket.id)
-        await currentRoom.saveAndClose();
+        try{
+          newUser = currentRoom.addPlayer(playerId, playerName, socket.id, password)
+          currentRoom.playerSockets.push(socket.id);
+        }catch(error){
+          throw error;
+        }finally{
+          await currentRoom.saveAndClose();
+        }
       }else if(userType == UserType.Spectator){
         //new spectator
-        currentRoom.spectatorSockets.push(socket.id);
-        newUser = currentRoom.addSpectator(playerName, socket.id)
-        await currentRoom.saveAndClose();
+        try{
+          newUser = currentRoom.addSpectator(playerId, playerName, socket.id, password)
+          currentRoom.spectatorSockets.push(socket.id);
+        }catch(error){
+          throw error;
+        }finally{
+          await currentRoom.saveAndClose();
+        }
       }else{
         console.error("Idk whats happening here: ", roomName, playerName, userType);
         socket.emit('error');
         return;
       }
-  
-      
   
       socket.join(currentRoom.id);
       //socket.emit('roomJoined', { roomName, socketId: socket.id });
