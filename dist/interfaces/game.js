@@ -25,6 +25,8 @@ var GameType;
     GameType[GameType["MTGCommander"] = 1] = "MTGCommander";
     GameType[GameType["MTGStandard"] = 2] = "MTGStandard";
     GameType[GameType["MTGModern"] = 3] = "MTGModern";
+    GameType[GameType["MTGLegacy"] = 4] = "MTGLegacy";
+    GameType[GameType["MTGVintage"] = 5] = "MTGVintage";
 })(GameType || (exports.GameType = GameType = {}));
 class GameError extends Error {
     constructor(type, message) {
@@ -38,6 +40,7 @@ var GameErrorType;
     GameErrorType[GameErrorType["GameNotStarted"] = 0] = "GameNotStarted";
     GameErrorType[GameErrorType["InvalidAction"] = 1] = "InvalidAction";
     GameErrorType[GameErrorType["NoRoomName"] = 2] = "NoRoomName";
+    GameErrorType[GameErrorType["InvalidPassword"] = 3] = "InvalidPassword";
 })(GameErrorType || (exports.GameErrorType = GameErrorType = {}));
 var UserType;
 (function (UserType) {

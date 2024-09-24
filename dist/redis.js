@@ -40,6 +40,7 @@ exports.lockRoomAndGetState = lockRoomAndGetState;
 exports.saveRoomAndUnlock = saveRoomAndUnlock;
 exports.deleteRoomAndUnlock = deleteRoomAndUnlock;
 exports.unlockRoom = unlockRoom;
+exports.isRoomPasswordProtected = isRoomPasswordProtected;
 const ioredis_1 = __importDefault(require("ioredis"));
 const redlock_1 = __importStar(require("redlock"));
 const roomInactivityExpirationInSeconds = 7200; //2 hours
@@ -137,6 +138,17 @@ function unlockRoom(lock) {
             console.error('Failed to unlock room:', error);
             throw error;
         }
+    });
+}
+function isRoomPasswordProtected(roomId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const key = `game_room:${roomId}`;
+        const room = yield redisClient.get(key);
+        if (!room) {
+            return false;
+        }
+        let parsedRoom = JSON.parse(room);
+        return parsedRoom.password ? true : false;
     });
 }
 //# sourceMappingURL=redis.js.map

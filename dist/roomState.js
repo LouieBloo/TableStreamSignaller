@@ -18,7 +18,7 @@ class RoomState {
     // rooms: { [key: string]: Room };
     constructor() {
     }
-    getOrCreateRoom(roomName, roomId, gameType) {
+    getOrCreateRoom(roomName, roomId, password, gameType) {
         return __awaiter(this, void 0, void 0, function* () {
             let redisResult = yield (0, redis_1.lockRoomAndGetState)(roomId);
             let room = null;
@@ -26,7 +26,7 @@ class RoomState {
                 if (!roomName) {
                     throw new game_1.GameError(game_1.GameErrorType.GameNotStarted, "Room name required");
                 }
-                room = new room_1.Room(roomName, gameType);
+                room = new room_1.Room(roomName, password, gameType);
             }
             else {
                 room = this.parseRoom(redisResult.room);
