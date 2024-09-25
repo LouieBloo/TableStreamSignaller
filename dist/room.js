@@ -26,9 +26,13 @@ const mtg_commander_1 = require("./games/mtg-commander");
 const spectator_1 = require("./users/spectator");
 const redis_1 = require("./redis");
 const class_transformer_1 = require("class-transformer");
+const mtg_standard_1 = require("./games/mtg-standard");
+const mtg_modern_1 = require("./games/mtg-modern");
+const mtg_vintage_1 = require("./games/mtg-vintage");
+const mtg_legacy_1 = require("./games/mtg-legacy");
 const { v4: uuidv4 } = require('uuid');
 class Room {
-    constructor(roomName, gameType) {
+    constructor(roomName, password, gameType) {
         this.playerSockets = [];
         this.spectatorSockets = [];
         this.saveAndClose = () => __awaiter(this, void 0, void 0, function* () {
@@ -42,18 +46,41 @@ class Room {
         this.messages = [];
         this.players = [];
         this.spectators = [];
-        this.game = this.createGame(gameType);
+        this.password = password;
+        this.game = Room.createGame(gameType);
     }
-    createGame(gameType) {
+    static createGame(gameType) {
+        if (typeof gameType === 'string') {
+            gameType = Number(gameType);
+        }
         switch (gameType) {
             case game_2.GameType.MTGCommander:
                 return new mtg_commander_1.MTGCommander();
                 break;
+            case game_2.GameType.MTGStandard:
+                return new mtg_standard_1.MTGStandard();
+                break;
+            case game_2.GameType.MTGModern:
+                return new mtg_modern_1.MTGModern();
+                break;
+            case game_2.GameType.MTGVintage:
+                return new mtg_vintage_1.MTGVintage();
+                break;
+            case game_2.GameType.MTGLegacy:
+                return new mtg_legacy_1.MTGLegacy();
+                break;
         }
     }
-    addPlayer(playerId, playerName, socketId) {
+    verifyPassword(password) {
+        return this.password === password;
+    }
+    addPlayer(playerId, playerName, socketId, password) {
         let player = this.players.find(e => e.id === playerId);
         if (!player) {
+            //we only check password on new players
+            if (this.password && !this.verifyPassword(password)) {
+                throw new game_2.GameError(game_2.GameErrorType.InvalidPassword, "Invalid Password");
+            }
             player = new player_1.Player(playerName, socketId, this.players.length, this.game.startingLifeTotal);
             if (this.players.length == 0) {
                 player.admin = true;
@@ -65,10 +92,13 @@ class Room {
         }
         return player;
     }
-    addSpectator(spectatorName, socketId) {
-        //check for duplicate player names
-        let spectator = this.spectators.find(e => e.name === spectatorName);
+    addSpectator(playerId, spectatorName, socketId, password) {
+        let spectator = this.spectators.find(e => e.id === playerId);
         if (!spectator) {
+            //we only check password on new spectators
+            if (this.password && !this.verifyPassword(password)) {
+                throw new game_2.GameError(game_2.GameErrorType.InvalidPassword, "Invalid Password");
+            }
             spectator = new spectator_1.Spectator(spectatorName, socketId);
             this.spectators.push(spectator);
         }
