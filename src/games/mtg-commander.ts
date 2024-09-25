@@ -8,9 +8,10 @@ import { slimCard } from "../interfaces/cards";
 export class MTGCommander extends Game {
     startingLifeTotal = 40;
 
+    gameType: GameType = GameType.MTGCommander;
+
     constructor(){
         super();
-        this.gameType = GameType.MTGCommander;
     }
 
     public event(gameEvent: IGameEvent, room: Room): any {

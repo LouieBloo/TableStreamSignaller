@@ -34,7 +34,9 @@ export enum GameType{
     Game,
     MTGCommander,
     MTGStandard,
-    MTGModern
+    MTGModern,
+    MTGLegacy,
+    MTGVintage
 }
 
 export interface CommanderDamage{
@@ -54,7 +56,8 @@ export class GameError extends Error {
 export enum GameErrorType{
     GameNotStarted,
     InvalidAction,
-    NoRoomName
+    NoRoomName,
+    InvalidPassword
 }
 
 export enum UserType{
