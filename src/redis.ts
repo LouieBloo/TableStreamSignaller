@@ -106,5 +106,14 @@ export async function unlockRoom(lock: any): Promise<void> {
   }
 }
 
+export async function isRoomPasswordProtected(roomId:string):Promise<boolean>{
+  const key = `game_room:${roomId}`;
+  const room = await redisClient.get(key);
+  if(!room){return false}
+
+  let parsedRoom = JSON.parse(room);
+  return parsedRoom.password ? true : false;
+}
+
 // Export the Redis client and Redlock instance for other parts of your application
 export { redisClient, redlock };

@@ -1,0 +1,1 @@
+{"version":3,"file":"mtg-legacy.js","sourceRoot":"","sources":["../../src/games/mtg-legacy.ts"],"names":[],"mappings":";;;AACA,6CAAsF;AAEtF,iCAA8B;AAI9B,MAAa,SAAU,SAAQ,WAAI;IAG/B;QACI,KAAK,EAAE,CAAC;QAHZ,sBAAiB,GAAG,EAAE,CAAC;QACvB,aAAQ,GAAY,eAAQ,CAAC,SAAS,CAAC;IAIvC,CAAC;CACJ;AAPD,8BAOC"}
