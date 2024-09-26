@@ -1,1 +1,0 @@
-{"version":3,"file":"mtg-standard.js","sourceRoot":"","sources":["../../src/games/mtg-standard.ts"],"names":[],"mappings":";;;AACA,6CAAsF;AAEtF,iCAA8B;AAI9B,MAAa,WAAY,SAAQ,WAAI;IAGjC;QACI,KAAK,EAAE,CAAC;QAHZ,sBAAiB,GAAG,EAAE,CAAC;QACvB,aAAQ,GAAY,eAAQ,CAAC,WAAW,CAAC;IAGzC,CAAC;CACJ;AAND,kCAMC"}
