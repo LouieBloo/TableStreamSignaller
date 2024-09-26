@@ -8,17 +8,11 @@
     "start": "node dist/app.js",
     "dev": "npm run build && node dist/app.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/LouieBloo/TableStreamSignaller.git"
-  },
+ 
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/LouieBloo/TableStreamSignaller/issues"
-  },
-  "homepage": "https://github.com/LouieBloo/TableStreamSignaller#readme",
+  
   "dependencies": {
     "axios": "^1.7.7",
     "class-transformer": "^0.5.1",
@@ -28,10 +22,10 @@
     "redlock": "^5.0.0-beta.2",
     "reflect-metadata": "^0.2.2",
     "socket.io": "^4.7.5",
+    "typescript": "^5.5.4",
     "uuid": "^10.0.0"
   },
   "devDependencies": {
-    "@types/node": "^22.3.0",
-    "typescript": "^5.5.4"
+    "@types/node": "^22.3.0"
   }
 }
