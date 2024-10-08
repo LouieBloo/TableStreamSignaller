@@ -43,6 +43,7 @@ export class Game {
             room.players[x].totalTurnTime = 0;
             room.players[x].currentTurnStartTime = null;
             room.players[x].isMonarch = false;
+            room.players[x].hasCitiesBlessing = false;
             room.players[x].poisonTotal = 0;
             room.players[x].energyTotal = 0;
             room.players[x].commanderDamages = {};
@@ -137,6 +138,9 @@ export class Game {
                 gameEvent.callingPlayer.energyTotal += modifyEvent.amountToModify;
                 if(gameEvent.callingPlayer.energyTotal < 0){gameEvent.callingPlayer.energyTotal = 0;}
                 break;
+            case PlayerProperties.citiesBlessing:
+                gameEvent.callingPlayer.hasCitiesBlessing = !gameEvent.callingPlayer.hasCitiesBlessing;
+                break;
         }
         
         return gameEvent.callingPlayer;
@@ -186,6 +190,7 @@ export class Game {
         return gameEvent.payload;
     }
 
+    // this is seperated from modify player properties since its touching all players
     toggleMonarch = (gameEvent: IGameEvent, room: Room)=>{
 
         if(!this.active){
