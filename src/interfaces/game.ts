@@ -15,7 +15,9 @@ export interface IModifyPlayerProperty{
 export enum PlayerProperties{
     lifeTotal,
     poisonTotal,
-    energyTotal
+    energyTotal,
+    monarch,
+    citiesBlessing
 }
 
 export enum GameEvent{

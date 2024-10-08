@@ -15,6 +15,7 @@ export class Player extends User {
     totalTurnTime: number;
 
     isMonarch:boolean = false;
+    hasCitiesBlessing:boolean = false;
 
     poisonTotal:number;
     energyTotal:number;
