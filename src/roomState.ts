@@ -10,7 +10,7 @@ export class RoomState {
   }
 
 
-  async getOrCreateRoom(roomName:string, roomId:string,password:string, gameType:GameType):Promise<Room> {
+  async getOrCreateRoom(roomName:string, roomId:string,password:string, gameType:GameType, maxPlayers:number):Promise<Room> {
     let redisResult = await lockRoomAndGetState(roomId);
     let room = null;
     if(!redisResult.room){
@@ -18,7 +18,7 @@ export class RoomState {
         throw new GameError(GameErrorType.GameNotStarted, "Room name required");
       }
 
-      room = new Room(roomName, password, gameType);
+      room = new Room(roomName, password, gameType,maxPlayers);
     }else{
       room = this.parseRoom(redisResult.room);  
     }
