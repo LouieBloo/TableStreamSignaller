@@ -75,15 +75,14 @@ app.post('/password-check', async(req:any,res:any)=>{
 io.on('connection', (socket:any) => {
   console.log('A user connected:', socket.id);
 
-  socket.on('joinRoom', async ({playerId, roomId, roomName, password, gameType, playerName, userType }:any, callback:any) => {
+  socket.on('joinRoom', async ({playerId, roomId, roomName, password, gameType, playerName, userType, maxPlayers }:any, callback:any) => {
     try{
       console.log("Join Room: " + " " + playerName + " - " + roomName + " - " + roomId)
 
-      let currentRoom:Room = await roomState.getOrCreateRoom(roomName, roomId, password, gameType);
-  
+      let currentRoom:Room = await roomState.getOrCreateRoom(roomName, roomId, password, gameType, maxPlayers);
       let newUser:User = null;
   
-      if (userType == UserType.Player && currentRoom.playerSockets.length >= 4) {
+      if (userType == UserType.Player && currentRoom.playerSockets.length >= currentRoom.maxPlayers) {
         socket.emit('roomFull');
         return;
       }else if(userType == UserType.Player){

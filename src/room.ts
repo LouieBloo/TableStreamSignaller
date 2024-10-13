@@ -26,6 +26,8 @@ export class Room {
   @Type(() => Game)
   game: Game;
 
+  maxPlayers:number = 4;
+
   playerSockets: string[] = [];
   spectatorSockets: string[] = [];
 
@@ -34,13 +36,14 @@ export class Room {
   id: string;
   password:string;
 
-  constructor(roomName: string,password:string, gameType: GameType) {
+  constructor(roomName: string,password:string, gameType: GameType, maxPlayers:number) {
     this.id = uuidv4();
     this.name = roomName;
     this.messages = [];
     this.players = [];
     this.spectators = [];
     this.password = password;
+    this.maxPlayers = maxPlayers;
 
     this.game = Room.createGame(gameType);
   }
