@@ -68,6 +68,7 @@ app.post('/password-check', async(req:any,res:any)=>{
   res.status(200).json({result: isPasswordPro})
 })
 
+
 // const getRoom = (roomName: string)=>{
 //   return roomState.rooms[roomName]
 // }
