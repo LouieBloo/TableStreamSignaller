@@ -8,12 +8,17 @@ import { Room } from "./room";
 import {isRoomPasswordProtected} from "./redis";
 import axios from 'axios';
 import cors from 'cors';
+const multer  = require('multer')
+import { handler } from "./classifier-lambda";
 
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 
+
 const app = express();
+const upload = multer(); // Configure as needed
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -68,6 +73,10 @@ app.post('/password-check', async(req:any,res:any)=>{
   res.status(200).json({result: isPasswordPro})
 })
 
+app.post('/classify',upload.any(), async(req:any,res:any)=>{
+
+  return await handler(req ,res);
+})
 
 // const getRoom = (roomName: string)=>{
 //   return roomState.rooms[roomName]
