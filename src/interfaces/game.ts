@@ -48,18 +48,26 @@ export interface CommanderDamage{
 
 export class GameError extends Error {
     type: GameErrorType;
+    severity: GameErrorSeverity;
 
-    constructor(type: GameErrorType, message: string) {
+    constructor(type: GameErrorType, message: string, severity:GameErrorSeverity) {
         super(message); // Pass the message to the base Error class
         this.type = type;
+        this.severity = severity;
     }
+}
+
+export enum GameErrorSeverity{
+    Warning,
+    Error,
 }
 
 export enum GameErrorType{
     GameNotStarted,
     InvalidAction,
     NoRoomName,
-    InvalidPassword
+    InvalidPassword,
+    GenericWarning
 }
 
 export enum UserType{
