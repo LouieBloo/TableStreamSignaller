@@ -1,5 +1,5 @@
 import { Room } from "../room";
-import { GameError, GameErrorType, GameEvent, GameType, IGameEvent, IModifyPlayerProperty, PlayerProperties } from "../interfaces/game";
+import { GameError, GameErrorSeverity, GameErrorType, GameEvent, GameType, IGameEvent, IModifyPlayerProperty, PlayerProperties } from "../interfaces/game";
 import { Player } from "../users/player";
 import { ScryfallCard, slimCard } from "../interfaces/cards";
 
@@ -121,7 +121,7 @@ export class Game {
 
     modifyPlayerProperty(gameEvent: IGameEvent): Player {
         if(!this.active){
-            throw new GameError(GameErrorType.GameNotStarted, "The game has not started yet. Please start the game.");
+            throw new GameError(GameErrorType.GameNotStarted, "The game has not started yet. Please start the game.",GameErrorSeverity.Error);
         }
 
         let modifyEvent:IModifyPlayerProperty = gameEvent.payload;
@@ -176,14 +176,12 @@ export class Game {
     
     shareCard = (gameEvent: IGameEvent)=>{
         let blockCard = false;
-        for(let x = 0; x < 3 && x < this.sharedCards.length; x++){
+        const numberOfCardsBackToCheck = 3;
+        for(let x = 0; x < numberOfCardsBackToCheck && x < this.sharedCards.length; x++){
             if(this.sharedCards[x].id == gameEvent.payload.id){
-                blockCard = true;
-                break;
+                throw new GameError(GameErrorType.GenericWarning, "Card shared recently", GameErrorSeverity.Warning); 
             }
         }
-
-        if(blockCard){return null}
 
         this.sharedCards.unshift(slimCard(gameEvent.payload));
 
@@ -194,7 +192,7 @@ export class Game {
     toggleMonarch = (gameEvent: IGameEvent, room: Room)=>{
 
         if(!this.active){
-            throw new GameError(GameErrorType.GameNotStarted, "The game has not started yet. Please start the game.");
+            throw new GameError(GameErrorType.GameNotStarted, "The game has not started yet. Please start the game.", GameErrorSeverity.Error);
         }
 
         if(gameEvent.callingPlayer.isMonarch){

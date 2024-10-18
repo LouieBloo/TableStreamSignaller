@@ -1,5 +1,5 @@
 import { Game } from "./games/game";
-import { GameError, GameErrorType, GameType, IGameEvent } from "./interfaces/game";
+import { GameError, GameErrorSeverity, GameErrorType, GameType, IGameEvent } from "./interfaces/game";
 import { IMessage } from "./interfaces/messaging";
 import { Player } from "./users/player";
 import { MTGCommander } from "./games/mtg-commander";
@@ -89,7 +89,7 @@ export class Room {
     if (!player) {
       //we only check password on new players
       if(this.password && !this.verifyPassword(password)){
-        throw new GameError(GameErrorType.InvalidPassword, "Invalid Password");
+        throw new GameError(GameErrorType.InvalidPassword, "Invalid Password",GameErrorSeverity.Error);
       }
 
       player = new Player(playerName, socketId, this.players.length, this.game.startingLifeTotal);
@@ -111,7 +111,7 @@ export class Room {
     if (!spectator) {
       //we only check password on new spectators
       if(this.password && !this.verifyPassword(password)){
-        throw new GameError(GameErrorType.InvalidPassword, "Invalid Password");
+        throw new GameError(GameErrorType.InvalidPassword, "Invalid Password",GameErrorSeverity.Error);
       }
 
       spectator = new Spectator(spectatorName, socketId);
@@ -157,7 +157,7 @@ export class Room {
     if (gameEvent.callingPlayer) {
       return this.game.event(gameEvent, this);
     } else {
-      throw new GameError(GameErrorType.InvalidAction, "You cant make that action");
+      throw new GameError(GameErrorType.InvalidAction, "You cant make that action",GameErrorSeverity.Error);
     }
   }
 }

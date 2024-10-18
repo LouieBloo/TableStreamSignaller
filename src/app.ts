@@ -147,7 +147,7 @@ io.on('connection', (socket:any) => {
         }
         catch(error){
           await room.close();
-          socket.emit('errorResponse', {type: error.type, message: error.message});
+          socket.emit('errorResponse', {type: error.type, message: error.message, severity: error.severity});
         }
       });
   
@@ -169,7 +169,7 @@ io.on('connection', (socket:any) => {
       callback(newUser,currentRoom);
     }catch(error){
       console.log(error);
-      callback(null,null,{type: error.type, message: error.message})
+      callback(null,null,{type: error.type, message: error.message, severity: error.severity})
     }
     
   });

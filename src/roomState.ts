@@ -1,4 +1,4 @@
-import { GameError, GameErrorType, GameType } from "./interfaces/game";
+import { GameError, GameErrorSeverity, GameErrorType, GameType } from "./interfaces/game";
 import { Room } from "./room";
 import { plainToInstance } from 'class-transformer';
 import {lockRoomAndGetState, saveRoomAndUnlock, deleteRoomAndUnlock} from './redis';
@@ -15,7 +15,7 @@ export class RoomState {
     let room = null;
     if(!redisResult.room){
       if(!roomName){
-        throw new GameError(GameErrorType.GameNotStarted, "Room name required");
+        throw new GameError(GameErrorType.GameNotStarted, "Room name required",GameErrorSeverity.Error);
       }
 
       room = new Room(roomName, password, gameType,maxPlayers);
