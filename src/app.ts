@@ -41,13 +41,13 @@ app.get('/', (req:any, res:any) => {
 });
 
 app.post('/report-issue', async (req:any, res:any) => {
-  const { title, body } = req.body;
+  const { title, body, email } = req.body;
   try {
     const response = await axios.post(
       'https://api.github.com/repos/louiebloo/TableStreamUI/issues',
       {
         title: title,
-        body: body,
+        body: "User Email: " + email + "\n" + body,
         labels:['user_submitted_issues']
       },
       {
