@@ -1,23 +1,18 @@
 
 import "reflect-metadata";
 import { IMessage } from "./interfaces/messaging";
-import { RoomState } from "./roomState";
-import {GameError, GameEvent, IGameEvent, UserType} from "./interfaces/game";
+import { RoomState } from "./rooms/roomState";
+import { IGameEvent, UserType} from "./interfaces/game";
 import { User } from "./users/user";
-import { Room } from "./room";
-import {isRoomPasswordProtected} from "./redis";
-import axios from 'axios';
+import { Room } from "./rooms/room";
 import cors from 'cors';
-const multer  = require('multer')
-import { handler } from "./classifier-lambda";
+import router from './router/router'; // Path to the routes file
 
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 
-
 const app = express();
-const upload = multer(); // Configure as needed
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -36,51 +31,7 @@ const roomState = new RoomState()
 app.use(express.json());
 app.use(cors());
 
-app.get('/', (req:any, res:any) => {
-  res.status(200).send('Beating...');
-});
-
-app.post('/report-issue', async (req:any, res:any) => {
-  const { title, body, email } = req.body;
-  try {
-    const response = await axios.post(
-      'https://api.github.com/repos/louiebloo/TableStreamUI/issues',
-      {
-        title: title,
-        body: "User Email: " + email + "\n" + body,
-        labels:['user_submitted_issues']
-      },
-      {
-        headers: {
-          Authorization: `token ${process.env.REPORT_GITHUB_CODE}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    res.status(200).json({ message: 'Issue created successfully!', data: response.data });
-  } catch (error) {
-    console.error('Error creating issue:', error);
-    res.status(500).json({ message: 'Failed to create issue', error: error.response.data });
-  }
-});
-
-app.post('/password-check', async(req:any,res:any)=>{
-  const { roomId } = req.body;
-
-  let isPasswordPro = await isRoomPasswordProtected(roomId);
-
-  res.status(200).json({result: isPasswordPro})
-})
-
-app.post('/classify',upload.any(), async(req:any,res:any)=>{
-
-  return await handler(req ,res);
-})
-
-// const getRoom = (roomName: string)=>{
-//   return roomState.rooms[roomName]
-// }
+app.use(router)
 
 io.on('connection', (socket:any) => {
   console.log('A user connected:', socket.id);
@@ -89,7 +40,7 @@ io.on('connection', (socket:any) => {
     try{
       console.log("Join Room: " + " " + playerName + " - " + roomName + " - " + roomId)
 
-      let currentRoom:Room = await roomState.getOrCreateRoom(roomName, roomId, password, gameType, maxPlayers);
+      let currentRoom:Room = await roomState.getOrCreateRoom({roomName, roomId, password, gameType, maxPlayers});
       let newUser:User = null;
   
       if (userType == UserType.Player && currentRoom.playerSockets.length >= currentRoom.maxPlayers) {
@@ -158,7 +109,8 @@ io.on('connection', (socket:any) => {
   
         room.userDisconnected(socket.id);
         socket.to(currentRoom.id).emit('peerDisconnected', { socketId: socket.id });
-        if (room.playerSockets.length === 0) {
+        //auto delete the room if its not a bot created room 
+        if (room.playerSockets.length === 0 && !room.scheduledRoom) {
           console.log("deleting room")
           await roomState.deleteRoom(room)
         }else{

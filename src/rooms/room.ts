@@ -1,15 +1,15 @@
-import { Game } from "./games/game";
-import { GameError, GameErrorSeverity, GameErrorType, GameType, IGameEvent } from "./interfaces/game";
-import { IMessage } from "./interfaces/messaging";
-import { Player } from "./users/player";
-import { MTGCommander } from "./games/mtg-commander";
-import { Spectator } from "./users/spectator";
-import { saveRoomAndUnlock, unlockRoom } from "./redis";
+import { Game } from "../games/game";
+import { GameError, GameErrorSeverity, GameErrorType, GameType, IGameEvent } from "../interfaces/game";
+import { IMessage } from "../interfaces/messaging";
+import { Player } from "../users/player";
+import { MTGCommander } from "../games/mtg-commander";
+import { Spectator } from "../users/spectator";
+import { saveRoomAndUnlock, unlockRoom } from "../redis";
 import { Type } from "class-transformer";
-import { MTGStandard } from "./games/mtg-standard";
-import { MTGModern } from "./games/mtg-modern";
-import { MTGVintage } from "./games/mtg-vintage";
-import { MTGLegacy } from "./games/mtg-legacy";
+import { MTGStandard } from "../games/mtg-standard";
+import { MTGModern } from "../games/mtg-modern";
+import { MTGVintage } from "../games/mtg-vintage";
+import { MTGLegacy } from "../games/mtg-legacy";
 const { v4: uuidv4 } = require('uuid');
 
 export class Room {
@@ -36,6 +36,10 @@ export class Room {
   id: string;
   password:string;
 
+  scheduledRoom:boolean = false;
+  initialScheduleTTLInSeconds: number;// games waiting to be played will be destroyed after this time
+  inactivityTimeUntilDestroyedInSeconds:number = 3600 // 1 hour default
+
   constructor(roomName: string,password:string, gameType: GameType, maxPlayers:number) {
     this.id = uuidv4();
     this.name = roomName;
@@ -48,8 +52,8 @@ export class Room {
     this.game = Room.createGame(gameType);
   }
 
-  saveAndClose = async () => {
-    saveRoomAndUnlock(this);
+  saveAndClose = async (setScheduledTTL:boolean = false) => {
+    saveRoomAndUnlock(this,setScheduledTTL);
   }
 
   close = async () => {
@@ -63,20 +67,32 @@ export class Room {
     switch (gameType) {
       case GameType.MTGCommander:
         return new MTGCommander();
-        break;
       case GameType.MTGStandard:
         return new MTGStandard();
-        break;
       case GameType.MTGModern:
         return new MTGModern();
-        break;
       case GameType.MTGVintage:
         return new MTGVintage();
-        break;
       case GameType.MTGLegacy:
         return new MTGLegacy();
-        break;
     }
+  }
+
+  static gameTypeMapping(gameType: string) {
+    switch (gameType) {
+      case "MTGCommander":
+        return GameType.MTGCommander
+      case "MTGStandard":
+        return GameType.MTGStandard
+      case "MTGModern":
+        return GameType.MTGModern
+      case "MTGVintage":
+        return GameType.MTGVintage
+      case "MTGLegacy":
+        return GameType.MTGLegacy
+    }
+
+    return null;
   }
 
   public verifyPassword(password:string): boolean{
@@ -159,5 +175,17 @@ export class Room {
     } else {
       throw new GameError(GameErrorType.InvalidAction, "You cant make that action",GameErrorSeverity.Error);
     }
+  }
+
+  generateRandomPassword(length: number = 10): string {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+~';
+    let password = '';
+  
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      password += characters[randomIndex];
+    }
+  
+    return password;
   }
 }
