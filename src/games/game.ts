@@ -1,4 +1,4 @@
-import { Room } from "../room";
+import { Room } from "../rooms/room";
 import { GameError, GameErrorSeverity, GameErrorType, GameEvent, GameType, IGameEvent, IModifyPlayerProperty, PlayerProperties } from "../interfaces/game";
 import { Player } from "../users/player";
 import { ScryfallCard, slimCard } from "../interfaces/cards";
