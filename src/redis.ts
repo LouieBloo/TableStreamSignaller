@@ -1,8 +1,6 @@
 import Redis from 'ioredis';
 import Redlock, { ResourceLockedError } from 'redlock';
-import { Room } from './room';
-
-const roomInactivityExpirationInSeconds = 7200;//2 hours
+import { Room } from './rooms/room';
 
 const redisClient = new Redis({
   host: process.env.REDIS_HOST,  
@@ -66,13 +64,13 @@ export async function lockRoomAndGetState(roomId:string = null): Promise<{ lock:
 }
 
 // Function to save the updated game state to Redis
-export async function saveRoomAndUnlock(room: Room): Promise<void> {
+export async function saveRoomAndUnlock(room: Room, setScheduledTTL: boolean = false): Promise<void> {
   const key = `game_room:${room.id}`;  // Use the same key for saving the state
   try {
     // Save the game state back to Redis
     let lock = room.redisLock;
     delete(room.redisLock);
-    await redisClient.set(key, JSON.stringify(room),'EX',roomInactivityExpirationInSeconds);
+    await redisClient.set(key, JSON.stringify(room),'EX',setScheduledTTL ? room.initialScheduleTTLInSeconds : room.inactivityTimeUntilDestroyedInSeconds);
     //console.log(`Game state for room ${room.name} updated successfully.`);
     await unlockRoom(lock);
   } catch (error) {
