@@ -28,8 +28,12 @@ class RoomService {
   // helper so callers dont need to do any mapping
   async updateRoom(room: Room): Promise<IMongoRoom | null> {
     if (!trackingActive) { return null; }
-
-    return await this.updateRoomMongo(room.id, this.mapTableStreamRoomToMongoRoom(room))
+    try{
+      return await this.updateRoomMongo(room.id, this.mapTableStreamRoomToMongoRoom(room))
+    }catch(error){
+      //keep on movin
+      console.error("Error updating mongo room: ", error);
+    }
   }
 
   // actually update the room
@@ -42,12 +46,16 @@ class RoomService {
   // Delete a room
   async deleteRoom(room:Room): Promise<IMongoRoom | null> {
     if (!trackingActive) { return null; }
-
-    return await MongoRoom.findOneAndUpdate(
-      { tableStreamId: room.id },
-      { deletedAt: new Date() }, // Set deletedAt timestamp
-      { new: true }
-    );
+    try{
+      return await MongoRoom.findOneAndUpdate(
+        { tableStreamId: room.id },
+        { deletedAt: new Date() }, // Set deletedAt timestamp
+        { new: true }
+      );
+    }catch(error){
+      //keep on movin
+      console.error("Error deleting mongo room: ", error);
+    }
   }
 
   // Find rooms within a given time period and provide statistics
