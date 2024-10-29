@@ -7,6 +7,7 @@ import { User } from "./users/user";
 import { Room } from "./rooms/room";
 import cors from 'cors';
 import router from './router/router'; // Path to the routes file
+import "./mongo/mongo";
 
 const express = require('express');
 const http = require('http');

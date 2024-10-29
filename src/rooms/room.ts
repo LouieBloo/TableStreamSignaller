@@ -10,6 +10,8 @@ import { MTGStandard } from "../games/mtg-standard";
 import { MTGModern } from "../games/mtg-modern";
 import { MTGVintage } from "../games/mtg-vintage";
 import { MTGLegacy } from "../games/mtg-legacy";
+import RoomService from '../mongo/services/room-service';
+
 const { v4: uuidv4 } = require('uuid');
 
 export class Room {
@@ -114,6 +116,9 @@ export class Room {
       }
 
       this.players.push(player)
+
+      //send changes to mongo
+      RoomService.updateRoom(this);
     } else {
       player.socketId = socketId;
     }
