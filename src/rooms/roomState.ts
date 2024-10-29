@@ -2,6 +2,7 @@ import { GameError, GameErrorSeverity, GameErrorType, GameType } from "../interf
 import { Room } from "./room";
 import { plainToInstance } from 'class-transformer';
 import {lockRoomAndGetState, saveRoomAndUnlock, deleteRoomAndUnlock} from '../redis';
+import RoomService from '../mongo/services/room-service';
 
 export interface ICreateRoomParams{
   roomId?:string;
@@ -40,6 +41,9 @@ export class RoomState {
       if(params.private && !params.password){
         room.password = room.generateRandomPassword(10);
       }
+
+      //track in mongo
+      await RoomService.addRoom(room);
     }else{
       room = this.parseRoom(redisResult.room);  
     }
@@ -77,6 +81,8 @@ export class RoomState {
 
   async deleteRoom(room:Room) {
     await deleteRoomAndUnlock(room);
+    //track in mongo
+    await RoomService.deleteRoom(room);
   }
 
 }
