@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/app.js",
-    "dev": "npm run build && node dist/app.js"
+    "dev": "npm run build && node dist/app.js",
+    "analytics" : "npx ts-node ./scripts/analytics.ts"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +16,7 @@
     "@aws-sdk/client-ec2": "^3.670.0",
     "@aws-sdk/client-ecs": "^3.670.0",
     "@types/express": "^5.0.0",
+    "@types/mongoose": "^5.11.97",
     "axios": "^1.7.7",
     "class-transformer": "^0.5.1",
     "cors": "^2.8.5",
@@ -22,6 +24,7 @@
     "express": "^4.19.2",
     "fs-extra": "^11.2.0",
     "ioredis": "^5.4.1",
+    "mongoose": "^8.7.3",
     "multer": "^1.4.5-lts.1",
     "redlock": "^5.0.0-beta.2",
     "reflect-metadata": "^0.2.2",
