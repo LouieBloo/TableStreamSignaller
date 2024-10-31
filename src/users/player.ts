@@ -1,4 +1,4 @@
-import { ScryfallCard } from "../interfaces/cards";
+import { PlayingCard } from "../interfaces/cards";
 import { CommanderDamage, UserType } from "../interfaces/game";
 import { User } from "./user";
 import { Type } from "class-transformer";
@@ -9,6 +9,7 @@ export class Player extends User {
 
     lifeTotal:number;
     isTakingTurn: boolean;
+    isDead:boolean = false;
     totalTurns: number;
     @Type(() => Date)
     currentTurnStartTime: Date;
@@ -22,7 +23,9 @@ export class Player extends User {
 
     commanderDamages: { [playerId: string]: CommanderDamage } = {};
 
-    commander: ScryfallCard;
+    commander: PlayingCard;
+
+    prizeCards:number = 0;
 
     constructor(name:string, socketId:string, turnOrder:number, startingLifeTotal:number) {
         super(name,socketId,UserType.Player);
