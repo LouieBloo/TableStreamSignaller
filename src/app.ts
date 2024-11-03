@@ -2,7 +2,7 @@
 import "reflect-metadata";
 import { IMessage } from "./interfaces/messaging";
 import { RoomState } from "./rooms/roomState";
-import { IGameEvent, UserType} from "./interfaces/game";
+import { GameEvent, IGameEvent, UserType} from "./interfaces/game";
 import { User } from "./users/user";
 import { Room } from "./rooms/room";
 import cors from 'cors';
@@ -94,6 +94,22 @@ io.on('connection', (socket:any) => {
         let room:Room = await roomState.getRoom(currentRoom.id);
         try{
           event.response = room.gameEvent(socket.id, event)
+          //if this event results in messages, add them
+          if(event.messages){
+            event.messages.forEach((message:IMessage)=>{
+              room.addMessage(event.callingPlayer.socketId, message.text)
+              //I dont like this flip coins check here but its fine for now
+              if(event.event == GameEvent.FlipCoins){
+                //for coin flips we add a delay so people can watch the animation instead of looking at chat
+                setTimeout(()=>{
+                  io.in(currentRoom.id).emit('message', message);
+                },2000)
+              }else{
+                io.in(currentRoom.id).emit('message', message);
+              }
+            })
+          }
+
           await room.saveAndClose();
           io.in(currentRoom.id).emit('gameEvent', event);
         }

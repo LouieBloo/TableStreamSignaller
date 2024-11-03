@@ -13,6 +13,8 @@ import discord from '../discord/discord-integration';
 import {verifyKeyMiddleware} from 'discord-interactions';
 import {createRoom} from '../rooms/room-controller';
 import { Room } from "../rooms/room";
+import { search } from "../pokemon/pokemon-search";
+import { PlayingCard } from "../interfaces/cards";
 
 router.get('/', (req: any, res: any) => {
   res.status(200).send('Beating...');
@@ -78,6 +80,11 @@ router.post('/discord-interaction', verifyKeyMiddleware(process.env.DISCORD_PUBL
   return await discord(req,res);
 })
 
+router.get('/pokemon-cards', async(req: any, res: any) => {
+  let response:PlayingCard[] = await search(req.query.query);
+
+  res.status(200).json({data: response});
+})
 
 
 //local developing only
