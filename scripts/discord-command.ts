@@ -40,6 +40,10 @@ const commands = [
             name: 'MTGVintage',
             value: 'MTGVintage',
           },
+          {
+            name: 'PokemonStandard',
+            value: 'PokemonStandard'
+          }
         ],
       },
       {

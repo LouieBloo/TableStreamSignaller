@@ -11,6 +11,7 @@ import { MTGModern } from "../games/mtg-modern";
 import { MTGVintage } from "../games/mtg-vintage";
 import { MTGLegacy } from "../games/mtg-legacy";
 import RoomService from '../mongo/services/room-service';
+import { PokemonStandard } from "../games/pokemon-standard";
 
 const { v4: uuidv4 } = require('uuid');
 
@@ -77,6 +78,8 @@ export class Room {
         return new MTGVintage();
       case GameType.MTGLegacy:
         return new MTGLegacy();
+      case GameType.PokemonStandard:
+        return new PokemonStandard();
     }
   }
 
@@ -92,6 +95,8 @@ export class Room {
         return GameType.MTGVintage
       case "MTGLegacy":
         return GameType.MTGLegacy
+      case "PokemonStandard":
+        return GameType.PokemonStandard;
     }
 
     return null;
@@ -114,6 +119,8 @@ export class Room {
       if (this.players.length == 0) {
         player.admin = true;
       }
+
+      this.game.setPlayerDefaults(player);
 
       this.players.push(player)
 
@@ -175,6 +182,7 @@ export class Room {
 
   gameEvent(socketId: string, gameEvent: IGameEvent): any {
     gameEvent.callingPlayer = this.getPlayer(socketId);
+    gameEvent.messages = [];
     if (gameEvent.callingPlayer) {
       return this.game.event(gameEvent, this);
     } else {

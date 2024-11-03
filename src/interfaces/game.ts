@@ -1,10 +1,12 @@
 import { Player } from "../users/player";
+import { IMessage } from "./messaging";
 
 export interface IGameEvent {
     callingPlayer:Player;
     event: GameEvent;
     payload?:any;
     response?: any;
+    messages?:IMessage[];
 }
 
 export interface IModifyPlayerProperty{
@@ -17,7 +19,8 @@ export enum PlayerProperties{
     poisonTotal,
     energyTotal,
     monarch,
-    citiesBlessing
+    citiesBlessing,
+    prizeCards
 }
 
 export enum GameEvent{
@@ -29,7 +32,8 @@ export enum GameEvent{
     ShareCard,
     ToggleMonarch,
     ModifyPlayerCommanderDamage,
-    SetCommander
+    SetCommander,
+    FlipCoins
 }
 
 export enum GameType{
@@ -38,7 +42,8 @@ export enum GameType{
     MTGStandard,
     MTGModern,
     MTGLegacy,
-    MTGVintage
+    MTGVintage,
+    PokemonStandard
 }
 
 export interface CommanderDamage{
@@ -73,4 +78,8 @@ export enum GameErrorType{
 export enum UserType{
     Player,
     Spectator
+}
+
+export interface ICoinFlipResults{
+    results:string[]
 }

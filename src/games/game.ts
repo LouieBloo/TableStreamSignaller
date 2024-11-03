@@ -1,14 +1,14 @@
 import { Room } from "../rooms/room";
-import { GameError, GameErrorSeverity, GameErrorType, GameEvent, GameType, IGameEvent, IModifyPlayerProperty, PlayerProperties } from "../interfaces/game";
+import { GameError, GameErrorSeverity, GameErrorType, GameEvent, GameType, ICoinFlipResults, IGameEvent, IModifyPlayerProperty, PlayerProperties } from "../interfaces/game";
 import { Player } from "../users/player";
-import { ScryfallCard, slimCard } from "../interfaces/cards";
+import { PlayingCard, slimCard } from "../interfaces/cards";
 
 export class Game {
 
     startingLifeTotal = 20;
     active:boolean = false;
 
-    sharedCards:ScryfallCard[] = [];
+    sharedCards:PlayingCard[] = [];
 
     gameType: GameType;
 
@@ -28,10 +28,12 @@ export class Game {
                 return this.shareCard(gameEvent);
             case GameEvent.ToggleMonarch:
                 return this.toggleMonarch(gameEvent, room);
+            case GameEvent.FlipCoins:
+                return this.flipCoins(gameEvent);
         }
     }
 
-    addPlayer(newPlayer: Player, room:Room){
+    setPlayerDefaults(player: Player){
     }
 
     startGame(room: Room){
@@ -48,6 +50,7 @@ export class Game {
             room.players[x].energyTotal = 0;
             room.players[x].commanderDamages = {};
             room.players[x].lifeTotal = this.startingLifeTotal;
+            room.players[x].isDead = false;
         }
 
         let firstPlayer:Player = room.players.find(p=> p.turnOrder == 0);
@@ -99,7 +102,7 @@ export class Game {
             tr = tr-room.players.length;
         }
 
-        let nextPlayer = room.players.find(p=> (p.turnOrder == tr && p.lifeTotal > 0))
+        let nextPlayer = room.players.find(p=> (p.turnOrder == tr && !p.isDead))
         if(!nextPlayer){
             if(tries >= room.players.length){
                 return null;
@@ -129,6 +132,7 @@ export class Game {
         switch(modifyEvent.property){
             case PlayerProperties.lifeTotal:
                 gameEvent.callingPlayer.lifeTotal += modifyEvent.amountToModify;
+                gameEvent.callingPlayer.isDead = gameEvent.callingPlayer.lifeTotal <= 0 ? true : false;
                 break;
             case PlayerProperties.poisonTotal:
                 gameEvent.callingPlayer.poisonTotal += modifyEvent.amountToModify;
@@ -210,4 +214,21 @@ export class Game {
         return room.players;
     }
 
+    flipCoins = (gameEvent: IGameEvent): any=>{
+        let coinFlips: string[] = [];
+        for(let x = 0; x < gameEvent.payload.coinsToFlip; x++){
+            let flipResult = Math.random() < 0.5 ? 'heads' : 'tails';
+            coinFlips.push(flipResult)
+        }
+
+        gameEvent.messages.push({
+            text: `flipped ${coinFlips.length} coin${coinFlips.length == 1 ? '' : 's'}: ${coinFlips.join(', ')}`,
+            date: new Date(),
+            player: gameEvent.callingPlayer
+        });
+
+        return {
+            results: coinFlips
+        }
+    }
 }

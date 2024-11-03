@@ -1,4 +1,4 @@
-export interface ScryfallCard {
+export interface PlayingCard {
     id: string;                         // The unique UUID of the card
     name: string;                       // The name of the card
     mana_cost?: string;                  // The mana cost of the card
@@ -43,11 +43,11 @@ export interface ScryfallCard {
     collector_number?: string;           // The collector number of the card within its set
     digital?: boolean;                   // Whether the card is available digitally (MTGO)
     classificationConfidence? :number;
-    card_faces?:ScryfallCard[]
+    card_faces?:PlayingCard[]
 }
 
-export const slimCard = (card:ScryfallCard):ScryfallCard =>{
-  let slimObj:ScryfallCard = {
+export const slimCard = (card:PlayingCard):PlayingCard =>{
+  let slimObj:PlayingCard = {
     id: card.id,
     name: card.name
   }
@@ -68,4 +68,16 @@ export const slimCard = (card:ScryfallCard):ScryfallCard =>{
 
   return slimObj;
 }
-  
+
+
+export interface PokemonCard{
+  id:string;
+  name:string;
+  images:{
+    small: string,
+    large: string
+  },
+  set:{
+    name: string;
+  }
+}
