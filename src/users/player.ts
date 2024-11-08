@@ -15,6 +15,9 @@ export class Player extends User {
     currentTurnStartTime: Date;
     totalTurnTime: number;
 
+    @Type(() => Date)
+    lastEffectTime:Date;
+
     isMonarch:boolean = false;
     hasCitiesBlessing:boolean = false;
 

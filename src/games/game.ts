@@ -30,6 +30,8 @@ export class Game {
                 return this.toggleMonarch(gameEvent, room);
             case GameEvent.FlipCoins:
                 return this.flipCoins(gameEvent);
+            case GameEvent.PlayEffect:
+                return this.playEffect(gameEvent);
         }
     }
 
@@ -230,5 +232,29 @@ export class Game {
         return {
             results: coinFlips
         }
+    }
+
+    playEffect = (gameEvent: IGameEvent): any => {
+        const now = new Date();
+        
+        // make sure the user isnt spamming reactions
+        if (gameEvent.callingPlayer.lastEffectTime) {
+            const timeDifference = now.getTime() - gameEvent.callingPlayer.lastEffectTime.getTime();
+
+            const waitTimeInSeconds = 8; // required wait time in seconds
+            const remainingTime = waitTimeInSeconds - Math.floor(timeDifference / 1000);
+
+            if (timeDifference < waitTimeInSeconds * 1000) { 
+                throw new GameError(
+                    GameErrorType.GenericWarning,
+                    `You must wait ${remainingTime} seconds before another reaction`,
+                    GameErrorSeverity.Warning
+                );
+            }
+        } 
+
+        gameEvent.callingPlayer.lastEffectTime = now;
+    
+        return gameEvent.payload;
     }
 }
