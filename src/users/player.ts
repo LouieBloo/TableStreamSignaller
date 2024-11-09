@@ -1,4 +1,4 @@
-import { PlayingCard } from "../interfaces/cards";
+import { PlayingCard, slimCard } from "../interfaces/cards";
 import { CommanderDamage, UserType } from "../interfaces/game";
 import { User } from "./user";
 import { Type } from "class-transformer";
@@ -23,7 +23,7 @@ export class Player extends User {
 
     commanderDamages: { [playerId: string]: CommanderDamage } = {};
 
-    commander: PlayingCard;
+    commanders: PlayingCard[];
 
     prizeCards:number = 0;
 
@@ -66,4 +66,10 @@ export class Player extends User {
 
         return this;
     }
+
+    //how can we know what type is coming in?
+    setCommander = (payload: any)=>{
+        this.commanders.push(slimCard(payload))
+    }
+
  }

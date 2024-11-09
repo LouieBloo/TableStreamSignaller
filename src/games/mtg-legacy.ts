@@ -1,7 +1,5 @@
-import { Player } from "../users/player";
-import { IGameEvent, GameEvent, CommanderDamage, GameType } from "../interfaces/game";
+import { GameType } from "../interfaces/game";
 import { Game } from "./game";
-import { slimCard } from "../interfaces/cards";
 
 
 export class MTGLegacy extends Game {

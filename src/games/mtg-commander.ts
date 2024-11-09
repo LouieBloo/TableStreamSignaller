@@ -1,8 +1,7 @@
 import { Player } from "../users/player";
-import { IGameEvent, GameEvent, CommanderDamage, GameType } from "../interfaces/game";
+import { IGameEvent, GameEvent, GameType } from "../interfaces/game";
 import { Room } from "../rooms/room";
 import { Game } from "./game";
-import { slimCard } from "../interfaces/cards";
 
 
 export class MTGCommander extends Game {
@@ -19,22 +18,14 @@ export class MTGCommander extends Game {
             case GameEvent.StartGame:
                 return this.startGame(room);
             case GameEvent.ModifyPlayerCommanderDamage:
-                return this.modifyPlayerCommanderDamage(gameEvent);
+                gameEvent.callingPlayer.takeCommanderDamage(gameEvent.payload.damagingPlayer, gameEvent.payload.amount);
+                return gameEvent.callingPlayer;
             case GameEvent.SetCommander:
-                console.log("setting commander!")
-                return this.setCommander(gameEvent);
+                gameEvent.callingPlayer.setCommander(gameEvent.payload)
+                return gameEvent.callingPlayer;
         }
 
         return super.event(gameEvent, room);
-    }
-
-    modifyPlayerCommanderDamage = (gameEvent: IGameEvent) => {
-        return gameEvent.callingPlayer.takeCommanderDamage(gameEvent.payload.damagingPlayer, gameEvent.payload.amount);
-    }
-
-    setCommander = (gameEvent: IGameEvent)=>{
-        gameEvent.callingPlayer.commander = slimCard(gameEvent.payload);
-        return gameEvent.callingPlayer;
     }
 
     //call the super startGame but also add our commander damage initialization
