@@ -1,4 +1,5 @@
 import { Player } from "../users/player";
+import { PlayingCard } from "./cards";
 import { IMessage } from "./messaging";
 
 export interface IGameEvent {
@@ -46,9 +47,10 @@ export enum GameType{
     PokemonStandard
 }
 
-export interface CommanderDamage{
+export interface CommanderDamage {
     playerId:string;
     damage:number;
+    target: PlayingCard
 }
 
 export class GameError extends Error {

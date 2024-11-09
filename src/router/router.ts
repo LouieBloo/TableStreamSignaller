@@ -76,7 +76,7 @@ router.post('/create-room', async (req: any, res: any) => {
   }
 })
 
-router.post('/discord-interaction', verifyKeyMiddleware(process.env.DISCORD_PUBLIC_KEY), async(req: Request, res: Response) => {
+router.post('/discord-interaction', verifyKeyMiddleware("hi"), async(req: Request, res: Response) => {
   return await discord(req,res);
 })
 
