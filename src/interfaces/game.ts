@@ -33,7 +33,8 @@ export enum GameEvent{
     ToggleMonarch,
     ModifyPlayerCommanderDamage,
     SetCommander,
-    FlipCoins
+    FlipCoins,
+    PlayEffect
 }
 
 export enum GameType{
