@@ -18,7 +18,7 @@ export class MTGCommander extends Game {
             case GameEvent.StartGame:
                 return this.startGame(room);
             case GameEvent.ModifyPlayerCommanderDamage:
-                gameEvent.callingPlayer.takeCommanderDamage(gameEvent.payload.damagingPlayer, gameEvent.payload.amount);
+                gameEvent.callingPlayer.takeCommanderDamage(gameEvent.payload.damagingPlayer, gameEvent.payload.amount, gameEvent.payload.target);
                 return gameEvent.callingPlayer;
             case GameEvent.SetCommander:
                 gameEvent.callingPlayer.setCommander(gameEvent.payload)
