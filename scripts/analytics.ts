@@ -12,4 +12,4 @@ const run = async(daysAgo:number)=>{
     console.log(JSON.stringify(results));
 }
 
-run(1);
+run(14);
