@@ -114,6 +114,7 @@ io.on('connection', (socket:any) => {
           io.in(currentRoom.id).emit('gameEvent', event);
         }
         catch(error){
+          console.log(error)
           await room.close();
           socket.emit('errorResponse', {type: error.type, message: error.message, severity: error.severity});
         }
