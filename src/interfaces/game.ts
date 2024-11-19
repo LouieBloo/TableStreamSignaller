@@ -1,4 +1,5 @@
 import { Player } from "../users/player";
+import { PlayingCard } from "./cards";
 import { IMessage } from "./messaging";
 
 export interface IGameEvent {
@@ -50,6 +51,7 @@ export enum GameType{
 export interface CommanderDamage{
     playerId:string;
     damage:number;
+    card:PlayingCard;
 }
 
 export class GameError extends Error {
