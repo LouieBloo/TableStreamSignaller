@@ -35,7 +35,7 @@ export class Game {
         }
     }
 
-    setPlayerDefaults(player: Player){
+    setPlayerDefaults(player: Player, room:Room){
     }
 
     startGame(room: Room){
@@ -50,7 +50,6 @@ export class Game {
             room.players[x].hasCitiesBlessing = false;
             room.players[x].poisonTotal = 0;
             room.players[x].energyTotal = 0;
-            room.players[x].commanderDamages = {};
             room.players[x].lifeTotal = this.startingLifeTotal;
             room.players[x].isDead = false;
         }
