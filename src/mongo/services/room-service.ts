@@ -9,9 +9,9 @@ class RoomService {
   // helper so callers dont need to do any mapping
   async addRoom(room: Room): Promise<IMongoRoom> {
     if (!trackingActive) { return null; }
-    try{
+    try {
       return await this.addRoomMongo(this.mapTableStreamRoomToMongoRoom(room))
-    }catch(error){
+    } catch (error) {
       //keep on movin
       console.error("Error adding mongo room: ", error);
     }
@@ -28,9 +28,9 @@ class RoomService {
   // helper so callers dont need to do any mapping
   async updateRoom(room: Room): Promise<IMongoRoom | null> {
     if (!trackingActive) { return null; }
-    try{
+    try {
       return await this.updateRoomMongo(room.id, this.mapTableStreamRoomToMongoRoom(room))
-    }catch(error){
+    } catch (error) {
       //keep on movin
       console.error("Error updating mongo room: ", error);
     }
@@ -44,22 +44,36 @@ class RoomService {
   }
 
   // Delete a room
-  async deleteRoom(room:Room): Promise<IMongoRoom | null> {
+  async deleteRoom(room: Room): Promise<IMongoRoom | null> {
     if (!trackingActive) { return null; }
-    try{
+    try {
       return await MongoRoom.findOneAndUpdate(
         { tableStreamId: room.id },
         { deletedAt: new Date() }, // Set deletedAt timestamp
         { new: true }
       );
-    }catch(error){
+    } catch (error) {
       //keep on movin
       console.error("Error deleting mongo room: ", error);
     }
   }
 
+  // Delete all rooms with less than 2 playerIds
+  async deleteEmptyOrSinglePlayerRooms(): Promise<number | void> {
+    if (!trackingActive) { return; }
+    try {
+      const result = await MongoRoom.deleteMany({
+        playerIds: { $exists: true, $type: "array", $size: 1 }
+      });
+      console.log(`Deleted ${result.deletedCount} rooms with less than 2 players.`);
+      return result.deletedCount;
+    } catch (error) {
+      console.error("Error deleting rooms with less than 2 players: ", error);
+    }
+  }
+
   // Find rooms within a given time period and provide statistics
-  async findRoomsInPeriod(startDate: Date, endDate: Date, scheduledRoom:boolean = false): Promise<{
+  async findRoomsInPeriod(startDate: Date, endDate: Date, scheduledRoom: boolean = false): Promise<{
     roomCount: number;
     totalPlayers: number;
     averagePlayers: number;
@@ -67,7 +81,8 @@ class RoomService {
   }> {
     const rooms = await MongoRoom.find({
       createdAt: { $gte: startDate, $lte: endDate },
-      scheduledRoom: scheduledRoom
+      scheduledRoom: scheduledRoom,
+      playerIds: { $exists: true, $type: "array", $not: { $size: 1 } }
     });
 
     // Calculate statistics
@@ -81,7 +96,7 @@ class RoomService {
       const endTime = room.deletedAt || new Date(); // Use deletedAt or current time if active
       let duration = (endTime.getTime() - room.createdAt.getTime()) / 1000; // Duration in seconds
       //we cap the duration as some games can be abandaned without properly deleting
-      if(duration > maximumGameLength){
+      if (duration > maximumGameLength) {
         duration = maximumGameLength;
       }
       return sum + duration;
