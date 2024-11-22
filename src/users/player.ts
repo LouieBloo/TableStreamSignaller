@@ -24,11 +24,12 @@ export class Player extends User {
     poisonTotal:number;
     energyTotal:number;
 
-    commanderDamages: { [playerId: string]: CommanderDamage } = {};
+    commanderDamages: { [playerId: string]: { [cardId: string]: CommanderDamage } } = {};
 
-    commander: PlayingCard;
+    commanders: PlayingCard[];
 
     prizeCards:number = 0;
+    player: any;
 
     constructor(name:string, socketId:string, turnOrder:number, startingLifeTotal:number) {
         super(name,socketId,UserType.Player);
@@ -43,27 +44,20 @@ export class Player extends User {
     }
 
 
-    takeCommanderDamage = (damagingPlayer: Player, amount: number)=>{
+    takeCommanderDamage = (damagingPlayer: Player, amount: number, card:PlayingCard)=>{
         //add or create the commander damage for this player
-        if(this.commanderDamages[damagingPlayer.id]){
-            this.commanderDamages[damagingPlayer.id].damage += amount;
-        }else{
-            this.commanderDamages[damagingPlayer.id] = {
-                playerId: damagingPlayer.id,
-                damage: amount
-            }
-        }
+        this.commanderDamages[damagingPlayer.id][card.id].damage += amount;
 
         //prevent negative commander damage
-        if(this.commanderDamages[damagingPlayer.id].damage < 0){
-            this.commanderDamages[damagingPlayer.id].damage = 0;
+        if(this.commanderDamages[damagingPlayer.id][card.id].damage < 0){
+            this.commanderDamages[damagingPlayer.id][card.id].damage = 0;
         }else{
             //remove lifetotal on commander damage
             this.lifeTotal -= amount;
         }
 
         //kill player if threshold met
-        if(this.commanderDamages[damagingPlayer.id].damage >= 21){
+        if(this.commanderDamages[damagingPlayer.id][card.id].damage >= 21){
             this.lifeTotal = 0;
         }
 

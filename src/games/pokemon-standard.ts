@@ -41,8 +41,8 @@ export class PokemonStandard extends Game {
     return room.players;
   }
 
-  override setPlayerDefaults(player: Player) {
-    super.setPlayerDefaults(player);
+  override setPlayerDefaults(player: Player, room:Room) {
+    super.setPlayerDefaults(player,room);
     player.prizeCards = this.prizeCardsToWin;
   }
 }

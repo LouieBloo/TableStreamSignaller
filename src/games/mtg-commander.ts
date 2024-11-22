@@ -2,7 +2,7 @@ import { Player } from "../users/player";
 import { IGameEvent, GameEvent, CommanderDamage, GameType } from "../interfaces/game";
 import { Room } from "../rooms/room";
 import { Game } from "./game";
-import { slimCard } from "../interfaces/cards";
+import { PlayingCard, slimCard } from "../interfaces/cards";
 
 
 export class MTGCommander extends Game {
@@ -21,43 +21,89 @@ export class MTGCommander extends Game {
             case GameEvent.ModifyPlayerCommanderDamage:
                 return this.modifyPlayerCommanderDamage(gameEvent);
             case GameEvent.SetCommander:
-                console.log("setting commander!")
-                return this.setCommander(gameEvent);
+                return this.setCommander(gameEvent, room);
         }
 
         return super.event(gameEvent, room);
     }
 
-    modifyPlayerCommanderDamage = (gameEvent: IGameEvent) => {
-        return gameEvent.callingPlayer.takeCommanderDamage(gameEvent.payload.damagingPlayer, gameEvent.payload.amount);
-    }
-
-    setCommander = (gameEvent: IGameEvent)=>{
-        gameEvent.callingPlayer.commander = slimCard(gameEvent.payload);
-        return gameEvent.callingPlayer;
-    }
-
-    //call the super startGame but also add our commander damage initialization
     startGame(room: Room): Player[] {
-        let players: Player[] = super.startGame(room);
+        super.startGame(room);
 
-        //for each player
-        players.forEach((pl: Player) => {
-            pl.commanderDamages = {};
+        //reset all commander damages to zero
+        room.players.forEach((player:Player)=>{
+            for (const [opponentId, value] of Object.entries(player.commanderDamages)) {
+                for (const [cardId, value2] of Object.entries(player.commanderDamages[opponentId])) {
+                    player.commanderDamages[opponentId][cardId].damage = 0;
+                }
+            }
+        })
 
-            //for all other players (aka opponents)
-            for (let x = 0; x < players.length; x++) {
-                if(pl.id != players[x].id){
-                    pl.commanderDamages[players[x].id] = {
+        return room.players;
+    }
+
+    setPlayerDefaults(newPlayer: Player, room:Room){
+        super.setPlayerDefaults(newPlayer,room);
+
+        newPlayer.commanders = []
+        newPlayer.commanderDamages = {};
+
+        //initilize this new players commander damages of any other players that are already in the game
+        room.players.forEach((oldPlayer:Player)=>{
+            if(oldPlayer.id != newPlayer.id){
+                newPlayer.commanderDamages[oldPlayer.id] = {};
+                oldPlayer.commanders.forEach((commander:PlayingCard)=>{
+                    newPlayer.commanderDamages[oldPlayer.id][commander.id] = {
+                        playerId: oldPlayer.id,
                         damage: 0,
-                        playerId: players[x].id
+                        card: commander
+                    }
+                })
+            }
+        })
+    }
+
+    setCommander = (gameEvent: IGameEvent, room:Room)=>{
+        //helper variables
+        let targetPlayer:Player = gameEvent.callingPlayer;
+        let newCommander:PlayingCard = gameEvent.payload.card
+        let oldCommander:PlayingCard = gameEvent.payload.index < gameEvent.callingPlayer.commanders.length ?  gameEvent.callingPlayer.commanders[gameEvent.payload.index] : null;
+        //set new commander, its possible its null (to clear)
+        if(newCommander){
+            gameEvent.callingPlayer.commanders[gameEvent.payload.index] = slimCard(newCommander);
+        }else{
+            //note we only ever clear out the 2nd commander
+            gameEvent.callingPlayer.commanders = [gameEvent.callingPlayer.commanders[0]]
+        }
+
+        //modify all the other players commander damages to reflect this new commander
+        room.players.forEach((player:Player)=>{
+            if(player.id != targetPlayer.id){
+                //this player might not have any commander damages from the target player yet. Initilize it
+                if(!player.commanderDamages[targetPlayer.id]){
+                    player.commanderDamages[targetPlayer.id] = {};
+                }
+                //remove old commander if it exists
+                if(oldCommander &&  player.commanderDamages[targetPlayer.id][oldCommander.id]){
+                    delete(player.commanderDamages[targetPlayer.id][oldCommander.id])
+                }
+
+                //set new commander damage (could be null if clearing)
+                if(newCommander){
+                    player.commanderDamages[targetPlayer.id][newCommander.id] = {
+                        playerId: targetPlayer.id,
+                        damage: 0,
+                        card: newCommander
                     }
                 }
             }
-            
         })
 
-        return players;
+        return room.players;
+    }
+
+    modifyPlayerCommanderDamage = (gameEvent: IGameEvent) => {
+        return gameEvent.callingPlayer.takeCommanderDamage(gameEvent.payload.damagingPlayer, gameEvent.payload.amount, gameEvent.payload.card);
     }
 
 }

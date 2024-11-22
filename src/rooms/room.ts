@@ -120,7 +120,7 @@ export class Room {
         player.admin = true;
       }
 
-      this.game.setPlayerDefaults(player);
+      this.game.setPlayerDefaults(player, this);
 
       this.players.push(player)
 
