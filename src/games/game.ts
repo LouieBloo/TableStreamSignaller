@@ -32,6 +32,8 @@ export class Game {
                 return this.flipCoins(gameEvent);
             case GameEvent.PlayEffect:
                 return this.playEffect(gameEvent);
+            case GameEvent.SetPlayerTurnOrders:
+                return this.setPlayerTurnOrders(gameEvent, room);
         }
     }
 
@@ -149,6 +151,19 @@ export class Game {
         }
         
         return gameEvent.callingPlayer;
+    }
+
+    setPlayerTurnOrders(gameEvent: IGameEvent, room:Room){
+        if(!gameEvent.callingPlayer.admin){
+            throw new GameError(GameErrorType.GenericWarning, "Only admins can change player order!",GameErrorSeverity.Error);
+        }
+
+        room.players.forEach((player:Player)=>{
+            let incomingPlayer:Player = gameEvent.payload.find((p:Player) => p.id === player.id);
+            player.turnOrder = incomingPlayer.turnOrder;
+        })
+        
+        return room.players;
     }
 
     randomizePlayerOrder(players: Player[]) {
