@@ -44,7 +44,7 @@ export class Player extends User {
     }
 
 
-    takeCommanderDamage = (damagingPlayer: Player, amount: number, card:PlayingCard)=>{
+    takeCommanderDamage = (damagingPlayer: Player, amount: number, card:PlayingCard, maxCommanderDamageUntilDead:number)=>{
         //add or create the commander damage for this player
         this.commanderDamages[damagingPlayer.id][card.id].damage += amount;
 
@@ -57,8 +57,11 @@ export class Player extends User {
         }
 
         //kill player if threshold met
-        if(this.commanderDamages[damagingPlayer.id][card.id].damage >= 21){
+        if(this.commanderDamages[damagingPlayer.id][card.id].damage >= maxCommanderDamageUntilDead){
             this.lifeTotal = 0;
+            this.isDead = true;
+        }else if(this.lifeTotal > 0){
+            this.isDead = false;
         }
 
         return this;
