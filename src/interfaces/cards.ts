@@ -81,3 +81,13 @@ export interface PokemonCard{
     name: string;
   }
 }
+
+export interface Token{
+  id:string;
+  ownerId:string;
+  name?:string;
+  card?:PlayingCard
+  xPosition?:number;
+  yPosition?:number;
+  tapped?:boolean;
+}

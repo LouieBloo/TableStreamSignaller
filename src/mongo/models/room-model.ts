@@ -9,6 +9,7 @@ export interface IMongoRoom extends Document {
   scheduledRoom: boolean;
   initialScheduleTTLInSeconds: number;
   inactivityTimeUntilDestroyedInSeconds: number;
+  reactionsEnabled?:boolean;
   createdAt?: Date;
   updatedAt?: Date;
   deletedAt?: Date;
@@ -24,6 +25,7 @@ const RoomSchema: Schema = new Schema(
     scheduledRoom: { type: Boolean, required: false },
     initialScheduleTTLInSeconds: { type: Number, required: false },
     inactivityTimeUntilDestroyedInSeconds: { type: Number, required: false },
+    reactionsEnabled: { type: Boolean, required: false },
     deletedAt: { type: Date, required: false },
   },
   {

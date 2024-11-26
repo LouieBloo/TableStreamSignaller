@@ -12,6 +12,7 @@ import { MTGVintage } from "../games/mtg-vintage";
 import { MTGLegacy } from "../games/mtg-legacy";
 import RoomService from '../mongo/services/room-service';
 import { PokemonStandard } from "../games/pokemon-standard";
+import { MTGPauperCommander } from "../games/mtg-pauper-commander";
 
 const { v4: uuidv4 } = require('uuid');
 
@@ -42,6 +43,8 @@ export class Room {
   scheduledRoom:boolean = false;
   initialScheduleTTLInSeconds: number;// games waiting to be played will be destroyed after this time
   inactivityTimeUntilDestroyedInSeconds:number = 3600 // 1 hour default
+
+  reactionsEnabled:boolean = true;
 
   constructor(roomName: string,password:string, gameType: GameType, maxPlayers:number) {
     this.id = uuidv4();
@@ -80,6 +83,8 @@ export class Room {
         return new MTGLegacy();
       case GameType.PokemonStandard:
         return new PokemonStandard();
+      case GameType.MTGPauperCommander:
+        return new MTGPauperCommander();
     }
   }
 
@@ -97,6 +102,8 @@ export class Room {
         return GameType.MTGLegacy
       case "PokemonStandard":
         return GameType.PokemonStandard;
+      case "MTGPauperCommander":
+        return GameType.MTGPauperCommander;
     }
 
     return null;
