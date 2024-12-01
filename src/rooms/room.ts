@@ -40,7 +40,7 @@ export class Room {
   password:string;
 
   scheduledRoom:boolean = false;
-  initialScheduleTTLInSeconds: number;// games waiting to be played will be destroyed after this time
+  initialScheduleTTLInSeconds: number = 3600;// games waiting to be played will be destroyed after this time
   inactivityTimeUntilDestroyedInSeconds:number = 3600 // 1 hour default
 
   constructor(roomName: string,password:string, gameType: GameType, maxPlayers:number) {
