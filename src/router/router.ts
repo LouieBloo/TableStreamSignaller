@@ -66,6 +66,7 @@ router.post('/create-room', async (req: any, res: any) => {
       password: req.body.password,
       private: req.body.private,
       initialScheduleTTLInSeconds: req.body.initialScheduleTTLInSeconds,
+      reactionsEnabled: req.body.reactionsEnabled,
       scheduledRoom: true
     });
 

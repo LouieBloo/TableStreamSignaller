@@ -34,6 +34,9 @@ const handler = async(req: any, res: any) => {
         if(option.name == "password"){
           roomParams.password = option.value;
         }
+        if(option.name == "reactions_enabled"){
+          roomParams.reactionsEnabled = option.value;
+        }
       })
 
       let newRoom = await createRoom(roomParams);

@@ -36,7 +36,11 @@ export enum GameEvent{
     SetCommander,
     FlipCoins,
     PlayEffect,
-    SetPlayerTurnOrders
+    SetPlayerTurnOrders,
+    CreateToken,
+    ModifyToken,
+    DeleteToken,
+    RollDice
 }
 
 export enum GameType{
@@ -46,7 +50,8 @@ export enum GameType{
     MTGModern,
     MTGLegacy,
     MTGVintage,
-    PokemonStandard
+    PokemonStandard,
+    MTGPauperCommander
 }
 
 export interface CommanderDamage{
