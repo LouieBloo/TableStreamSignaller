@@ -33,12 +33,12 @@ export class PokemonStandard extends Game {
     return super.event(gameEvent, room);
   }
 
-  override startGame(room: Room) {
+  override startGame(room: Room):Room {
     super.startGame(room);
     for (let x = 0; x < room.players.length; x++) {
       room.players[x].prizeCards = this.prizeCardsToWin;
     }
-    return room.players;
+    return room;
   }
 
   override setPlayerDefaults(player: Player, room:Room) {

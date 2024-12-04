@@ -1,7 +1,9 @@
 import { Room } from "../rooms/room";
 import { GameError, GameErrorSeverity, GameErrorType, GameEvent, GameType, ICoinFlipResults, IGameEvent, IModifyPlayerProperty, PlayerProperties } from "../interfaces/game";
 import { Player } from "../users/player";
-import { PlayingCard, slimCard } from "../interfaces/cards";
+import { PlayingCard, slimCard, Token } from "../interfaces/cards";
+import { Type } from "class-transformer";
+const { v4: uuidv4 } = require('uuid');
 
 export class Game {
 
@@ -12,6 +14,11 @@ export class Game {
 
     gameType: GameType;
 
+    tokens:Token[] = [];
+    
+    @Type(() => Date)
+    startedAt:Date;
+
     public event(gameEvent: IGameEvent, room: Room): any {
         switch (gameEvent.event) {
             case GameEvent.RandomizePlayerOrder:
@@ -21,7 +28,7 @@ export class Game {
             case GameEvent.StartGame:
                 return this.startGame(room);
             case GameEvent.ResetGame:
-                    return this.startGame(room);
+                return this.startGame(room);
             case GameEvent.EndCurrentTurn:
                 return this.endCurrentTurn(room);
             case GameEvent.ShareCard:
@@ -30,17 +37,25 @@ export class Game {
                 return this.toggleMonarch(gameEvent, room);
             case GameEvent.FlipCoins:
                 return this.flipCoins(gameEvent);
+            case GameEvent.RollDice:
+                return this.rollDice(gameEvent);
             case GameEvent.PlayEffect:
-                return this.playEffect(gameEvent);
+                return this.playEffect(gameEvent, room);
             case GameEvent.SetPlayerTurnOrders:
                 return this.setPlayerTurnOrders(gameEvent, room);
+            case GameEvent.CreateToken:
+                return this.createToken(gameEvent);
+            case GameEvent.DeleteToken:
+                return this.deleteToken(gameEvent);
+            case GameEvent.ModifyToken:
+                return this.modifyToken(gameEvent);
         }
     }
 
     setPlayerDefaults(player: Player, room:Room){
     }
 
-    startGame(room: Room){
+    startGame(room: Room):Room{
         //if(this.active){return null;}
 
         for(let x = 0; x < room.players.length; x++){
@@ -60,8 +75,9 @@ export class Game {
         this.startPlayerTurn(firstPlayer, room);
 
         this.active = true;
+        this.startedAt = new Date();
 
-        return room.players;
+        return room;
     }
 
     endCurrentTurn(room:Room){
@@ -96,6 +112,13 @@ export class Game {
 
         nextPlayer.currentTurnStartTime = new Date();
         nextPlayer.isTakingTurn = true;
+
+        //rotate all of the nextPlayers tokens for conveniance
+        // this.tokens.forEach((token:Token)=>{
+        //     if(token.ownerId == nextPlayer.id){
+        //         token.tapped = false;
+        //     }
+        // })
     }
 
     findNextPlayer = (currentPlayer: Player, room:Room, tries:number = 1):Player=>{
@@ -248,7 +271,33 @@ export class Game {
         }
     }
 
-    playEffect = (gameEvent: IGameEvent): any => {
+    rollDice = (gameEvent: IGameEvent): any=>{
+        let diceRolls: string[] = [];
+        for(let x = 0; x < gameEvent.payload.dicesToRoll; x++){
+            let sidedDice:number = gameEvent.payload.sidedDice;
+            diceRolls.push(Math.ceil(Math.random() * sidedDice) + "");
+        }
+
+        gameEvent.messages.push({
+            text: `rolled a D${gameEvent.payload.sidedDice}: ${diceRolls.join(', ')}`,
+            date: new Date(),
+            player: gameEvent.callingPlayer
+        });
+
+        return {
+            results: diceRolls
+        }
+    }
+
+    playEffect = (gameEvent: IGameEvent, room:Room): any => {
+        if(!room.reactionsEnabled){
+            throw new GameError(
+                GameErrorType.GenericWarning,
+                `Reactions are not enabled for this game`,
+                GameErrorSeverity.Warning
+            );
+        }
+
         const now = new Date();
         
         // make sure the user isnt spamming reactions
@@ -271,4 +320,51 @@ export class Game {
     
         return gameEvent.payload;
     }
+
+    createToken = (gameEvent: IGameEvent): any => {
+        let newToken:Token = {
+            id: uuidv4(),
+            ownerId: gameEvent.callingPlayer.id,
+            name: gameEvent.callingPlayer.name + "'s token",
+            xPosition: 0.5,
+            yPosition: 0.5
+        }
+
+        if(gameEvent.payload){
+            let copyFromToken:Token = gameEvent.payload;
+            newToken.name = copyFromToken.name;
+            newToken.card = copyFromToken.card;
+        }
+
+        this.tokens.push(newToken)
+
+        return newToken;
+    }
+
+    modifyToken = (gameEvent: IGameEvent): any => {
+        let payloadTokenToModify:Token = gameEvent.payload;
+        let tokenToModify = this.tokens.find(token=> token.id == payloadTokenToModify.id && token.ownerId == gameEvent.callingPlayer.id)
+
+        if(tokenToModify){
+            tokenToModify.name = payloadTokenToModify.name;
+            tokenToModify.card = payloadTokenToModify.card ? slimCard(payloadTokenToModify.card) : null;
+            tokenToModify.xPosition = payloadTokenToModify.xPosition;
+            tokenToModify.yPosition = payloadTokenToModify.yPosition;
+            tokenToModify.tapped = payloadTokenToModify.tapped;
+        }
+
+        return tokenToModify;
+    }
+
+    deleteToken = (gameEvent: IGameEvent): any => {
+        let payloadTokenToDelete:Token = gameEvent.payload;
+        let tokenToDelete = this.tokens.find(token=> token.id == payloadTokenToDelete.id && token.ownerId == gameEvent.callingPlayer.id)
+
+        if(tokenToDelete){
+            this.tokens = this.tokens.filter(token => token.id != tokenToDelete.id);
+        }
+
+        return tokenToDelete;
+    } 
+
 }
