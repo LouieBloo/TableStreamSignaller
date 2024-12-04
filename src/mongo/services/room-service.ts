@@ -121,7 +121,8 @@ class RoomService {
       maxPlayers: room.maxPlayers,
       scheduledRoom: room.scheduledRoom,
       initialScheduleTTLInSeconds: room.initialScheduleTTLInSeconds,
-      inactivityTimeUntilDestroyedInSeconds: room.inactivityTimeUntilDestroyedInSeconds
+      inactivityTimeUntilDestroyedInSeconds: room.inactivityTimeUntilDestroyedInSeconds,
+      reactionsEnabled: room.reactionsEnabled
     }
 
     return mappedRoom;

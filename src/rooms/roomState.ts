@@ -13,6 +13,7 @@ export interface ICreateRoomParams{
   maxPlayers?:number;
   scheduledRoom?:boolean;
   initialScheduleTTLInSeconds?:number;
+  reactionsEnabled?:boolean;
 }
 
 export class RoomState {
@@ -40,6 +41,9 @@ export class RoomState {
       //auto create password if the room is private and no password was given
       if(params.private && !params.password){
         room.password = room.generateRandomPassword(10);
+      }
+      if(params.reactionsEnabled == false){
+        room.reactionsEnabled = false;
       }
 
       //track in mongo

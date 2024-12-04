@@ -43,6 +43,10 @@ const commands = [
           {
             name: 'PokemonStandard',
             value: 'PokemonStandard'
+          },
+          {
+            name: 'MTGPauperCommander',
+            value: 'MTGPauperCommander'
           }
         ],
       },
@@ -56,6 +60,12 @@ const commands = [
         name: 'password',
         description: 'The room password (optional)',
         type: 3,
+        required: false,
+      },
+      {
+        name: 'reactions_enabled',
+        description: 'Reactions enabled',
+        type: 5,
         required: false,
       },
     ],
