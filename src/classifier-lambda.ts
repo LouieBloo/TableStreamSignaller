@@ -1,18 +1,16 @@
-// Import modules using ES6 syntax
-import http from 'http';
-
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { ECSClient, ListTasksCommand, DescribeTasksCommand } from "@aws-sdk/client-ecs";
 import { EC2Client, DescribeNetworkInterfacesCommand } from "@aws-sdk/client-ec2";
+import MongoTrainingImage, { IMongoTrainingImage } from './mongo/models/training-image-model';
+import axios from 'axios';
+import FormData from 'form-data';
 
-// Initialize the ECS and EC2 clients
-const ecsClient = new ECSClient({ region: 'us-west-2' }); // Replace 'your-region' with your AWS region
-const ec2Client = new EC2Client({ region: 'us-west-2' }); // Replace 'your-region' with your AWS region
+const ecsClient = new ECSClient({ region: 'us-west-2' });
+const ec2Client = new EC2Client({ region: 'us-west-2' });
+const s3Client = new S3Client({ region: "us-west-1" });
 
 const clusterName = 'table-stream-classifier-mtg';  
 const serviceName = 'table-stream-mtg-classifier'; 
-
-import axios from 'axios';
-import FormData from 'form-data';
 
 export const handler = async (req: any, res: any) => {
   // Step 1: List the running tasks in the ECS service
@@ -87,6 +85,16 @@ export const handler = async (req: any, res: any) => {
           contentType: file.mimetype,
         });
       });
+
+      //send file to s3
+      try{
+        if(process.env.SAVE_CLASSIFIED_IMAGES && process.env.SAVE_CLASSIFIED_IMAGES == 'true'){
+          sendFileToS3andMongo(files, req.body.roomId);
+        }
+      }catch(error){
+        console.log("Error uploading classifier image to s3: ", error)
+      }
+      
     }
 
     // Define the target endpoint URL
@@ -100,9 +108,9 @@ export const handler = async (req: any, res: any) => {
     });
 
     // Log response details
-    console.log('Response Status:', response.status);
-    console.log('Response Headers:', response.headers);
-    console.log('Response Data:', response.data);
+    // console.log('Response Status:', response.status);
+    // console.log('Response Headers:', response.headers);
+    // console.log('Response Data:', response.data);
 
     // Send back the response from the target endpoint
     res.status(response.status).send(response.data);
@@ -111,3 +119,37 @@ export const handler = async (req: any, res: any) => {
     res.status(500).send(`Error: ${error.message}`);
   }
 };
+
+const sendFileToS3andMongo = async(files:any, roomId:string)=>{
+  const bucket = 'card-classifier';
+  const uploadPromises = files.map(async (file: any) => {
+    const fileName = `${roomId}-${new Date().toISOString().replace(/[:.]/g, "-")}.jpg`// Replace : and . with -
+    const fileKey = `stream-images/${fileName}`;
+
+    // Prepare the upload command
+    const command = new PutObjectCommand({
+      Bucket: bucket,
+      Key: fileKey,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+    });
+
+    // Upload the file to S3
+    const result = await s3Client.send(command);
+    console.log(`Uploaded ${file.originalname} to ${fileKey}:`, result);
+
+    const trainingImage = new MongoTrainingImage({
+      imageName: fileName,
+      imageLocation: `${bucket}/${fileKey}`,
+      imageType:"BOARD",
+      status:"PENDING_SLICE"
+    });
+
+    await trainingImage.save();
+
+    return result;
+  });
+
+  // Wait for all files to upload
+  await Promise.all(uploadPromises);
+}

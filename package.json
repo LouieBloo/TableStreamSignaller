@@ -7,7 +7,7 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "dev": "npm run build && node dist/app.js",
-    "analytics" : "npx ts-node ./scripts/analytics.ts"
+    "analytics": "npx ts-node ./scripts/analytics.ts"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +15,7 @@
   "dependencies": {
     "@aws-sdk/client-ec2": "^3.670.0",
     "@aws-sdk/client-ecs": "^3.670.0",
+    "@aws-sdk/client-s3": "^3.705.0",
     "@types/express": "^5.0.0",
     "@types/mongoose": "^5.11.97",
     "axios": "^1.7.7",
