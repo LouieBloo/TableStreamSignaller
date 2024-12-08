@@ -37,11 +37,11 @@ app.use(router)
 io.on('connection', (socket:any) => {
   console.log('A user connected:', socket.id);
 
-  socket.on('joinRoom', async ({playerId, roomId, roomName, password, gameType, playerName, userType, maxPlayers }:any, callback:any) => {
+  socket.on('joinRoom', async ({playerId, roomId, roomName, password, gameType, playerName, userType, maxPlayers, reactionsEnabled }:any, callback:any) => {
     try{
       console.log("Join Room: " + " " + playerName + " - " + roomName + " - " + roomId)
 
-      let currentRoom:Room = await roomState.getOrCreateRoom({roomName, roomId, password, gameType, maxPlayers});
+      let currentRoom:Room = await roomState.getOrCreateRoom({roomName, roomId, password, gameType, maxPlayers, reactionsEnabled: reactionsEnabled});
       let newUser:User = null;
   
       if (userType == UserType.Player && currentRoom.playerSockets.length >= currentRoom.maxPlayers) {
