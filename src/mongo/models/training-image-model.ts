@@ -5,6 +5,8 @@ export interface IMongoTrainingImage extends Document {
   imageLocation: string;
   imageType:string;
   status:string;
+  possibleOracleIds:string[];
+  votesToDelete:number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -22,7 +24,9 @@ const TrainingImageSchema: Schema = new Schema(
       type: String,
       enum: ['PENDING_SLICE', 'SLICED', 'PENDING_CLASSIFICATION', 'CLASSIFIED'],
       required: true,
-    }
+    },
+    possibleOracleIds:{type: [String]},
+    votesToDelete: {type: Number}
   },
   {
     timestamps: true,
