@@ -6,8 +6,6 @@ import fs from 'fs';
 import path from 'path';
 import "../src/mongo/mongo";
 
-const ecsClient = new ECSClient({ region: 'us-west-2' });
-const ec2Client = new EC2Client({ region: 'us-west-2' });
 const s3Client = new S3Client({ region: "us-west-1" });
 
 async function waitFiveSeconds() {
@@ -18,6 +16,7 @@ async function waitFiveSeconds() {
   });
 }
 
+// uploads the images to s3 and creates a record in mongo for them
 const sendSlicedImagesToCloud = async () => {
   //so mongo will load lol
   await waitFiveSeconds();

@@ -19,9 +19,6 @@ export class TrainingImageService {
       if (!['BOARD', 'CARD'].includes(imageType)) {
         throw new Error('Invalid imageType');
       }
-      if (!['PENDING_SLICE', 'SLICED', 'PENDING_CLASSIFICATION', 'CLASSIFIED'].includes(status)) {
-        throw new Error('Invalid status');
-      }
 
       // Query the database for matching images
       let images: any[] = await MongoTrainingImage.find({ imageType, status });
@@ -31,7 +28,7 @@ export class TrainingImageService {
         images.map(async (image) => {
           const url = await this.generatePresignedUrl(image.imageLocation);
           // Convert Mongoose document to a plain JavaScript object
-          const imageObject = image.toObject(); 
+          const imageObject = image.toObject();
           imageObject.presignedUrl = url;
           return imageObject;
         })
@@ -49,6 +46,9 @@ export class TrainingImageService {
     updates: Partial<IMongoTrainingImage>
   ): Promise<IMongoTrainingImage | null> {
     try {
+      //rules for training
+      this.applyTrainingRules(updates);
+
       // Find and update the image
       const updatedImage = await MongoTrainingImage.findByIdAndUpdate(id, updates, {
         new: true, // Return the updated document
@@ -71,10 +71,10 @@ export class TrainingImageService {
   ): Promise<any> {
     try {
       // Find and update the image
-      const mongoImage:IMongoTrainingImage = await MongoTrainingImage.findById(id);
-      const s3filename:string = mongoImage.imageLocation;
-      const updatedImage = await MongoTrainingImage.deleteOne({ _id:  id});
-      await this.deleteFileFromS3(BUCKET_NAME,s3filename);
+      const mongoImage: IMongoTrainingImage = await MongoTrainingImage.findById(id);
+      const s3filename: string = mongoImage.imageLocation;
+      const updatedImage = await MongoTrainingImage.deleteOne({ _id: id });
+      await this.deleteFileFromS3(BUCKET_NAME, s3filename);
 
       return null;
     } catch (error) {
@@ -112,14 +112,38 @@ export class TrainingImageService {
         Bucket: bucketName,
         Key: filename.replace(bucketName + "/", ""),
       });
-  
+
       // Send the delete command
       await s3Client.send(command);
-  
+
       console.log(`File deleted successfully: ${filename}`);
     } catch (error) {
       console.error(`Error deleting file ${filename} from S3:`, error);
       throw new Error(`Failed to delete file: ${error.message}`);
+    }
+  }
+
+  private static applyTrainingRules = (updates:Partial<IMongoTrainingImage>) => {
+    //custom rule for CARDS
+    if (updates.imageType == 'CARD' && updates.status == 'PENDING_CLASSIFICATION') {
+      //3 guesses, change status to what it should be
+      if (updates.possibleOracleIds && updates.possibleOracleIds.length >= 3) {
+        //verify all the oracle ids are the same
+        let matchedCardId: string = updates.possibleOracleIds[0];
+        if (updates.possibleOracleIds[1] == matchedCardId && updates.possibleOracleIds[2] == matchedCardId) {
+          updates.status = 'PENDING_TRAINING';
+        } else {
+          updates.status = 'PENDING_VERIFICATION';
+        }
+      }
+      //people dont know
+      else if (updates.votesNotSure >= 3) {
+        updates.status = 'PENDING_IDK';
+      }
+      //people want to delete
+      else if (updates.votesToDelete >= 3) {
+        updates.status = 'PENDING_DELETE';
+      }
     }
   }
 }
