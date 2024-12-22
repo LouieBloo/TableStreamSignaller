@@ -7,7 +7,9 @@ import { User } from "./users/user";
 import { Room } from "./rooms/room";
 import cors from 'cors';
 import router from './router/router'; // Path to the routes file
+import classifierTrainRouter from './router/classifier-router' ;
 import "./mongo/mongo";
+import { checkBearerToken } from "./router/bearer-token-check";
 
 const express = require('express');
 const http = require('http');
@@ -33,6 +35,9 @@ app.use(express.json());
 app.use(cors());
 
 app.use(router)
+
+//very careful with exposing this
+app.use('/classify/train', checkBearerToken, classifierTrainRouter);
 
 io.on('connection', (socket:any) => {
   console.log('A user connected:', socket.id);
