@@ -7,7 +7,8 @@ import { User } from "./users/user";
 import { Room } from "./rooms/room";
 import cors from 'cors';
 import router from './router/router'; // Path to the routes file
-import classifierTrainRouter from './router/classifier-router' ;
+import classifierTrainRouter from './router/classifier-router';
+import sttRouter from './router/stt-router';
 import "./mongo/mongo";
 import { checkBearerToken } from "./router/bearer-token-check";
 
@@ -38,6 +39,8 @@ app.use(router)
 
 //very careful with exposing this
 app.use('/classify/train', checkBearerToken, classifierTrainRouter);
+
+app.use('/transcribe', sttRouter);
 
 io.on('connection', (socket:any) => {
   console.log('A user connected:', socket.id);
