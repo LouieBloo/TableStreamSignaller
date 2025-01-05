@@ -4,6 +4,7 @@ import { EC2Client, DescribeNetworkInterfacesCommand } from "@aws-sdk/client-ec2
 import MongoTrainingImage, { IMongoTrainingImage } from './mongo/models/training-image-model';
 import axios from 'axios';
 import FormData from 'form-data';
+import * as fs from 'fs';
 
 const ecsClient = new ECSClient({ region: 'us-west-2' });
 const ec2Client = new EC2Client({ region: 'us-west-2' });
@@ -89,7 +90,7 @@ export const handler = async (req: any, res: any) => {
       //send file to s3
       try{
         if(process.env.SAVE_CLASSIFIED_IMAGES && process.env.SAVE_CLASSIFIED_IMAGES == 'true'){
-          sendFileToS3andMongo(files, req.body.roomId);
+          sendFileToS3andMongo(files, req.body.roomId, false);
         }
       }catch(error){
         console.log("Error uploading classifier image to s3: ", error)
@@ -107,6 +108,19 @@ export const handler = async (req: any, res: any) => {
       },
     });
 
+    if(process.env.SAVE_CLASSIFIED_IMAGES && process.env.SAVE_CLASSIFIED_IMAGES == 'true' && response && response.data && response.data.card_image_base64){
+      const fileName = `tempsave`;
+      const filePath = `${fileName}.jpg`;
+      try{
+        const file = base64ToJpg(response.data.card_image_base64, fileName);
+        await sendFileToS3andMongo([file], req.body.roomId, true);
+      }catch(error){
+        console.log("Error uploading classifier image to s3: ", error)
+      } finally {
+        deleteLocalFile(filePath);
+      }
+    }
+
     // Log response details
     // console.log('Response Status:', response.status);
     // console.log('Response Headers:', response.headers);
@@ -120,11 +134,11 @@ export const handler = async (req: any, res: any) => {
   }
 };
 
-const sendFileToS3andMongo = async(files:any, roomId:string)=>{
+const sendFileToS3andMongo = async(files:any, roomId:string, isSingleCard:boolean)=>{
   const bucket = 'card-classifier';
   const uploadPromises = files.map(async (file: any) => {
-    const fileName = `${roomId}-${new Date().toISOString().replace(/[:.]/g, "-")}.jpg`// Replace : and . with -
-    const fileKey = `stream-images/${fileName}`;
+    const fileName = `${roomId}-${isSingleCard ? "CARD" : "BOARD"}-${new Date().toISOString().replace(/[:.]/g, "-")}.jpg`// Replace : and . with -
+    const fileKey = `${isSingleCard ? "sliced-images" : "stream-images"}/${fileName}`;
 
     // Prepare the upload command
     const command = new PutObjectCommand({
@@ -141,8 +155,8 @@ const sendFileToS3andMongo = async(files:any, roomId:string)=>{
     const trainingImage = new MongoTrainingImage({
       imageName: fileName,
       imageLocation: `${bucket}/${fileKey}`,
-      imageType:"BOARD",
-      status:"PENDING_SLICE"
+      imageType: isSingleCard ? "CARD" : "BOARD",
+      status: isSingleCard ? "PENDING_CLASSIFICATION" : "PENDING_SLICE"
     });
 
     await trainingImage.save();
@@ -153,3 +167,45 @@ const sendFileToS3andMongo = async(files:any, roomId:string)=>{
   // Wait for all files to upload
   await Promise.all(uploadPromises);
 }
+
+
+/**
+ * Converts a base64 string to a JPG file and returns the file object.
+ * @param base64String - The base64-encoded string representing the image.
+ * @param fileName - The desired name for the resulting JPG file (without extension).
+ * @returns An object representing the file with buffer and metadata.
+ */
+const base64ToJpg = (base64String: string, fileName: string) => {
+  // Decode the base64 string
+  const buffer = Buffer.from(base64String, 'base64');
+
+  // Define the file path
+  const filePath = `${fileName}.jpg`;
+
+  // Write the buffer to a file
+  fs.writeFileSync(filePath, buffer);
+
+  // Return the file as an object compatible with `sendFileToS3andMongo`
+  return {
+    buffer,                     // The file's buffer
+    originalname: `${fileName}.jpg`, // Original file name (metadata)
+    mimetype: 'image/jpeg'      // MIME type
+  };
+};
+
+/**
+ * Deletes a local file from the filesystem.
+ * @param filePath - The path to the file to be deleted.
+ */
+const deleteLocalFile = (filePath: string) => {
+  try {
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath); // Deletes the file
+      console.log(`Successfully deleted local file: ${filePath}`);
+    } else {
+      console.warn(`File not found, skipping delete: ${filePath}`);
+    }
+  } catch (error) {
+    console.error(`Error deleting file ${filePath}:`, error);
+  }
+};
