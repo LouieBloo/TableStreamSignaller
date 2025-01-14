@@ -23,7 +23,7 @@ const TrainingImageSchema: Schema = new Schema(
     },
     status: {
       type: String,
-      enum: ['PENDING_SLICE', 'SLICED', 'PENDING_CLASSIFICATION', 'PENDING_TRAINING', 'PENDING_DELETE', 'PENDING_VERIFICATION', 'PENDING_IDK', 'CLASSIFIED'],
+      enum: ['PENDING_SLICE', 'SLICED', 'PENDING_CLASSIFICATION', 'PENDING_TRAINING', 'PENDING_DELETE', 'PENDING_VERIFICATION', 'PENDING_IDK', 'CLASSIFIED', 'DELETED'],
       required: true,
     },
     possibleOracleIds:{type: [String]},

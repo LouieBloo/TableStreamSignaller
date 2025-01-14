@@ -6,6 +6,10 @@ import MongoTrainingImage, { IMongoTrainingImage } from '../models/training-imag
 const s3Client = new S3Client({ region: 'us-west-1' });
 const BUCKET_NAME = 'card-classifier';
 
+interface MongoCardSearchParams{
+  imageType?:string;
+  status?:string;
+}
 export class TrainingImageService {
   /**
    * Search for training images based on imageType and status, and generate presigned URLs for each image.
@@ -13,15 +17,10 @@ export class TrainingImageService {
    * @param status - The status of the image (e.g., 'PENDING_SLICE', 'CLASSIFIED').
    * @returns A list of images with presigned URLs.
    */
-  static async searchImages(imageType: string, status: string): Promise<any[]> {
+  static async searchImages(params:MongoCardSearchParams): Promise<any[]> {
     try {
-      // Validate inputs
-      if (!['BOARD', 'CARD'].includes(imageType)) {
-        throw new Error('Invalid imageType');
-      }
-
       // Query the database for matching images
-      let images: any[] = await MongoTrainingImage.find({ imageType, status });
+      let images: any[] = await MongoTrainingImage.find(params);
 
       // Generate presigned URLs for the images
       const results = await Promise.all(
