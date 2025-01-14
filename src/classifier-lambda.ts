@@ -113,7 +113,7 @@ export const handler = async (req: any, res: any) => {
       const filePath = `${fileName}.jpg`;
       try{
         const file = base64ToJpg(response.data.card_image_base64, fileName);
-        await sendFileToS3andMongo([file], req.body.roomId, true);
+        await sendFileToS3andMongo([file], req.body.roomId, true, "scryfall_" + response.data.detected_card + "_");
       }catch(error){
         console.log("Error uploading classifier image to s3: ", error)
       } finally {
@@ -127,17 +127,22 @@ export const handler = async (req: any, res: any) => {
     // console.log('Response Data:', response.data);
 
     // Send back the response from the target endpoint
-    res.status(response.status).send(response.data);
+    res.status(response.status).send({
+      classification_confidence: response.data.classification_confidence,
+      detected_card: response.data.detected_card,
+      scryfall_data: response.data.scryfall_data,
+      bounding_box: response.data.bounding_box
+    });
   } catch (error: any) {
     console.error('Error:', error);
     res.status(500).send(`Error: ${error.message}`);
   }
 };
 
-const sendFileToS3andMongo = async(files:any, roomId:string, isSingleCard:boolean)=>{
+const sendFileToS3andMongo = async(files:any, roomId:string, isSingleCard:boolean, postString:string=null)=>{
   const bucket = 'card-classifier';
   const uploadPromises = files.map(async (file: any) => {
-    const fileName = `${roomId}-${isSingleCard ? "CARD" : "BOARD"}-${new Date().toISOString().replace(/[:.]/g, "-")}.jpg`// Replace : and . with -
+    const fileName = `${roomId}-${isSingleCard ? "CARD" : "BOARD"}-${postString ? postString + "-" : ""}${new Date().toISOString().replace(/[:.]/g, "-")}.jpg`// Replace : and . with -
     const fileKey = `${isSingleCard ? "sliced-images" : "stream-images"}/${fileName}`;
 
     // Prepare the upload command
