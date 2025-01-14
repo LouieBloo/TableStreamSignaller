@@ -6,7 +6,7 @@ const multer = require('multer')
 
 
 router.get('/images',async (req: any, res: any) => {
-  let result = await TrainingImageService.searchImages(req.query.imageType, req.query.status);
+  let result = await TrainingImageService.searchImages({imageType: req.query.imageType, status: req.query.status});
 
   res.status(200).json(result)
 });
