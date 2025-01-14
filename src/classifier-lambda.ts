@@ -62,10 +62,10 @@ export const handler = async (req: any, res: any) => {
     publicIp: eni.Association?.PublicIp || 'No Public IP',
   }));
 
-  console.log('Task IP addresses:', ipAddresses);
+  // console.log('Task IP addresses:', ipAddresses);
   const targetIp: string = ipAddresses[0].publicIp;
 
-  console.log(req.body)
+  // console.log(req.body)
 
   try {
     // Prepare formData to send to the target endpoint
@@ -155,7 +155,7 @@ const sendFileToS3andMongo = async(files:any, roomId:string, isSingleCard:boolea
 
     // Upload the file to S3
     const result = await s3Client.send(command);
-    console.log(`Uploaded ${file.originalname} to ${fileKey}:`, result);
+    // console.log(`Uploaded ${file.originalname} to ${fileKey}:`, result);
 
     const trainingImage = new MongoTrainingImage({
       imageName: fileName,
@@ -206,7 +206,7 @@ const deleteLocalFile = (filePath: string) => {
   try {
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath); // Deletes the file
-      console.log(`Successfully deleted local file: ${filePath}`);
+      // console.log(`Successfully deleted local file: ${filePath}`);
     } else {
       console.warn(`File not found, skipping delete: ${filePath}`);
     }
