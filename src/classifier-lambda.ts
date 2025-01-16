@@ -11,61 +11,16 @@ const ec2Client = new EC2Client({ region: 'us-west-2' });
 const s3Client = new S3Client({ region: "us-west-1" });
 
 const clusterName = 'table-stream-classifier-mtg';  
-const serviceName = 'table-stream-mtg-classifier'; 
+const serviceName = 'table-stream-mtg-classifier';
+
+let currentIp:string = null;
+let lastIpFetchTime:Date = new Date();
+const ipExpirationTime:number = 5 * 60 * 1000;//5 mins
 
 export const handler = async (req: any, res: any) => {
-  // Step 1: List the running tasks in the ECS service
-  const listTasksResponse = await ecsClient.send(
-    new ListTasksCommand({
-      cluster: clusterName,
-      serviceName: serviceName,
-    })
-  );
-
-  const taskArns = listTasksResponse.taskArns;
-
-  if (!taskArns.length) {
-    console.log('No running tasks found.');
-    return res.status(200).json({ message: 'No running tasks found' });
+  if (!currentIp || (Date.now() - lastIpFetchTime.getTime() > ipExpirationTime)) {
+    await setClassifierIp();
   }
-
-  // Step 2: Describe the tasks to get network details (ENI IDs)
-  const describeTasksResponse = await ecsClient.send(
-    new DescribeTasksCommand({
-      cluster: clusterName,
-      tasks: taskArns,
-    })
-  );
-
-  const eniIds = describeTasksResponse.tasks.flatMap((task) =>
-    task.attachments.flatMap((attachment) =>
-      attachment.details
-        .filter((detail) => detail.name === 'networkInterfaceId')
-        .map((detail) => detail.value)
-    )
-  );
-
-  if (!eniIds.length) {
-    console.log('No ENIs found for tasks.');
-    return res.status(200).json({ message: 'No ENIs found for tasks' });
-  }
-
-  // Step 3: Describe the ENIs to get private and public IPs
-  const describeNetworkInterfacesResponse = await ec2Client.send(
-    new DescribeNetworkInterfacesCommand({
-      NetworkInterfaceIds: eniIds,
-    })
-  );
-
-  const ipAddresses: any = describeNetworkInterfacesResponse.NetworkInterfaces.map((eni: any) => ({
-    privateIp: eni.PrivateIpAddress,
-    publicIp: eni.Association?.PublicIp || 'No Public IP',
-  }));
-
-  // console.log('Task IP addresses:', ipAddresses);
-  const targetIp: string = ipAddresses[0].publicIp;
-
-  // console.log(req.body)
 
   try {
     // Prepare formData to send to the target endpoint
@@ -99,7 +54,7 @@ export const handler = async (req: any, res: any) => {
     }
 
     // Define the target endpoint URL
-    const targetUrl = `http://${targetIp}:8080/classify`;
+    const targetUrl = `http://${currentIp}:8080/classify`;
 
     // Send the request to the target endpoint
     const response = await axios.post(targetUrl, formData, {
@@ -173,6 +128,64 @@ const sendFileToS3andMongo = async(files:any, roomId:string, isSingleCard:boolea
   await Promise.all(uploadPromises);
 }
 
+const setClassifierIp = async()=>{
+
+  // Step 1: List the running tasks in the ECS service
+  const listTasksResponse = await ecsClient.send(
+    new ListTasksCommand({
+      cluster: clusterName,
+      serviceName: serviceName,
+    })
+  );
+
+  const taskArns = listTasksResponse.taskArns;
+
+  if (!taskArns.length) {
+    console.log('No running tasks found.');
+    return;
+  }
+
+  // Step 2: Describe the tasks to get network details (ENI IDs)
+  const describeTasksResponse = await ecsClient.send(
+    new DescribeTasksCommand({
+      cluster: clusterName,
+      tasks: taskArns,
+    })
+  );
+
+  const eniIds = describeTasksResponse.tasks.flatMap((task) =>
+    task.attachments.flatMap((attachment) =>
+      attachment.details
+        .filter((detail) => detail.name === 'networkInterfaceId')
+        .map((detail) => detail.value)
+    )
+  );
+
+  if (!eniIds.length) {
+    console.log('No ENIs found for tasks.');
+    return;
+  }
+
+  // Step 3: Describe the ENIs to get private and public IPs
+  const describeNetworkInterfacesResponse = await ec2Client.send(
+    new DescribeNetworkInterfacesCommand({
+      NetworkInterfaceIds: eniIds,
+    })
+  );
+
+  const ipAddresses: any = describeNetworkInterfacesResponse.NetworkInterfaces.map((eni: any) => ({
+    privateIp: eni.PrivateIpAddress,
+    publicIp: eni.Association?.PublicIp || 'No Public IP',
+  }));
+
+  // console.log('Task IP addresses:', ipAddresses);
+  const targetIp: string = ipAddresses[0].publicIp;
+
+  currentIp = targetIp;
+  lastIpFetchTime = new Date();
+
+  return currentIp;
+}
 
 /**
  * Converts a base64 string to a JPG file and returns the file object.

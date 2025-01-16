@@ -48,13 +48,23 @@ router.post('/report-issue', async (req: any, res: any) => {
 router.post('/password-check', async (req: any, res: any) => {
   const { roomId } = req.body;
 
-  let isPasswordPro = await isRoomPasswordProtected(roomId);
-
-  res.status(200).json({ result: isPasswordPro })
+  try {
+    let isPasswordPro = await isRoomPasswordProtected(roomId);
+    res.status(200).json({ result: isPasswordPro })
+  }catch(error){
+    console.error("Error checking password: ", error)
+    res.status(500).json({ message: 'Failed to check password'});
+  }
+  
 })
 
 router.post('/classify', upload.any(), async (req: any, res: any) => {
-  return await handler(req, res);
+  try {
+    return await handler(req, res);
+  }catch(error){
+    console.error("Classifier error: ", error)
+    res.status(500).json({ message: 'Failed to classify'});
+  }
 })
 
 router.post('/create-room', async (req: any, res: any) => {
