@@ -23,7 +23,7 @@ const run = async()=>{
      //so mongo will load lol
     await waitFiveSeconds();
 
-    let classifiedImages:any[] = await TrainingImageService.searchImages("CARD", "PENDING_TRAINING")
+    let classifiedImages:any[] = await TrainingImageService.searchImages({imageType: "CARD", status: "PENDING_TRAINING"})
 
     for(let x = 0; x < classifiedImages.length; x++){
       console.log(classifiedImages[x]._id)
