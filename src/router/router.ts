@@ -15,9 +15,21 @@ import {createRoom} from '../rooms/room-controller';
 import { Room } from "../rooms/room";
 import { search } from "../pokemon/pokemon-search";
 import { PlayingCard } from "../interfaces/cards";
+import {redisClient} from '../redis';
 
 router.get('/', (req: any, res: any) => {
   res.status(200).send('Beating...');
+});
+
+router.get('/news', async(req: any, res: any) => {
+  try{
+    let news = await redisClient.get("globalNews");
+    res.status(200).json(JSON.parse(news));
+  }catch(error){
+    console.log("Error fetching news: ", error)
+    res.status(500).json({ message: 'Failed to get news'});
+  }
+  
 });
 
 router.post('/report-issue', async (req: any, res: any) => {

@@ -1,7 +1,7 @@
 import { GameError, GameErrorSeverity, GameErrorType, GameType } from "../interfaces/game";
 import { Room } from "./room";
 import { plainToInstance } from 'class-transformer';
-import {lockRoomAndGetState, saveRoomAndUnlock, deleteRoomAndUnlock} from '../redis';
+import {lockRoomAndGetState, deleteRoomAndUnlock} from '../redis';
 import RoomService from '../mongo/services/room-service';
 
 export interface ICreateRoomParams{
@@ -84,7 +84,12 @@ export class RoomState {
 
 
   async deleteRoom(room:Room) {
-    await deleteRoomAndUnlock(room);
+    try{
+      await deleteRoomAndUnlock(room);
+    }catch(error){
+      console.log("catching delete room: ", error);
+    }
+    
     //track in mongo
     await RoomService.deleteRoom(room);
   }

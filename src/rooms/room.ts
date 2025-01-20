@@ -59,7 +59,11 @@ export class Room {
   }
 
   saveAndClose = async (setScheduledTTL:boolean = false) => {
-    saveRoomAndUnlock(this,setScheduledTTL);
+    try{
+      saveRoomAndUnlock(this,setScheduledTTL);
+    }catch(error){
+      console.log("catching save and close: ", error)
+    }
   }
 
   close = async () => {
@@ -111,6 +115,19 @@ export class Room {
 
   public verifyPassword(password:string): boolean{
     return this.password === password;
+  }
+
+  public canAddPlayer(playerId:string, socketId:string):boolean{
+    //if a player is rejoining we let them in
+    if(playerId){
+      let savedPlayer = this.players.find(e => e.id === playerId);
+      if(savedPlayer){
+        return true;
+      }
+    }
+    
+    //if not a new player make sure we have room
+    return this.players.length < this.maxPlayers;
   }
 
   public addPlayer(playerId: string, playerName: string, socketId: string, password:string): Player {

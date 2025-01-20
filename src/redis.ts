@@ -30,14 +30,14 @@ redlock.on("error", (error) => {
   }
 
   // Log all other errors.
-  console.error(error);
+  console.error("Redlock error:", error);
 });
 
 // Function to lock a specific game room and return the game state
 export async function lockRoomAndGetState(roomId:string = null): Promise<{ lock: any, room: string }> {
   const lockKey = `lock:${roomId}`;
   const key = `game_room:${roomId}`; 
-  const ttl = 2000;  // Time to live (TTL) for the lock in milliseconds (2 seconds)
+  const ttl = 3000;  // Time to live (TTL) for the lock in milliseconds (3 seconds)
 
   try {
     // Acquire the lock
@@ -48,7 +48,7 @@ export async function lockRoomAndGetState(roomId:string = null): Promise<{ lock:
     const room = await redisClient.get(key);
 
     if(!room){
-
+      console.warn(`No existing room found for roomId=${roomId}`);
     }
 
     // Parse the game state if it exists, or initialize it if not
@@ -66,35 +66,55 @@ export async function lockRoomAndGetState(roomId:string = null): Promise<{ lock:
 // Function to save the updated game state to Redis
 export async function saveRoomAndUnlock(room: Room, setScheduledTTL: boolean = false): Promise<void> {
   const key = `game_room:${room.id}`;  // Use the same key for saving the state
+  let lock = room.redisLock;
+
   try {
     // Save the game state back to Redis
-    let lock = room.redisLock;
+    
     delete(room.redisLock);
     await redisClient.set(key, JSON.stringify(room),'EX',setScheduledTTL ? room.initialScheduleTTLInSeconds : room.inactivityTimeUntilDestroyedInSeconds);
     //console.log(`Game state for room ${room.name} updated successfully.`);
-    await unlockRoom(lock);
+    //await unlockRoom(lock);
   } catch (error) {
     console.error(`Failed to update game state for room ${room.id}:`, error);
     throw error;
+  } finally {
+    // Always attempt to unlock, even if saving fails
+    if (lock) {
+      await unlockRoom(lock).catch((unlockErr) => {
+        console.error(`Failed to unlock room ${room.id}:`, unlockErr);
+      });
+    }
   }
 }
 
 export async function deleteRoomAndUnlock(room: Room): Promise<void> {
   const key = `game_room:${room.id}`;  // Use the same key for saving the state
+  let lock = room.redisLock;
   try {
     // Save the game state back to Redis
-    let lock = room.redisLock;
     await redisClient.del(key);
     console.log(`Room ${room.id} deleted successfully.`);
-    await unlockRoom(lock);
+    // await unlockRoom(lock);
   } catch (error) {
     console.error(`Failed to delete room ${room.id}:`, error);
     throw error;
+  }finally {
+    // Always attempt to unlock, even if delete fails
+    if (lock) {
+      await unlockRoom(lock).catch((unlockErr) => {
+        console.error(`Failed to unlock room on delete ${room.id}:`, unlockErr);
+      });
+    }
   }
 }
 
 // Function to unlock a specific game room
 export async function unlockRoom(lock: any): Promise<void> {
+  if (!lock) {
+    // No lock to release; just return
+    return;
+  }
   try {
     await lock.release();
     //console.log('Room unlocked successfully.');
