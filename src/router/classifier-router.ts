@@ -6,14 +6,14 @@ const multer = require('multer')
 
 
 router.get('/images',async (req: any, res: any) => {
-  let result = await TrainingImageService.searchImages({imageType: req.query.imageType, status: req.query.status});
+  let result = await TrainingImageService.searchImages(req.query);
 
   res.status(200).json(result)
 });
 
 
 router.patch('/images/:id',async (req: any, res: any) => {
-  let result = await TrainingImageService.updateImage(req.params.id, req.body)
+  let result = await TrainingImageService.updateImage(req.params.id, req.body, req.user)
 
   res.status(200).json(result)
 });

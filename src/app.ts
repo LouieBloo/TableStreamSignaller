@@ -2,7 +2,7 @@
 import "reflect-metadata";
 import { IMessage } from "./interfaces/messaging";
 import { RoomState } from "./rooms/roomState";
-import { GameEvent, IGameEvent, UserType} from "./interfaces/game";
+import { GameErrorSeverity, GameErrorType, GameEvent, IGameEvent, UserType} from "./interfaces/game";
 import { User } from "./users/user";
 import { Room } from "./rooms/room";
 import cors from 'cors';
@@ -47,13 +47,14 @@ io.on('connection', (socket:any) => {
 
   socket.on('joinRoom', async ({playerId, roomId, roomName, password, gameType, playerName, userType, maxPlayers, reactionsEnabled }:any, callback:any) => {
     try{
-      console.log("Join Room: " + " " + playerName + " - " + roomName + " - " + roomId)
+      console.log("Join Room: " + " " + playerName + " - " + roomName + " - " + roomId + " - " + playerId)
 
       let currentRoom:Room = await roomState.getOrCreateRoom({roomName, roomId, password, gameType, maxPlayers, reactionsEnabled: reactionsEnabled});
       let newUser:User = null;
   
-      if (userType == UserType.Player && currentRoom.playerSockets.length >= currentRoom.maxPlayers) {
+      if (userType == UserType.Player && !currentRoom.canAddPlayer(playerId,socket.id)) {
         socket.emit('roomFull');
+        callback(null,null,{type: GameErrorType.RoomFull, message: "Room full", severity: GameErrorSeverity.Error})
         return;
       }else if(userType == UserType.Player){
         //new player

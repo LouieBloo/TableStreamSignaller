@@ -1,14 +1,19 @@
 import { S3Client, GetObjectCommand, GetObjectCommandInput, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import MongoTrainingImage, { IMongoTrainingImage } from '../models/training-image-model';
+import { IMongoUser } from '../models/user-model';
+import  MongoUserClassification from '../models/user-classification-model';
+import mongoose from 'mongoose';
 
 // AWS S3 configuration
 const s3Client = new S3Client({ region: 'us-west-1' });
 const BUCKET_NAME = 'card-classifier';
 
-interface MongoCardSearchParams{
-  imageType?:string;
-  status?:string;
+interface MongoCardSearchParams {
+  imageType?: string;
+  status?: string;
+  randomizeResults?:boolean;
+  maxImages?:number;
 }
 export class TrainingImageService {
   /**
@@ -17,10 +22,17 @@ export class TrainingImageService {
    * @param status - The status of the image (e.g., 'PENDING_SLICE', 'CLASSIFIED').
    * @returns A list of images with presigned URLs.
    */
-  static async searchImages(params:MongoCardSearchParams): Promise<any[]> {
+  static async searchImages(params: MongoCardSearchParams): Promise<any[]> {
     try {
+      const { randomizeResults, maxImages, ...query } = params;
+
       // Query the database for matching images
-      let images: any[] = await MongoTrainingImage.find(params);
+      let images: any[] = await MongoTrainingImage.find(query).limit(1000);
+
+      // Perform random sampling if randomizeResults is true
+      if (randomizeResults) {
+        images = this.getRandomSample(images, maxImages);
+      }
 
       // Generate presigned URLs for the images
       const results = await Promise.all(
@@ -42,8 +54,10 @@ export class TrainingImageService {
 
   static async updateImage(
     id: string,
-    updates: Partial<IMongoTrainingImage>
+    updates: Partial<IMongoTrainingImage>,
+    user:IMongoUser = null
   ): Promise<IMongoTrainingImage | null> {
+
     try {
       //rules for training
       this.applyTrainingRules(updates);
@@ -56,6 +70,12 @@ export class TrainingImageService {
 
       if (!updatedImage) {
         throw new Error('Image not found');
+      }
+
+      if (user && updatedImage.imageType == 'CARD' && updatedImage.status == 'PENDING_TRAINING') {
+        await this.logUserCredit(new mongoose.Types.ObjectId(user._id + ""),new mongoose.Types.ObjectId(updatedImage._id + "") , 'CLASSIFIED')
+      }else if(user && updatedImage.imageType == 'CARD' && updatedImage.status == 'PENDING_DELETE'){
+        await this.logUserCredit(new mongoose.Types.ObjectId(user._id + ""),new mongoose.Types.ObjectId(updatedImage._id + "") , 'DELETED')
       }
 
       return updatedImage;
@@ -122,7 +142,7 @@ export class TrainingImageService {
     }
   }
 
-  private static applyTrainingRules = (updates:Partial<IMongoTrainingImage>) => {
+  private static applyTrainingRules = (updates: Partial<IMongoTrainingImage>) => {
     //custom rule for CARDS
     if (updates.imageType == 'CARD' && updates.status == 'PENDING_CLASSIFICATION') {
       //3 guesses, change status to what it should be
@@ -144,5 +164,39 @@ export class TrainingImageService {
         updates.status = 'PENDING_DELETE';
       }
     }
+  }
+
+  private static logUserCredit = async (userId: mongoose.Types.ObjectId, trainingImageId: mongoose.Types.ObjectId, action: string) => {
+    try {
+      // Create a new classification document
+      const newClassification = new MongoUserClassification({
+        user: userId,
+        trainingImage: trainingImageId,
+        action
+      });
+
+      // Save the classification to the database
+      const savedClassification = await newClassification.save();
+
+      return savedClassification;
+    } catch (error) {
+      console.error('Error inserting classification:', error);
+      throw error;
+    }
+  }
+
+    /**
+   * Utility function to get a random sample from an array.
+   * @param array - The array to sample from.
+   * @param sampleSize - The maximum number of items to sample.
+   * @returns - A randomly sampled array.
+   */
+  private static getRandomSample(array: any[], sampleSize?: number): any[] {
+    if (!sampleSize || sampleSize >= array.length) {
+      return array; // If no sampleSize is provided or it's larger than the array, return the full array
+    }
+
+    const shuffled = array.sort(() => 0.5 - Math.random()); // Shuffle the array randomly
+    return shuffled.slice(0, sampleSize); // Return a slice of the shuffled array
   }
 }
