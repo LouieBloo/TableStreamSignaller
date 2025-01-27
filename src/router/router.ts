@@ -16,9 +16,21 @@ import { Room } from "../rooms/room";
 import { search } from "../pokemon/pokemon-search";
 import { PlayingCard } from "../interfaces/cards";
 import {redisClient} from '../redis';
+import { logMessage } from "../mongo/services/log-service";
+import { IMongoLog } from "../mongo/models/log-model";
 
 router.get('/', (req: any, res: any) => {
   res.status(200).send('Beating...');
+});
+
+router.post('/log', async(req: any, res: any) => {
+  try{
+    let newLog:IMongoLog | {} = await logMessage(req.body);
+    res.status(201).json(newLog);
+  }catch(error){
+    console.log("Error logging: ", error)
+    res.status(500).json({ message: 'Failed to log'});
+  }
 });
 
 router.get('/news', async(req: any, res: any) => {
@@ -29,7 +41,6 @@ router.get('/news', async(req: any, res: any) => {
     console.log("Error fetching news: ", error)
     res.status(500).json({ message: 'Failed to get news'});
   }
-  
 });
 
 router.post('/report-issue', async (req: any, res: any) => {
