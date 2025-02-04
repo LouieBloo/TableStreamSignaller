@@ -41,6 +41,12 @@ export class TrainingImageService {
           // Convert Mongoose document to a plain JavaScript object
           const imageObject = image.toObject();
           imageObject.presignedUrl = url;
+          // Extract the scryfall id our model guessed for front end conveniance
+          const classifierScryfallIdMatches = image.imageName.match(/scryfall_([a-f0-9-]+)_/);
+          if(classifierScryfallIdMatches && classifierScryfallIdMatches.length > 1){
+            imageObject.classifierScryfallIdGuess = classifierScryfallIdMatches[1];
+          }
+          
           return imageObject;
         })
       );
