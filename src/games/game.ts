@@ -3,6 +3,7 @@ import { GameError, GameErrorSeverity, GameErrorType, GameEvent, GameType, ICoin
 import { Player } from "../users/player";
 import { PlayingCard, slimCard, Token } from "../interfaces/cards";
 import { Type } from "class-transformer";
+import { KickPlayerResponse } from "../interfaces/kick-player-response";
 const { v4: uuidv4 } = require('uuid');
 
 export class Game {
@@ -49,6 +50,8 @@ export class Game {
                 return this.deleteToken(gameEvent);
             case GameEvent.ModifyToken:
                 return this.modifyToken(gameEvent);
+            case GameEvent.KickPlayer:
+                    return this.kickPlayer(gameEvent, room);
         }
     }
 
@@ -367,8 +370,23 @@ export class Game {
         if(tokenToDelete){
             this.tokens = this.tokens.filter(token => token.id != tokenToDelete.id);
         }
-
         return tokenToDelete;
     } 
+
+    kickPlayer = (gameEvent: IGameEvent, room: Room): KickPlayerResponse => {
+        const playerToKick = room.players.find(p => p.id === gameEvent.payload.playerId)
+        room.kickPlayer(playerToKick.id);
+        room.userDisconnected(playerToKick.socketId)
+
+        gameEvent.messages.push({
+            text: `a participant has left the building!`,
+            date: new Date(),
+            player: gameEvent.callingPlayer
+        });
+
+        return {
+            playerId: playerToKick.id
+        }
+    }
 
 }

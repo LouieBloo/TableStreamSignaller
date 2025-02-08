@@ -229,4 +229,8 @@ export class Room {
   
     return password;
   }
+
+  kickPlayer(playerId: string){
+    this.players = this.players.filter(p => p.id != playerId)
+  }
 }
