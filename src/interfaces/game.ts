@@ -44,6 +44,7 @@ export enum GameEvent{
     ModifyToken,
     DeleteToken,
     RollDice,
+    KickPlayer
 }
 
 export enum GameType{

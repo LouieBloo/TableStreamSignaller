@@ -4,7 +4,7 @@ import { Room } from './rooms/room';
 
 const redisClient = new Redis({
   host: process.env.REDIS_HOST,  
-  port: 19210,          
+  port: 19210,           
   password: process.env.REDIS_PASSWORD,       
 });
 
