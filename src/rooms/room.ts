@@ -34,6 +34,7 @@ export class Room {
 
   playerSockets: string[] = [];
   spectatorSockets: string[] = [];
+  bannedPlayerIpAddresses: string[] = [];
 
   redisLock: any;
 
@@ -130,7 +131,7 @@ export class Room {
     return this.players.length < this.maxPlayers;
   }
 
-  public addPlayer(playerId: string, playerName: string, socketId: string, password:string): Player {
+  public addPlayer(playerId: string, playerName: string, socketId: string, password:string, ipAddress:string): Player {
     let player = this.players.find(e => e.id === playerId);
 
     if (!player) {
@@ -140,6 +141,7 @@ export class Room {
       }
 
       player = new Player(playerName, socketId, this.players.length, this.game.startingLifeTotal);
+      player.ipAddress = ipAddress;
       if (this.players.length == 0) {
         player.admin = true;
       }

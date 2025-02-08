@@ -11,6 +11,7 @@ import classifierTrainRouter from './router/classifier-router';
 import sttRouter from './router/stt-router';
 import "./mongo/mongo";
 import { checkBearerToken } from "./router/bearer-token-check";
+import { getClientIp } from "./socket/socket-service";
 
 const express = require('express');
 const http = require('http');
@@ -45,6 +46,8 @@ app.use('/transcribe', sttRouter);
 io.on('connection', (socket:any) => {
   console.log('A user connected:', socket.id);
 
+  const userIp:string = getClientIp(socket);
+
   socket.on('joinRoom', async ({playerId, roomId, roomName, password, gameType, playerName, userType, maxPlayers, reactionsEnabled }:any, callback:any) => {
     try{
       console.log("Join Room: " + " " + playerName + " - " + roomName + " - " + roomId + " - " + playerId)
@@ -59,7 +62,7 @@ io.on('connection', (socket:any) => {
       }else if(userType == UserType.Player){
         //new player
         try{
-          newUser = currentRoom.addPlayer(playerId, playerName, socket.id, password)
+          newUser = currentRoom.addPlayer(playerId, playerName, socket.id, password, userIp)
           currentRoom.playerSockets.push(socket.id);
         }catch(error){
           throw error;
