@@ -8,11 +8,13 @@ export interface IGameEvent {
     payload?:any;
     response?: any;
     messages?:IMessage[];
+    isPrivate?:boolean;
 }
 
 export interface IModifyPlayerProperty{
     property:PlayerProperties;
     amountToModify:number;
+    value?:any;
 }
 
 export enum PlayerProperties{
@@ -21,7 +23,8 @@ export enum PlayerProperties{
     energyTotal,
     monarch,
     citiesBlessing,
-    prizeCards
+    prizeCards,
+    sharingImages
 }
 
 export enum GameEvent{
@@ -40,7 +43,7 @@ export enum GameEvent{
     CreateToken,
     ModifyToken,
     DeleteToken,
-    RollDice
+    RollDice,
 }
 
 export enum GameType{

@@ -1,7 +1,7 @@
 import { GameError, GameErrorSeverity, GameErrorType, GameType } from "../interfaces/game";
 import { Room } from "./room";
 import { plainToInstance } from 'class-transformer';
-import {lockRoomAndGetState, deleteRoomAndUnlock} from '../redis';
+import {lockRoomAndGetState, getRoomUnsafe, deleteRoomAndUnlock} from '../redis';
 import RoomService from '../mongo/services/room-service';
 
 export interface ICreateRoomParams{
@@ -67,6 +67,17 @@ export class RoomState {
     let room:Room = this.parseRoom(rawRoom);
     room.redisLock = redisResult.lock;
 
+    return room;
+  }
+
+  async getRoomUnsafe(roomId:string):Promise<Room> {
+    let redisResult = await getRoomUnsafe(roomId);
+    let rawRoom = redisResult.room;
+    if(!rawRoom){
+      return null;
+    }
+
+    let room:Room = this.parseRoom(rawRoom);
     return room;
   }
 
