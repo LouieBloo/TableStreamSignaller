@@ -149,7 +149,8 @@ export class Game {
     }
 
     modifyPlayerProperty(gameEvent: IGameEvent): Player {
-        if(!this.active){
+        // dont allow players to modify anything when the game hasn't started unless its a private property
+        if(!this.active && !gameEvent.isPrivate){
             throw new GameError(GameErrorType.GameNotStarted, "The game has not started yet. Please start the game.",GameErrorSeverity.Error);
         }
 
@@ -170,6 +171,9 @@ export class Game {
                 break;
             case PlayerProperties.citiesBlessing:
                 gameEvent.callingPlayer.hasCitiesBlessing = !gameEvent.callingPlayer.hasCitiesBlessing;
+                break;
+            case PlayerProperties.sharingImages:
+                gameEvent.callingPlayer.isSharingImages = gameEvent.payload.value;
                 break;
         }
         

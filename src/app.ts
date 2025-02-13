@@ -11,6 +11,7 @@ import classifierTrainRouter from './router/classifier-router';
 import sttRouter from './router/stt-router';
 import "./mongo/mongo";
 import { checkBearerToken } from "./router/bearer-token-check";
+import { getClientIp } from "./socket/socket-service";
 
 const express = require('express');
 const http = require('http');
@@ -45,7 +46,9 @@ app.use('/transcribe', sttRouter);
 io.on('connection', (socket:any) => {
   console.log('A user connected:', socket.id);
 
-  socket.on('joinRoom', async ({playerId, roomId, roomName, password, gameType, playerName, userType, maxPlayers, reactionsEnabled }:any, callback:any) => {
+  const userIp:string = getClientIp(socket);
+
+  socket.on('joinRoom', async ({playerId, roomId, roomName, password, gameType, playerName, userType, maxPlayers, reactionsEnabled, isSharingImages }:any, callback:any) => {
     try{
       console.log("Join Room: " + " " + playerName + " - " + roomName + " - " + roomId + " - " + playerId)
 
@@ -59,7 +62,7 @@ io.on('connection', (socket:any) => {
       }else if(userType == UserType.Player){
         //new player
         try{
-          newUser = currentRoom.addPlayer(playerId, playerName, socket.id, password)
+          newUser = currentRoom.addPlayer(playerId, playerName, socket.id, password, userIp, isSharingImages)
           currentRoom.playerSockets.push(socket.id);
         }catch(error){
           throw error;
@@ -99,6 +102,7 @@ io.on('connection', (socket:any) => {
         }
       });
   
+      //primary game events
       socket.on('gameEvent', async(event:IGameEvent) => {
         let room:Room = await roomState.getRoom(currentRoom.id);
         try{
@@ -121,6 +125,22 @@ io.on('connection', (socket:any) => {
 
           await room.saveAndClose();
           io.in(currentRoom.id).emit('gameEvent', event);
+        }
+        catch(error){
+          console.log(error)
+          await room.close();
+          socket.emit('errorResponse', {type: error.type, message: error.message, severity: error.severity});
+        }
+      });
+
+      //private game events such as personal settings
+      socket.on('privateGameEvent', async(event: IGameEvent, callback:any) => {
+        let room:Room = await roomState.getRoom(currentRoom.id);
+        try{
+          event.isPrivate = true;
+          event.response = room.gameEvent(socket.id, event)
+          await room.saveAndClose();
+          callback(event);
         }
         catch(error){
           console.log(error)

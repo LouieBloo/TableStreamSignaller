@@ -63,6 +63,25 @@ export async function lockRoomAndGetState(roomId:string = null): Promise<{ lock:
   }
 }
 
+// Function to get a specific game room. ONLY USE FOR READING, THIS DOES NOT LOCK THE ROOM
+export async function getRoomUnsafe(roomId:string = null): Promise<{ room: string }> {
+  const key = `game_room:${roomId}`; 
+
+  try {
+    // Fetch the current game state from Redis using the same key
+    const room = await redisClient.get(key);
+
+    if(!room){
+      console.warn(`No existing room found for roomId=${roomId}`);
+    }
+
+    return {  room };
+  } catch (error) {
+    console.error(`Failed to get room ${roomId}:`, error);
+    throw error;
+  }
+}
+
 // Function to save the updated game state to Redis
 export async function saveRoomAndUnlock(room: Room, setScheduledTTL: boolean = false): Promise<void> {
   const key = `game_room:${room.id}`;  // Use the same key for saving the state

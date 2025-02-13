@@ -6,6 +6,7 @@ export class User {
     name: string;
     socketId: string;
     id: string;
+    ipAddress: string;
 
     type: UserType;
 
