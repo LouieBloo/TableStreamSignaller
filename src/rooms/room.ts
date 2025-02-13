@@ -131,7 +131,7 @@ export class Room {
     return this.players.length < this.maxPlayers;
   }
 
-  public addPlayer(playerId: string, playerName: string, socketId: string, password:string, ipAddress:string): Player {
+  public addPlayer(playerId: string, playerName: string, socketId: string, password:string, ipAddress:string, isSharingImages:boolean): Player {
     let player = this.players.find(e => e.id === playerId);
 
     if (!player) {
@@ -142,6 +142,8 @@ export class Room {
 
       player = new Player(playerName, socketId, this.players.length, this.game.startingLifeTotal);
       player.ipAddress = ipAddress;
+      player.isSharingImages = isSharingImages == false ? false: true;
+      
       if (this.players.length == 0) {
         player.admin = true;
       }

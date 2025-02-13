@@ -5,6 +5,9 @@ import MongoTrainingImage, { IMongoTrainingImage } from './mongo/models/training
 import axios from 'axios';
 import FormData from 'form-data';
 import * as fs from 'fs';
+import { RoomState } from "./rooms/roomState";
+import { Room } from "./rooms/room";
+import { Player } from "./users/player";
 
 const ecsClient = new ECSClient({ region: 'us-west-2' });
 const ec2Client = new EC2Client({ region: 'us-west-2' });
@@ -26,6 +29,9 @@ export const handler = async (req: any, res: any) => {
     // Prepare formData to send to the target endpoint
     const formData = new FormData();
 
+    //make sure this user hasnt denied image saving
+    const canSavePlayerImage:boolean = await canSavePlayerImages(req.body.playerId, req.body.roomId);
+
     // Append text fields from req.body
     for (const key in req.body) {
       formData.append(key, req.body[key]);
@@ -44,7 +50,7 @@ export const handler = async (req: any, res: any) => {
 
       //send file to s3
       try{
-        if(process.env.SAVE_CLASSIFIED_IMAGES && process.env.SAVE_CLASSIFIED_IMAGES == 'true'){
+        if(canSavePlayerImage && process.env.SAVE_BOARD_IMAGES && process.env.SAVE_BOARD_IMAGES == 'true'){
           sendFileToS3andMongo(files, req.body.roomId, false);
         }
       }catch(error){
@@ -63,7 +69,7 @@ export const handler = async (req: any, res: any) => {
       },
     });
 
-    if(process.env.SAVE_CLASSIFIED_IMAGES && process.env.SAVE_CLASSIFIED_IMAGES == 'true' && response && response.data && response.data.card_image_base64){
+    if(canSavePlayerImage && process.env.SAVE_CLASSIFIED_IMAGES && process.env.SAVE_CLASSIFIED_IMAGES == 'true' && response && response.data && response.data.card_image_base64){
       const fileName = `tempsave`;
       const filePath = `${fileName}.jpg`;
       try{
@@ -86,13 +92,32 @@ export const handler = async (req: any, res: any) => {
       classification_confidence: response.data.classification_confidence,
       detected_card: response.data.detected_card,
       scryfall_data: response.data.scryfall_data,
-      bounding_box: response.data.bounding_box
+      bounding_box: response.data.bounding_box,
+      top_guesses: response.data.top_guesses
     });
   } catch (error: any) {
     console.error('Error:', error);
     res.status(500).send(`Error: ${error.message}`);
   }
 };
+
+/**
+ * given a player id check if they have allowed us to save their images for ml training
+ * @param playerId 
+ * @param roomId 
+ * @returns 
+ */
+const canSavePlayerImages = async(playerId:string, roomId:string):Promise<boolean>=>{
+  let roomState:RoomState = new RoomState();
+  let room:Room = await roomState.getRoomUnsafe(roomId);
+
+  if(room && room.players){
+    let targetPlayer:Player = room.players.find(p => p.id === playerId);
+    return targetPlayer.isSharingImages;
+  }
+
+  return false;
+}
 
 const sendFileToS3andMongo = async(files:any, roomId:string, isSingleCard:boolean, postString:string=null)=>{
   const bucket = 'card-classifier';
