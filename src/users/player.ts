@@ -19,6 +19,7 @@ export class Player extends User {
     lastEffectTime:Date;
 
     isMonarch:boolean = false;
+    isSharingImages:boolean = true;
     hasCitiesBlessing:boolean = false;
 
     poisonTotal:number;

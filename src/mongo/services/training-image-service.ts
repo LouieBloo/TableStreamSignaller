@@ -14,6 +14,7 @@ interface MongoCardSearchParams {
   status?: string;
   randomizeResults?:boolean;
   maxImages?:number;
+  sortOrder?:string;
 }
 export class TrainingImageService {
   /**
@@ -24,10 +25,12 @@ export class TrainingImageService {
    */
   static async searchImages(params: MongoCardSearchParams): Promise<any[]> {
     try {
-      const { randomizeResults, maxImages, ...query } = params;
+      const { randomizeResults, maxImages, sortOrder='desc', ...query } = params;
 
       // Query the database for matching images
-      let images: any[] = await MongoTrainingImage.find(query).limit(1000);
+      let images: any[] = await MongoTrainingImage.find(query)
+        .sort({ createdAt: sortOrder === 'asc' ? 1 : -1 })
+        .limit(1000);
 
       // Perform random sampling if randomizeResults is true
       if (randomizeResults) {
