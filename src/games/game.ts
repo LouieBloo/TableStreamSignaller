@@ -267,12 +267,9 @@ export class Game {
             coinFlips.push(flipResult)
         }
 
-        gameEvent.messages.push({
-            text: `flipped ${coinFlips.length} coin${coinFlips.length == 1 ? '' : 's'}: ${coinFlips.join(', ')}`,
-            date: new Date(),
-            player: gameEvent.callingPlayer
-        });
-
+        const message = `flipped ${coinFlips.length} coin${coinFlips.length == 1 ? '' : 's'}: ${coinFlips.join(', ')}`
+        this.sendMessage(message, gameEvent);
+        
         return {
             results: coinFlips
         }
@@ -285,11 +282,9 @@ export class Game {
             diceRolls.push(Math.ceil(Math.random() * sidedDice) + "");
         }
 
-        gameEvent.messages.push({
-            text: `rolled a D${gameEvent.payload.sidedDice}: ${diceRolls.join(', ')}`,
-            date: new Date(),
-            player: gameEvent.callingPlayer
-        });
+        const message = `rolled a D${gameEvent.payload.sidedDice}: ${diceRolls.join(', ')}`
+        this.sendMessage(message, gameEvent)
+
 
         return {
             results: diceRolls
@@ -373,20 +368,46 @@ export class Game {
         return tokenToDelete;
     } 
 
-    kickPlayer = (gameEvent: IGameEvent, room: Room): KickPlayerResponse => {
-        const playerToKick = room.players.find(p => p.id === gameEvent.payload.playerId)
-        room.kickPlayer(playerToKick.id);
-        room.userDisconnected(playerToKick.socketId)
 
-        gameEvent.messages.push({
-            text: `a participant has left the building!`,
-            date: new Date(),
-            player: gameEvent.callingPlayer
-        });
 
+    kickPlayer(gameEvent: IGameEvent, room: Room): KickPlayerResponse {
+        const playerToKick = room.players.find(p => p.id === gameEvent.payload.playerId);
+        if (!playerToKick) {
+            return { playerId: null };
+        }
+        room.userDisconnected(playerToKick.socketId, playerToKick.id);
+        this.removeTokenByPlayerId(playerToKick.id);
+
+        if (playerToKick.admin) {
+            this.promoteNewAdmin(room, playerToKick.turnOrder);
+        }
+
+        this.sendMessage("A participant has left the building!", gameEvent);
+    
         return {
             playerId: playerToKick.id
         }
     }
+
+    private sendMessage(message: string, gameEvent: IGameEvent){
+        gameEvent.messages.push({
+            text: message,
+            date: new Date(),
+            player: gameEvent.callingPlayer
+        });
+    }
+
+    private removeTokenByPlayerId(playerId: string){
+        this.tokens = this.tokens.filter(token => token.ownerId != playerId)
+    }
+
+    private promoteNewAdmin(room: Room, currentTurnOrder: number) {
+        const newAdmin = room.players.find(player => player.turnOrder === currentTurnOrder + 1);
+        if (newAdmin) {
+            newAdmin.admin = true;
+        }
+    }
+
+
 
 }

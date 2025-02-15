@@ -179,9 +179,13 @@ export class Room {
     return spectator;
   }
 
-  public userDisconnected(socketId: string) {
+  public userDisconnected(socketId: string, playerId: string | null) {
     this.playerSockets = this.playerSockets.filter((id: any) => id !== socketId);
     this.spectatorSockets = this.spectatorSockets.filter((id: any) => id !== socketId);
+
+    if(playerId)
+      this.players = this.players.filter(p => p.id != playerId)
+    
   }
 
   public getAllSocketIds(): string[] {
@@ -230,7 +234,5 @@ export class Room {
     return password;
   }
 
-  kickPlayer(playerId: string){
-    this.players = this.players.filter(p => p.id != playerId)
-  }
+
 }

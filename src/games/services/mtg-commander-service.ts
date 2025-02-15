@@ -78,3 +78,17 @@ export const SetCommander = (gameEvent: IGameEvent, room:Room)=>{
 export const ModifyPlayerCommanderDamage = (gameEvent: IGameEvent, maxCommanderDamageUntilDead:number) => {
     return gameEvent.callingPlayer.takeCommanderDamage(gameEvent.payload.damagingPlayer, gameEvent.payload.amount, gameEvent.payload.card, maxCommanderDamageUntilDead);
 }
+
+export const RemoveCommanderDamagesFromPlayer = (gameEvent: IGameEvent, room: Room) => {
+    const playerIdToRemove = gameEvent.payload.playerId;
+    room.players.forEach((player: Player) => {
+        if (player.id !== playerIdToRemove) {
+            if (player.commanderDamages[playerIdToRemove]) {
+                delete player.commanderDamages[playerIdToRemove]
+            }
+        }
+    });
+    return {
+        playerId: playerIdToRemove
+    };
+}
