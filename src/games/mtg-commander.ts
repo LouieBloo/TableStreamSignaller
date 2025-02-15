@@ -2,7 +2,7 @@ import { Player } from "../users/player";
 import { IGameEvent, GameEvent, GameType } from "../interfaces/game";
 import { Room } from "../rooms/room";
 import { Game } from "./game";
-import {ResetCommanderDamagesToZero, SetPlayerDefaults, SetCommander, ModifyPlayerCommanderDamage} from './services/mtg-commander-service';
+import {ResetCommanderDamagesToZero, SetPlayerDefaults, SetCommander, ModifyPlayerCommanderDamage, RemoveCommanderDamagesFromPlayer} from './services/mtg-commander-service';
 
 export class MTGCommander extends Game {
     startingLifeTotal = 40;
@@ -24,6 +24,9 @@ export class MTGCommander extends Game {
                 return this.modifyPlayerCommanderDamage(gameEvent);
             case GameEvent.SetCommander:
                 return this.setCommander(gameEvent, room);
+            case GameEvent.KickPlayer:
+                return this.removeCommanderDamagesFromPlayer(gameEvent, room)
+
         }
 
         return super.event(gameEvent, room);
@@ -47,6 +50,11 @@ export class MTGCommander extends Game {
 
     modifyPlayerCommanderDamage = (gameEvent: IGameEvent) => {
         return ModifyPlayerCommanderDamage(gameEvent, this.maxCommanderDamageUntilDead);
+    }
+
+    removeCommanderDamagesFromPlayer = (gameEvent: IGameEvent, room: Room) => {
+        super.kickPlayer(gameEvent, room);
+        return RemoveCommanderDamagesFromPlayer(gameEvent, room)
     }
 
 }

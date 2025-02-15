@@ -154,7 +154,7 @@ io.on('connection', (socket:any) => {
         let room:Room = await roomState.getRoom(currentRoom.id);
         if(!room){return;}
   
-        room.userDisconnected(socket.id);
+        room.userDisconnected(socket.id, null);
         socket.to(currentRoom.id).emit('peerDisconnected', { socketId: socket.id });
         //auto delete the room if its not a bot created room 
         if (room.playerSockets.length === 0 && !room.scheduledRoom) {
