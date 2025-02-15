@@ -30,7 +30,6 @@ export class Player extends User {
     commanders: PlayingCard[];
 
     prizeCards:number = 0;
-    player: any;
 
     constructor(name:string, socketId:string, turnOrder:number, startingLifeTotal:number) {
         super(name,socketId,UserType.Player);

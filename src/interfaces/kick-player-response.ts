@@ -1,3 +1,10 @@
+import { Player } from "../users/player";
+import { Token } from "./cards";
+import { IUser } from "./player";
+
+
 export interface KickPlayerResponse {
-    playerId: string;
+    kickedPlayer?:IUser;
+    players?: Player[];
+    removedTokens?: Token[];
 }

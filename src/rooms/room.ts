@@ -13,6 +13,7 @@ import { MTGLegacy } from "../games/mtg-legacy";
 import RoomService from '../mongo/services/room-service';
 import { PokemonStandard } from "../games/pokemon-standard";
 import { MTGPauperCommander } from "../games/mtg-pauper-commander";
+import { KickPlayerResponse } from "../interfaces/kick-player-response";
 
 const { v4: uuidv4 } = require('uuid');
 
@@ -186,6 +187,22 @@ export class Room {
     if(playerId)
       this.players = this.players.filter(p => p.id != playerId)
     
+  }
+
+
+  public kickPlayer(gameEvent: IGameEvent): Player {
+    if(!gameEvent.callingPlayer.admin){
+      throw new GameError(GameErrorType.InvalidAction, "You cant make that action", GameErrorSeverity.Error);
+    }
+
+    const playerToKick:Player = this.players.find(p => p.id === gameEvent.payload.playerId);
+    if (!playerToKick) {
+      throw new GameError(GameErrorType.InvalidAction, "Player not found", GameErrorSeverity.Error);
+    }
+
+    this.userDisconnected(playerToKick.socketId, playerToKick.id);
+
+    return playerToKick;
   }
 
   public getAllSocketIds(): string[] {
