@@ -51,7 +51,7 @@ export class Game {
             case GameEvent.ModifyToken:
                 return this.modifyToken(gameEvent);
             case GameEvent.KickPlayer:
-                    return this.kickPlayer(gameEvent, room);
+                return this.kickPlayer(gameEvent, room);
         }
     }
 
@@ -181,6 +181,32 @@ export class Game {
         }
         
         return gameEvent.callingPlayer;
+    }
+
+    public kickPlayer(gameEvent: IGameEvent, room:Room):KickPlayerResponse{
+
+        //room will handle removing player
+        let kickedPlayer:Player = room.kickPlayer(gameEvent);
+
+        //remove all tokens from this user
+        let removedTokens:Token[] = this.removeTokenByPlayerId(kickedPlayer.id);
+
+        //modify turn orders (remove 1 from every players turn order for each player above the removed players order)
+        room.players.forEach((player:Player)=>{
+            if(player.turnOrder > kickedPlayer.turnOrder){
+                player.turnOrder--;
+            }
+        })
+
+        //if we just kicked the player whos turn it was just choose the first player (players will figure out whos turn it should be)
+        let currentPlayer = room.players.find(p=>p.isTakingTurn == true);
+        if(!currentPlayer){
+            this.startPlayerTurn(room.players[0],room);
+        }
+    
+        this.sendMessage(`${gameEvent.callingPlayer.name} has kicked ${kickedPlayer.name}. Adios!`, gameEvent);
+
+        return {kickedPlayer, removedTokens, players: room.players }
     }
 
     setPlayerTurnOrders(gameEvent: IGameEvent, room:Room){
@@ -369,26 +395,6 @@ export class Game {
     } 
 
 
-
-    kickPlayer(gameEvent: IGameEvent, room: Room): KickPlayerResponse {
-        const playerToKick = room.players.find(p => p.id === gameEvent.payload.playerId);
-        if (!playerToKick) {
-            return { playerId: null };
-        }
-        room.userDisconnected(playerToKick.socketId, playerToKick.id);
-        this.removeTokenByPlayerId(playerToKick.id);
-
-        if (playerToKick.admin) {
-            this.promoteNewAdmin(room, playerToKick.turnOrder);
-        }
-
-        this.sendMessage("A participant has left the building!", gameEvent);
-    
-        return {
-            playerId: playerToKick.id
-        }
-    }
-
     private sendMessage(message: string, gameEvent: IGameEvent){
         gameEvent.messages.push({
             text: message,
@@ -397,8 +403,15 @@ export class Game {
         });
     }
 
-    private removeTokenByPlayerId(playerId: string){
-        this.tokens = this.tokens.filter(token => token.ownerId != playerId)
+    private removeTokenByPlayerId(playerId: string): Token[]{
+        // Find the tokens that will be removed
+        const removedTokens = this.tokens.filter(token => token.ownerId === playerId);
+
+        // Keep only the tokens that do not belong to the player
+        this.tokens = this.tokens.filter(token => token.ownerId !== playerId);
+
+        // Return the removed tokens
+        return removedTokens;
     }
 
     private promoteNewAdmin(room: Room, currentTurnOrder: number) {
@@ -407,7 +420,5 @@ export class Game {
             newAdmin.admin = true;
         }
     }
-
-
 
 }

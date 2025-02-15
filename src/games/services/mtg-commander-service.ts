@@ -79,8 +79,8 @@ export const ModifyPlayerCommanderDamage = (gameEvent: IGameEvent, maxCommanderD
     return gameEvent.callingPlayer.takeCommanderDamage(gameEvent.payload.damagingPlayer, gameEvent.payload.amount, gameEvent.payload.card, maxCommanderDamageUntilDead);
 }
 
-export const RemoveCommanderDamagesFromPlayer = (gameEvent: IGameEvent, room: Room) => {
-    const playerIdToRemove = gameEvent.payload.playerId;
+export const RemoveCommanderDamagesFromPlayer = (removedPlayerId:string, room: Room) => {
+    const playerIdToRemove = removedPlayerId;
     room.players.forEach((player: Player) => {
         if (player.id !== playerIdToRemove) {
             if (player.commanderDamages[playerIdToRemove]) {
@@ -88,7 +88,6 @@ export const RemoveCommanderDamagesFromPlayer = (gameEvent: IGameEvent, room: Ro
             }
         }
     });
-    return {
-        playerId: playerIdToRemove
-    };
+    
+    return room.players;
 }
