@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
 import Redlock, { ResourceLockedError } from 'redlock';
-import { Room } from './rooms/room';
+import { Room } from './domain/rooms/room';
 
 const redisClient = new Redis({
   host: process.env.REDIS_HOST,  

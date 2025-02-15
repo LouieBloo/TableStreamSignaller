@@ -1,5 +1,6 @@
 import "../src/mongo/mongo";
-import RoomService from '../src/mongo/services/room-service';
+import RoomService from '../src/services/room-service';
+
 
 const run = async(daysAgo:number)=>{
     let startTime = new Date();
