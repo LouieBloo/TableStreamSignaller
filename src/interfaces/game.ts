@@ -86,7 +86,8 @@ export enum GameErrorType{
     NoRoomName,
     InvalidPassword,
     GenericWarning,
-    RoomFull
+    RoomFull,
+    EnteringBannedRoom
 }
 
 export enum UserType{

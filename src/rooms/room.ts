@@ -133,6 +133,11 @@ export class Room {
   }
 
   public addPlayer(playerId: string, playerName: string, socketId: string, password:string, ipAddress:string, isSharingImages:boolean): Player {
+
+    if(this.bannedPlayerIpAddresses.includes(ipAddress)){
+      throw new GameError(GameErrorType.EnteringBannedRoom, "Banned!", GameErrorSeverity.Error);
+    }
+
     let player = this.players.find(e => e.id === playerId);
 
     if (!player) {
@@ -196,6 +201,7 @@ export class Room {
     }
 
     const playerToKick:Player = this.players.find(p => p.id === gameEvent.payload.playerId);
+    this.bannedPlayerIpAddresses.push(playerToKick.ipAddress);
     if (!playerToKick) {
       throw new GameError(GameErrorType.InvalidAction, "Player not found", GameErrorSeverity.Error);
     }
