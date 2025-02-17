@@ -100,6 +100,7 @@ router.post('/create-room', async (req: any, res: any) => {
       private: req.body.private,
       initialScheduleTTLInSeconds: req.body.initialScheduleTTLInSeconds,
       reactionsEnabled: req.body.reactionsEnabled,
+      allowPlayerKicking: req.body.allowPlayerKicking,
       scheduledRoom: true
     });
 
