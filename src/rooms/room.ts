@@ -43,6 +43,7 @@ export class Room {
   password:string;
 
   scheduledRoom:boolean = false;
+  allowPlayerKicking:boolean = true;
   initialScheduleTTLInSeconds: number = 3600;// games waiting to be played will be destroyed after this time
   inactivityTimeUntilDestroyedInSeconds:number = 3600 // 1 hour default
 
@@ -135,7 +136,7 @@ export class Room {
   public addPlayer(playerId: string, playerName: string, socketId: string, password:string, ipAddress:string, isSharingImages:boolean): Player {
 
     if(this.bannedPlayerIpAddresses.includes(ipAddress)){
-      throw new GameError(GameErrorType.EnteringBannedRoom, "Banned!", GameErrorSeverity.Error);
+      throw new GameError(GameErrorType.EnteringBannedRoom, "You have been banned from this room.", GameErrorSeverity.Error);
     }
 
     let player = this.players.find(e => e.id === playerId);
@@ -196,15 +197,17 @@ export class Room {
 
 
   public kickPlayer(gameEvent: IGameEvent): Player {
-    if(!gameEvent.callingPlayer.admin){
+    if(!gameEvent.callingPlayer.admin || !this.allowPlayerKicking){
       throw new GameError(GameErrorType.InvalidAction, "You cant make that action", GameErrorSeverity.Error);
     }
 
     const playerToKick:Player = this.players.find(p => p.id === gameEvent.payload.playerId);
-    this.bannedPlayerIpAddresses.push(playerToKick.ipAddress);
+    
     if (!playerToKick) {
       throw new GameError(GameErrorType.InvalidAction, "Player not found", GameErrorSeverity.Error);
     }
+
+    this.bannedPlayerIpAddresses.push(playerToKick.ipAddress);
 
     this.userDisconnected(playerToKick.socketId, playerToKick.id);
 
