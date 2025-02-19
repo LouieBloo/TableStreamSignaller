@@ -13,6 +13,7 @@ import { MTGLegacy } from "../games/mtg-legacy";
 import RoomService from '../mongo/services/room-service';
 import { PokemonStandard } from "../games/pokemon-standard";
 import { MTGPauperCommander } from "../games/mtg-pauper-commander";
+import { KickPlayerResponse } from "../interfaces/kick-player-response";
 
 const { v4: uuidv4 } = require('uuid');
 
@@ -42,6 +43,7 @@ export class Room {
   password:string;
 
   scheduledRoom:boolean = false;
+  allowPlayerKicking:boolean = true;
   initialScheduleTTLInSeconds: number = 3600;// games waiting to be played will be destroyed after this time
   inactivityTimeUntilDestroyedInSeconds:number = 3600 // 1 hour default
 
@@ -132,6 +134,11 @@ export class Room {
   }
 
   public addPlayer(playerId: string, playerName: string, socketId: string, password:string, ipAddress:string, isSharingImages:boolean): Player {
+
+    if(this.bannedPlayerIpAddresses.includes(ipAddress)){
+      throw new GameError(GameErrorType.EnteringBannedRoom, "You have been banned from this room.", GameErrorSeverity.Error);
+    }
+
     let player = this.players.find(e => e.id === playerId);
 
     if (!player) {
@@ -179,9 +186,32 @@ export class Room {
     return spectator;
   }
 
-  public userDisconnected(socketId: string) {
+  public userDisconnected(socketId: string, playerId: string | null) {
     this.playerSockets = this.playerSockets.filter((id: any) => id !== socketId);
     this.spectatorSockets = this.spectatorSockets.filter((id: any) => id !== socketId);
+
+    if(playerId)
+      this.players = this.players.filter(p => p.id != playerId)
+    
+  }
+
+
+  public kickPlayer(gameEvent: IGameEvent): Player {
+    if(!gameEvent.callingPlayer.admin || !this.allowPlayerKicking){
+      throw new GameError(GameErrorType.InvalidAction, "You cant make that action", GameErrorSeverity.Error);
+    }
+
+    const playerToKick:Player = this.players.find(p => p.id === gameEvent.payload.playerId);
+    
+    if (!playerToKick) {
+      throw new GameError(GameErrorType.InvalidAction, "Player not found", GameErrorSeverity.Error);
+    }
+
+    this.bannedPlayerIpAddresses.push(playerToKick.ipAddress);
+
+    this.userDisconnected(playerToKick.socketId, playerToKick.id);
+
+    return playerToKick;
   }
 
   public getAllSocketIds(): string[] {
@@ -229,4 +259,6 @@ export class Room {
   
     return password;
   }
+
+
 }

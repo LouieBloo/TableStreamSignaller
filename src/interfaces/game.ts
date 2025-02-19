@@ -44,6 +44,7 @@ export enum GameEvent{
     ModifyToken,
     DeleteToken,
     RollDice,
+    KickPlayer
 }
 
 export enum GameType{
@@ -85,7 +86,8 @@ export enum GameErrorType{
     NoRoomName,
     InvalidPassword,
     GenericWarning,
-    RoomFull
+    RoomFull,
+    EnteringBannedRoom
 }
 
 export enum UserType{

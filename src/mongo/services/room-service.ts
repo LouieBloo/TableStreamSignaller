@@ -122,7 +122,8 @@ class RoomService {
       scheduledRoom: room.scheduledRoom,
       initialScheduleTTLInSeconds: room.initialScheduleTTLInSeconds,
       inactivityTimeUntilDestroyedInSeconds: room.inactivityTimeUntilDestroyedInSeconds,
-      reactionsEnabled: room.reactionsEnabled
+      reactionsEnabled: room.reactionsEnabled,
+      allowPlayerKicking: room.allowPlayerKicking
     }
 
     return mappedRoom;

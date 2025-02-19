@@ -14,6 +14,7 @@ export interface ICreateRoomParams{
   scheduledRoom?:boolean;
   initialScheduleTTLInSeconds?:number;
   reactionsEnabled?:boolean;
+  allowPlayerKicking?:boolean
 }
 
 export class RoomState {
@@ -44,6 +45,9 @@ export class RoomState {
       }
       if(params.reactionsEnabled == false){
         room.reactionsEnabled = false;
+      }
+      if(params.allowPlayerKicking == false){
+        room.allowPlayerKicking = false;
       }
 
       //track in mongo
