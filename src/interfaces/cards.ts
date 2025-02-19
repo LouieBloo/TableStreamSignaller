@@ -44,6 +44,7 @@ export interface PlayingCard {
     digital?: boolean;                   // Whether the card is available digitally (MTGO)
     classificationConfidence? :number;
     card_faces?:PlayingCard[]
+    castAmount?:number;
 }
 
 export const slimCard = (card:PlayingCard):PlayingCard =>{

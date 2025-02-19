@@ -43,6 +43,7 @@ export const SetCommander = (gameEvent: IGameEvent, room:Room)=>{
     let oldCommander:PlayingCard = gameEvent.payload.index < gameEvent.callingPlayer.commanders.length ?  gameEvent.callingPlayer.commanders[gameEvent.payload.index] : null;
     //set new commander, its possible its null (to clear)
     if(newCommander){
+        newCommander.castAmount = 0;
         gameEvent.callingPlayer.commanders[gameEvent.payload.index] = newCommander;
     }else{
         //note we only ever clear out the 2nd commander
@@ -77,4 +78,29 @@ export const SetCommander = (gameEvent: IGameEvent, room:Room)=>{
 
 export const ModifyPlayerCommanderDamage = (gameEvent: IGameEvent, maxCommanderDamageUntilDead:number) => {
     return gameEvent.callingPlayer.takeCommanderDamage(gameEvent.payload.damagingPlayer, gameEvent.payload.amount, gameEvent.payload.card, maxCommanderDamageUntilDead);
+}
+
+export const ModifyPlayerCommanderCastAmount = (gameEvent: IGameEvent) : Player => {
+    gameEvent.callingPlayer.commanders.forEach((commander:PlayingCard)=>{
+        if(commander.id == gameEvent.payload.commander.id){
+            commander.castAmount += gameEvent.payload.amountToModify;
+            if(commander.castAmount < 0){
+                commander.castAmount = 0;
+            }
+        }
+    })
+    return gameEvent.callingPlayer;
+}
+
+export const RemoveCommanderDamagesFromPlayer = (removedPlayerId:string, room: Room) => {
+    const playerIdToRemove = removedPlayerId;
+    room.players.forEach((player: Player) => {
+        if (player.id !== playerIdToRemove) {
+            if (player.commanderDamages[playerIdToRemove]) {
+                delete player.commanderDamages[playerIdToRemove]
+            }
+        }
+    });
+    
+    return room.players;
 }

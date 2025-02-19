@@ -100,6 +100,7 @@ router.post('/create-room', async (req: any, res: any) => {
       private: req.body.private,
       initialScheduleTTLInSeconds: req.body.initialScheduleTTLInSeconds,
       reactionsEnabled: req.body.reactionsEnabled,
+      allowPlayerKicking: req.body.allowPlayerKicking,
       scheduledRoom: true
     });
 
@@ -109,10 +110,12 @@ router.post('/create-room', async (req: any, res: any) => {
     res.status(422).send(error)
   }
 })
-
-router.post('/discord-interaction', verifyKeyMiddleware(process.env.DISCORD_PUBLIC_KEY), async(req: Request, res: Response) => {
-  return await discord(req,res);
-})
+if(process.env.DISCORD_PUBLIC_KEY){
+  router.post('/discord-interaction', verifyKeyMiddleware(process.env.DISCORD_PUBLIC_KEY), async(req: Request, res: Response) => {
+    return await discord(req,res);
+  })
+  
+}
 
 router.get('/pokemon-cards', async(req: any, res: any) => {
   let response:PlayingCard[] = await search(req.query.query);

@@ -24,7 +24,8 @@ export enum PlayerProperties{
     monarch,
     citiesBlessing,
     prizeCards,
-    sharingImages
+    sharingImages,
+    commanderCastAmount
 }
 
 export enum GameEvent{
@@ -44,6 +45,7 @@ export enum GameEvent{
     ModifyToken,
     DeleteToken,
     RollDice,
+    KickPlayer
 }
 
 export enum GameType{
@@ -85,7 +87,8 @@ export enum GameErrorType{
     NoRoomName,
     InvalidPassword,
     GenericWarning,
-    RoomFull
+    RoomFull,
+    EnteringBannedRoom
 }
 
 export enum UserType{
