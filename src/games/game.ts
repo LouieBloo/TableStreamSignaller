@@ -3,6 +3,7 @@ import { GameError, GameErrorSeverity, GameErrorType, GameEvent, GameType, ICoin
 import { Player } from "../users/player";
 import { PlayingCard, slimCard, Token } from "../interfaces/cards";
 import { Type } from "class-transformer";
+import { KickPlayerResponse } from "../interfaces/kick-player-response";
 const { v4: uuidv4 } = require('uuid');
 
 export class Game {
@@ -49,6 +50,8 @@ export class Game {
                 return this.deleteToken(gameEvent);
             case GameEvent.ModifyToken:
                 return this.modifyToken(gameEvent);
+            case GameEvent.KickPlayer:
+                return this.kickPlayer(gameEvent, room);
         }
     }
 
@@ -180,6 +183,32 @@ export class Game {
         return gameEvent.callingPlayer;
     }
 
+    public kickPlayer(gameEvent: IGameEvent, room:Room):KickPlayerResponse{
+
+        //room will handle removing player
+        let kickedPlayer:Player = room.kickPlayer(gameEvent);
+
+        //remove all tokens from this user
+        let removedTokens:Token[] = this.removeTokenByPlayerId(kickedPlayer.id);
+
+        //modify turn orders (remove 1 from every players turn order for each player above the removed players order)
+        room.players.forEach((player:Player)=>{
+            if(player.turnOrder > kickedPlayer.turnOrder){
+                player.turnOrder--;
+            }
+        })
+
+        //if we just kicked the player whos turn it was just choose the first player (players will figure out whos turn it should be)
+        let currentPlayer = room.players.find(p=>p.isTakingTurn == true);
+        if(!currentPlayer){
+            this.startPlayerTurn(room.players[0],room);
+        }
+    
+        this.sendMessage(`${gameEvent.callingPlayer.name} has kicked ${kickedPlayer.name}. Adios!`, gameEvent);
+
+        return {kickedPlayer, removedTokens, players: room.players }
+    }
+
     setPlayerTurnOrders(gameEvent: IGameEvent, room:Room){
         if(!gameEvent.callingPlayer.admin){
             throw new GameError(GameErrorType.GenericWarning, "Only admins can change player order!",GameErrorSeverity.Error);
@@ -264,12 +293,9 @@ export class Game {
             coinFlips.push(flipResult)
         }
 
-        gameEvent.messages.push({
-            text: `flipped ${coinFlips.length} coin${coinFlips.length == 1 ? '' : 's'}: ${coinFlips.join(', ')}`,
-            date: new Date(),
-            player: gameEvent.callingPlayer
-        });
-
+        const message = `flipped ${coinFlips.length} coin${coinFlips.length == 1 ? '' : 's'}: ${coinFlips.join(', ')}`
+        this.sendMessage(message, gameEvent);
+        
         return {
             results: coinFlips
         }
@@ -282,11 +308,9 @@ export class Game {
             diceRolls.push(Math.ceil(Math.random() * sidedDice) + "");
         }
 
-        gameEvent.messages.push({
-            text: `rolled a D${gameEvent.payload.sidedDice}: ${diceRolls.join(', ')}`,
-            date: new Date(),
-            player: gameEvent.callingPlayer
-        });
+        const message = `rolled a D${gameEvent.payload.sidedDice}: ${diceRolls.join(', ')}`
+        this.sendMessage(message, gameEvent)
+
 
         return {
             results: diceRolls
@@ -367,8 +391,34 @@ export class Game {
         if(tokenToDelete){
             this.tokens = this.tokens.filter(token => token.id != tokenToDelete.id);
         }
-
         return tokenToDelete;
     } 
+
+
+    private sendMessage(message: string, gameEvent: IGameEvent){
+        gameEvent.messages.push({
+            text: message,
+            date: new Date(),
+            player: gameEvent.callingPlayer
+        });
+    }
+
+    private removeTokenByPlayerId(playerId: string): Token[]{
+        // Find the tokens that will be removed
+        const removedTokens = this.tokens.filter(token => token.ownerId === playerId);
+
+        // Keep only the tokens that do not belong to the player
+        this.tokens = this.tokens.filter(token => token.ownerId !== playerId);
+
+        // Return the removed tokens
+        return removedTokens;
+    }
+
+    private promoteNewAdmin(room: Room, currentTurnOrder: number) {
+        const newAdmin = room.players.find(player => player.turnOrder === currentTurnOrder + 1);
+        if (newAdmin) {
+            newAdmin.admin = true;
+        }
+    }
 
 }

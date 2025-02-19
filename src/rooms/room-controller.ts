@@ -9,6 +9,7 @@ export interface IRoomCreationResponse{
     maxPlayers:number;
     password?:string;
     scheduledRoom?:boolean;
+    allowPlayerKicking?:boolean;
 }
 
 export const createRoom = async(params:ICreateRoomParams):Promise<IRoomCreationResponse>=>{
@@ -41,6 +42,7 @@ export const createRoom = async(params:ICreateRoomParams):Promise<IRoomCreationR
         gameType: GameType[newRoom.game.gameType].toString(),
         maxPlayers: newRoom.maxPlayers,
         password: newRoom.password,
+        allowPlayerKicking: newRoom.allowPlayerKicking
     }
 
     return response;
