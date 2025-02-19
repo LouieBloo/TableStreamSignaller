@@ -24,7 +24,8 @@ export enum PlayerProperties{
     monarch,
     citiesBlessing,
     prizeCards,
-    sharingImages
+    sharingImages,
+    commanderCastAmount
 }
 
 export enum GameEvent{
