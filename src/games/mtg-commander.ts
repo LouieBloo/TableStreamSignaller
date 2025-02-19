@@ -1,65 +1,77 @@
 import { Player } from "../users/player";
-import { IGameEvent, GameEvent, GameType } from "../interfaces/game";
+import { IGameEvent, GameEvent, GameType, PlayerProperties, IModifyPlayerProperty } from "../interfaces/game";
 import { Room } from "../rooms/room";
 import { Game } from "./game";
-import {ResetCommanderDamagesToZero, SetPlayerDefaults, SetCommander, ModifyPlayerCommanderDamage, RemoveCommanderDamagesFromPlayer} from './services/mtg-commander-service';
+import { ResetCommanderDamagesToZero, SetPlayerDefaults, SetCommander, ModifyPlayerCommanderDamage, RemoveCommanderDamagesFromPlayer, ModifyPlayerCommanderCastAmount } from './services/mtg-commander-service';
 import { KickPlayerResponse } from "../interfaces/kick-player-response";
 
 export class MTGCommander extends Game {
-    startingLifeTotal = 40;
-    maxCommanderDamageUntilDead: number = 21;
+  startingLifeTotal = 40;
+  maxCommanderDamageUntilDead: number = 21;
 
-    gameType: GameType = GameType.MTGCommander;
+  gameType: GameType = GameType.MTGCommander;
 
-    constructor(){
-        super();
+  constructor() {
+    super();
+  }
+
+  public event(gameEvent: IGameEvent, room: Room): any {
+    switch (gameEvent.event) {
+      case GameEvent.StartGame:
+        return this.startGame(room);
+      case GameEvent.ResetGame:
+        return this.startGame(room);
+      case GameEvent.ModifyPlayerCommanderDamage:
+        return this.modifyPlayerCommanderDamage(gameEvent);
+      case GameEvent.SetCommander:
+        return this.setCommander(gameEvent, room);
+      case GameEvent.KickPlayer:
+        return this.kickPlayer(gameEvent, room)
+      case GameEvent.ModifyPlayerProperty:
+        return this.modifyPlayerProperty(gameEvent)
     }
 
-    public event(gameEvent: IGameEvent, room: Room): any {
-        switch (gameEvent.event) {
-            case GameEvent.StartGame:
-                return this.startGame(room);
-            case GameEvent.ResetGame:
-                return this.startGame(room);
-            case GameEvent.ModifyPlayerCommanderDamage:
-                return this.modifyPlayerCommanderDamage(gameEvent);
-            case GameEvent.SetCommander:
-                return this.setCommander(gameEvent, room);
-            case GameEvent.KickPlayer:
-                return this.kickPlayer(gameEvent, room)
+    return super.event(gameEvent, room);
+  }
 
-        }
+  modifyPlayerProperty(gameEvent: IGameEvent): Player {
+    let modifyEvent: IModifyPlayerProperty = gameEvent.payload;
 
-        return super.event(gameEvent, room);
+    switch (modifyEvent.property) {
+      case PlayerProperties.commanderCastAmount:
+        return ModifyPlayerCommanderCastAmount(gameEvent);
     }
 
-    startGame(room: Room): Room {
-        super.startGame(room);
+    return super.modifyPlayerProperty(gameEvent);
+  }
 
-        return ResetCommanderDamagesToZero(room);
-    }
+  startGame(room: Room): Room {
+    super.startGame(room);
 
-    setPlayerDefaults(newPlayer: Player, room:Room){
-        super.setPlayerDefaults(newPlayer,room);
+    return ResetCommanderDamagesToZero(room);
+  }
 
-        SetPlayerDefaults(newPlayer, room);
-    }
+  setPlayerDefaults(newPlayer: Player, room: Room) {
+    super.setPlayerDefaults(newPlayer, room);
 
-    setCommander = (gameEvent: IGameEvent, room:Room)=>{
-        return SetCommander(gameEvent, room);
-    }
+    SetPlayerDefaults(newPlayer, room);
+  }
 
-    modifyPlayerCommanderDamage = (gameEvent: IGameEvent) => {
-        return ModifyPlayerCommanderDamage(gameEvent, this.maxCommanderDamageUntilDead);
-    }
+  setCommander = (gameEvent: IGameEvent, room: Room) => {
+    return SetCommander(gameEvent, room);
+  }
 
-    kickPlayer = (gameEvent: IGameEvent, room: Room):KickPlayerResponse => {
-        let response:KickPlayerResponse = super.kickPlayer(gameEvent, room);
-        RemoveCommanderDamagesFromPlayer(response.kickedPlayer.id, room)
+  modifyPlayerCommanderDamage = (gameEvent: IGameEvent) => {
+    return ModifyPlayerCommanderDamage(gameEvent, this.maxCommanderDamageUntilDead);
+  }
 
-        response.players = room.players;
-        
-        return response
-    }
+  kickPlayer = (gameEvent: IGameEvent, room: Room): KickPlayerResponse => {
+    let response: KickPlayerResponse = super.kickPlayer(gameEvent, room);
+    RemoveCommanderDamagesFromPlayer(response.kickedPlayer.id, room)
+
+    response.players = room.players;
+
+    return response
+  }
 
 }
