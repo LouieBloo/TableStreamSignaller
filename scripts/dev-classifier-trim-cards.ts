@@ -1,6 +1,5 @@
 import "../src/mongo/mongo";
-import { TrainingImageService } from "../src/mongo/services/training-image-service";
-import MongoTrainingImage, { IMongoTrainingImage } from '../src/mongo/models/training-image-model';
+import { TrainingImageService } from "../src/infrastructure/mongo/services/training-image-service";
 import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 const s3Client = new S3Client({ region: "us-west-1" });
@@ -12,8 +11,6 @@ async function waitFiveSeconds() {
       }, 3000);
     });
   }
-
-  
 
 
 const run = async()=>{
