@@ -1,13 +1,13 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { ECSClient, ListTasksCommand, DescribeTasksCommand } from "@aws-sdk/client-ecs";
 import { EC2Client, DescribeNetworkInterfacesCommand } from "@aws-sdk/client-ec2";
-import MongoTrainingImage, { IMongoTrainingImage } from './mongo/models/training-image-model';
+import MongoTrainingImage, { IMongoTrainingImage } from './infrastructure/mongo/models/training-image-model';
 import axios from 'axios';
 import FormData from 'form-data';
 import * as fs from 'fs';
-import { RoomState } from "./rooms/roomState";
-import { Room } from "./rooms/room";
-import { Player } from "./users/player";
+import RoomManager from "./domain/rooms/room-manager";
+import { Room } from "./domain/rooms/room";
+import { Player } from "./domain/users/player";
 
 const ecsClient = new ECSClient({ region: 'us-west-2' });
 const ec2Client = new EC2Client({ region: 'us-west-2' });
@@ -108,8 +108,7 @@ export const handler = async (req: any, res: any) => {
  * @returns 
  */
 const canSavePlayerImages = async(playerId:string, roomId:string):Promise<boolean>=>{
-  let roomState:RoomState = new RoomState();
-  let room:Room = await roomState.getRoomUnsafe(roomId);
+  let room:Room = await RoomManager.getRoomUnsafe(roomId);
 
   if(room && room.players){
     let targetPlayer:Player = room.players.find(p => p.id === playerId);

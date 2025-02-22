@@ -1,7 +1,5 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { ECSClient, ListTasksCommand, DescribeTasksCommand } from "@aws-sdk/client-ecs";
-import { EC2Client, DescribeNetworkInterfacesCommand } from "@aws-sdk/client-ec2";
-import MongoTrainingImage, { IMongoTrainingImage } from '../src/mongo/models/training-image-model';
+import MongoTrainingImage, { IMongoTrainingImage } from '../src/infrastructure/mongo/models/training-image-model';
 import fs from 'fs';
 import path from 'path';
 import "../src/mongo/mongo";
