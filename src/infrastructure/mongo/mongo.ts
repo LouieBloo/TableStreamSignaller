@@ -1,8 +1,8 @@
 import mongoose from 'mongoose';
 
-if(process.env.mongoUrI){
+if(process.env.MONGODB_URI){
     console.log("Starting mongoose...")
-    const mongoUri = process.env.mongoUrI;
+    const mongoUri = process.env.MONGODB_URI;
     mongoose
       .connect(mongoUri)
       .then(() => console.log('Connected to MongoDB Atlas'))

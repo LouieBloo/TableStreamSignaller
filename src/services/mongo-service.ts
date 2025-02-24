@@ -27,7 +27,7 @@ export class MongoService implements IMongoService {
     // Loop over each two-week period in the last two months
     for (let i = 0; i < 4; i++) {
       const { startDate, endDate } = this.getTwoWeekPeriod(twoMonthsAgo, i);
-      const rooms = await this._iMongoRepository.getAnalyticAsync(startDate, endDate);
+      const rooms = await this._iMongoRepository.getRoomsAsync(startDate, endDate);
   
       const analytic = this.calculateAnalyticForPeriod(rooms, startDate, endDate);
       analytics.push(analytic);

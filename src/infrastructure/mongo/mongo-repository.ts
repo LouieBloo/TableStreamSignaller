@@ -4,7 +4,7 @@ import { IMongoRepository } from "../../services/interfaces/iMongoRepository";
 
 export class MongoRepository implements IMongoRepository {
 
-  async getAnalyticAsync(startDate: Date, endDate: Date): Promise<IMongoRoom[] | null> {
+  async getRoomsAsync(startDate: Date, endDate: Date): Promise<IMongoRoom[] | null> {
     const mongoRooms = await MongoRoom.find({
       createdAt: { $gte: startDate, $lte: endDate },
       scheduledRoom: false,

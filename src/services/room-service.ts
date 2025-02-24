@@ -56,13 +56,16 @@ class RoomService {
     return mappedRoom;
   }
 
+
+//should move to mongoRepository
   private async addRoomMongo(roomData: Partial<IMongoRoom>): Promise<IMongoRoom> {
     if (!trackingActive) { return null; }
 
     const room = new MongoRoom(roomData);
     return await room.save();
   }
-
+  
+//should move to mongoRepository
   private async updateRoomMongo(tableStreamRoomId: string, updates: Partial<IMongoRoom>): Promise<IMongoRoom | null> {
     if (!trackingActive) { return null; }
 
