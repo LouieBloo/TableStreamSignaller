@@ -1,19 +1,36 @@
 
 import "reflect-metadata";
-import { IMessage } from "./interfaces/messaging";
-import { RoomState } from "./rooms/roomState";
-import { GameErrorSeverity, GameErrorType, GameEvent, IGameEvent, UserType} from "./interfaces/game";
-import { User } from "./users/user";
-import { Room } from "./rooms/room";
+import { IMessage } from "./domain/interfaces/messaging";
+import { RoomState } from "./domain/rooms/roomState";
+import { GameErrorSeverity, GameErrorType, GameEvent, IGameEvent, UserType} from "./domain/interfaces/game";
+import { User } from "./domain/users/user";
+import { Room } from "./domain/rooms/room";
 import cors from 'cors';
-import router from './router/router'; // Path to the routes file
-import classifierTrainRouter from './router/classifier-router';
-import sttRouter from './router/stt-router';
-import "./mongo/mongo";
-import { checkBearerToken } from "./router/bearer-token-check";
-import { getClientIp } from "./socket/socket-service";
+import router from './presentation/router/router'; // Path to the routes file
+import classifierTrainRouter from './presentation/router/classifier-router';
+import sttRouter from './presentation/router/stt-router';
+import "./infrastructure/mongo/mongo";
+import { checkBearerToken } from "./presentation/router/bearer-token-check";
+import { getClientIp } from "./presentation/socket/socket-service";
+import { MongoRepository } from "./infrastructure/mongo/mongo-repository";
+import { MongoService } from "./services/mongo-service";
+const swaggerJSDoc = require('swagger-jsdoc');
 
+const options = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'TableStream',
+      version: '1.0.0',
+      description: 'API documentation for your Node.js application',
+    },
+  },
+  apis: ['src/router/router.ts'], // Path to the API routes
+};
+
+const swaggerSpec = swaggerJSDoc(options);
 const express = require('express');
+const swaggerUi = require('swagger-ui-express');
 const http = require('http');
 const { Server } = require('socket.io');
 
@@ -31,8 +48,10 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3001;
 
+const mongoRepository = new MongoRepository();
 const roomState = new RoomState()
-
+const mongoService = new MongoService(mongoRepository);
+app.use('/swagger', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use(express.json());
 app.use(cors());
 
@@ -159,7 +178,10 @@ io.on('connection', (socket:any) => {
         //auto delete the room if its not a bot created room 
         if (room.playerSockets.length === 0 && !room.scheduledRoom) {
           console.log("deleting room")
-          await roomState.deleteRoom(room)
+          await roomState.deleteRoom(room);
+          await mongoService.deleteRoom(room);
+
+          //mongoService 
         }else{
           await room.saveAndClose();
         }
