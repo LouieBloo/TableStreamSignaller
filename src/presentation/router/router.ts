@@ -54,7 +54,7 @@ router.get('/analytics', async (req: any, res: any) => {
     const result = await roomService.getTwoMonthsAnalytics();
     const redisResult = await RedisService.getCurrentRedisData();
     const analytic: Analytic = {
-      mongoAnalytic: result,
+      mongoAnalytics: result,
       redisAnalytic: redisResult
     }
     res.json(analytic);
