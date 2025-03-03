@@ -14,10 +14,10 @@ export class MongoRepository implements IMongoRepository {
     return mongoRooms;
   }
 
-  async deleteRoomAsync(room: Room): Promise<IMongoRoom | null> {
+  async deleteRoomAsync(id: string): Promise<IMongoRoom | null> {
     try {
       return await MongoRoom.findOneAndUpdate(
-        { tableStreamId: room.id },
+        { tableStreamId: id },
         { deletedAt: new Date() },
         { new: true }
       );
@@ -26,5 +26,13 @@ export class MongoRepository implements IMongoRepository {
     }
   }
 
+  async addRoomMongo(roomData: Partial<IMongoRoom>): Promise<IMongoRoom> {
+    const room = new MongoRoom(roomData);
+    return await room.save();
+  }
+
+  async updateRoomMongo(tableStreamRoomId: string, updates: Partial<IMongoRoom>): Promise<IMongoRoom | null> {
+    return await MongoRoom.findOneAndUpdate({ tableStreamId: tableStreamRoomId }, updates, { new: true });
+  }
   
 }

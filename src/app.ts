@@ -1,7 +1,6 @@
 
 import "reflect-metadata";
 import { IMessage } from "./domain/interfaces/messaging";
-import { RoomState } from "./domain/rooms/roomState";
 import { GameErrorSeverity, GameErrorType, GameEvent, IGameEvent, UserType} from "./domain/interfaces/game";
 import { User } from "./domain/users/user";
 import { Room } from "./domain/rooms/room";
@@ -14,6 +13,8 @@ import { checkBearerToken } from "./presentation/router/bearer-token-check";
 import { getClientIp } from "./presentation/socket/socket-service";
 import { MongoRepository } from "./infrastructure/mongo/mongo-repository";
 import { MongoService } from "./services/mongo-service";
+import { RedisRepository } from "./infrastructure/redis/redis-repository";
+import { RedisService } from "./services/redis.service";
 const swaggerJSDoc = require('swagger-jsdoc');
 
 const options = {
@@ -49,8 +50,10 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 3001;
 
 const mongoRepository = new MongoRepository();
-const roomState = new RoomState()
 const mongoService = new MongoService(mongoRepository);
+const redisRepository = new RedisRepository();
+const redisService = new RedisService(redisRepository);
+
 app.use('/swagger', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use(express.json());
 app.use(cors());
@@ -71,7 +74,7 @@ io.on('connection', (socket:any) => {
     try{
       console.log("Join Room: " + " " + playerName + " - " + roomName + " - " + roomId + " - " + playerId)
 
-      let currentRoom:Room = await roomState.getOrCreateRoom({roomName, roomId, password, gameType, maxPlayers, reactionsEnabled: reactionsEnabled});
+      let currentRoom:Room = await redisService.getOrCreateRoom({roomName, roomId, password, gameType, maxPlayers, reactionsEnabled: reactionsEnabled});
       let newUser:User = null;
   
       if (userType == UserType.Player && !currentRoom.canAddPlayer(playerId,socket.id)) {
@@ -81,12 +84,13 @@ io.on('connection', (socket:any) => {
       }else if(userType == UserType.Player){
         //new player
         try{
-          newUser = currentRoom.addPlayer(playerId, playerName, socket.id, password, userIp, isSharingImages)
+          newUser = currentRoom.addPlayer(playerId, playerName, socket.id, password, userIp, isSharingImages);
+          mongoService.updateRoom(currentRoom);
           currentRoom.playerSockets.push(socket.id);
         }catch(error){
           throw error;
         }finally{
-          await currentRoom.saveAndClose();
+          await redisService.saveAndClose(currentRoom);
         }
       }else if(userType == UserType.Spectator){
         //new spectator
@@ -96,7 +100,7 @@ io.on('connection', (socket:any) => {
         }catch(error){
           throw error;
         }finally{
-          await currentRoom.saveAndClose();
+          await redisService.saveAndClose(currentRoom);
         }
       }else{
         console.error("Idk whats happening here: ", roomName, playerName, userType);
@@ -113,17 +117,19 @@ io.on('connection', (socket:any) => {
       }); 
   
       socket.on('message', async(message:IMessage) => {
-        let room:Room = await roomState.getRoom(currentRoom.id);
+        let room:Room = await redisService.getRoom(currentRoom.id);
         let newMessage = room.addMessage(socket.id, message.text)
         if(newMessage){
-          await room.saveAndClose();
+          await redisService.saveAndClose(room);
           io.in(currentRoom.id).emit('message', newMessage);
         }
       });
   
       //primary game events
       socket.on('gameEvent', async(event:IGameEvent) => {
-        let room:Room = await roomState.getRoom(currentRoom.id);
+        let room:Room = await redisService.getRoom(currentRoom.id);
+        console.log(room);
+
         try{
           event.response = room.gameEvent(socket.id, event)
           //if this event results in messages, add them
@@ -142,48 +148,46 @@ io.on('connection', (socket:any) => {
             })
           }
 
-          await room.saveAndClose();
+          await redisService.saveAndClose(room);
           io.in(currentRoom.id).emit('gameEvent', event);
         }
         catch(error){
           console.log(error)
-          await room.close();
+          await redisService.close(room);
           socket.emit('errorResponse', {type: error.type, message: error.message, severity: error.severity});
         }
       });
 
       //private game events such as personal settings
       socket.on('privateGameEvent', async(event: IGameEvent, callback:any) => {
-        let room:Room = await roomState.getRoom(currentRoom.id);
+        let room:Room = await redisService.getRoom(currentRoom.id);
         try{
           event.isPrivate = true;
           event.response = room.gameEvent(socket.id, event)
-          await room.saveAndClose();
+          await redisService.saveAndClose(room);
           callback(event);
         }
         catch(error){
           console.log(error)
-          await room.close();
+          await redisService.close(room);
           socket.emit('errorResponse', {type: error.type, message: error.message, severity: error.severity});
         }
       });
   
       socket.on('disconnect', async() => {
         console.log('A user disconnected:', socket.id);
-        let room:Room = await roomState.getRoom(currentRoom.id);
+        let room:Room = await redisService.getRoom(currentRoom.id);
         if(!room){return;}
   
         room.userDisconnected(socket.id, null);
         socket.to(currentRoom.id).emit('peerDisconnected', { socketId: socket.id });
         //auto delete the room if its not a bot created room 
         if (room.playerSockets.length === 0 && !room.scheduledRoom) {
-          console.log("deleting room")
-          await roomState.deleteRoom(room);
+          await redisService.deleteRoom(room);
           await mongoService.deleteRoom(room);
 
-          //mongoService 
         }else{
-          await room.saveAndClose();
+          await redisService.saveAndClose(room);
         }
       });
   

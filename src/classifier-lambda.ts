@@ -5,9 +5,10 @@ import MongoTrainingImage, { IMongoTrainingImage } from './infrastructure/mongo/
 import axios from 'axios';
 import FormData from 'form-data';
 import * as fs from 'fs';
-import { RoomState } from "./domain/rooms/roomState";
 import { Room } from "./domain/rooms/room";
 import { Player } from "./domain/users/player";
+import { RedisRepository } from "./infrastructure/redis/redis-repository";
+import { RedisService } from "./services/redis.service";
 
 const ecsClient = new ECSClient({ region: 'us-west-2' });
 const ec2Client = new EC2Client({ region: 'us-west-2' });
@@ -108,9 +109,10 @@ export const handler = async (req: any, res: any) => {
  * @returns 
  */
 const canSavePlayerImages = async(playerId:string, roomId:string):Promise<boolean>=>{
-  let roomState:RoomState = new RoomState();
-  let room:Room = await roomState.getRoomUnsafe(roomId);
-
+  const redisRepository = new RedisRepository();
+  const redisService = new RedisService(redisRepository)
+  let room:Room = await redisService.getRoomUnsafe(roomId);
+  //test this TODO
   if(room && room.players){
     let targetPlayer:Player = room.players.find(p => p.id === playerId);
     return targetPlayer.isSharingImages;

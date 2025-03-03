@@ -4,5 +4,7 @@ import { IMongoRoom } from "../../infrastructure/mongo/models/room-model";
 
 export interface IMongoService {
     deleteRoom(room: Room): Promise<IMongoRoom | null>;
-    getTwoMonthsAnalytics(): Promise<MongoAnalytic[]>
+    addRoom(room: Room): Promise<IMongoRoom>;
+    getTwoMonthsAnalytics(): Promise<MongoAnalytic[]>;
+    updateRoom(room: Room): Promise<IMongoRoom | null>;
 }

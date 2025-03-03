@@ -4,18 +4,18 @@ import { IMessage } from "../interfaces/messaging";
 import { Player } from "../users/player";
 import { MTGCommander } from "../mtg-commander";
 import { Spectator } from "../users/spectator";
-import { saveRoomAndUnlock, unlockRoom } from "../../infrastructure/redis/redis";
 import { Type } from "class-transformer";
 import { MTGStandard } from "../mtg-standard";
 import { MTGModern } from "../mtg-modern";
 import { MTGVintage } from "../mtg-vintage";
 import { MTGLegacy } from "../mtg-legacy";
-import RoomService from '../../services/room-service';
 import { PokemonStandard } from "../pokemon-standard";
 import { MTGPauperCommander } from "../mtg-pauper-commander";
+import { ICreateRoomParams } from "../interfaces/create-room-params";
 
 const { v4: uuidv4 } = require('uuid');
 
+//this is an entity. No services allowed to be called
 export class Room {
   name: string;
 
@@ -47,30 +47,44 @@ export class Room {
   inactivityTimeUntilDestroyedInSeconds:number = 3600 // 1 hour default
 
   reactionsEnabled:boolean = true;
+  
+  get roomUrl(){
+    return process.env.APP_URL + "/game?id=" + this.id
+  }
 
-  constructor(roomName: string,password:string, gameType: GameType, maxPlayers:number) {
+  constructor(params: ICreateRoomParams) {
+    if(!params.roomName){
+      throw new GameError(GameErrorType.GameNotStarted, "Room name required",GameErrorSeverity.Error);
+    }
+    
     this.id = uuidv4();
-    this.name = roomName;
+    this.name = params.roomName;
     this.messages = [];
     this.players = [];
     this.spectators = [];
-    this.password = password;
-    this.maxPlayers = maxPlayers;
+    this.password = params.password;
+    this.maxPlayers = params.maxPlayers;
 
-    this.game = Room.createGame(gameType);
-  }
-
-  saveAndClose = async (setScheduledTTL:boolean = false) => {
-    try{
-      saveRoomAndUnlock(this,setScheduledTTL);
-    }catch(error){
-      console.log("catching save and close: ", error)
+    if(params.scheduledRoom){
+      this.scheduledRoom = params.scheduledRoom;
     }
+    if(params.initialScheduleTTLInSeconds > 0){
+      this.initialScheduleTTLInSeconds = params.initialScheduleTTLInSeconds;
+    }
+    //auto create password if the room is private and no password was given
+    if(params.private && !params.password){
+      this.password = this.generateRandomPassword(10);
+    }
+    if(params.reactionsEnabled == false){
+      this.reactionsEnabled = false;
+    }
+    if(params.allowPlayerKicking == false){
+      this.allowPlayerKicking = false;
+    }
+
+    this.game = Room.createGame(params.gameType);
   }
 
-  close = async () => {
-    unlockRoom(this.redisLock);
-  }
 
   static createGame(gameType: GameType) {
     if (typeof gameType === 'string') {
@@ -158,8 +172,6 @@ export class Room {
 
       this.players.push(player)
 
-      //send changes to mongo
-      RoomService.updateRoom(this);
     } else {
       player.socketId = socketId;
     }

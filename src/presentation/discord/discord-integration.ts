@@ -1,15 +1,12 @@
+import { ICreateRoomParams } from "../../domain/interfaces/create-room-params";
 import { GameType } from "../../domain/interfaces/game";
 import { Room } from "../../domain/rooms/room";
-import { createRoom } from "../../domain/rooms/room-controller";
-import { ICreateRoomParams } from "../../domain/rooms/roomState";
 
 
 const handler = async(req: any, res: any) => {
   console.log(JSON.stringify(req.body))
-  // Parse the interaction
   const data = req.body.data;
 
-  // Handle application commands
   if (data.name =='create_game') {
     try{
 
@@ -39,13 +36,12 @@ const handler = async(req: any, res: any) => {
         }
       })
 
-      let newRoom = await createRoom(roomParams);
+      const newRoom = new Room(roomParams);
   
-      // Respond to Discord
       return res.json({
         type: 4, // Channel message with source
         data: {
-          content: `Room "${newRoom.roomName}" has been created at ${newRoom.roomUrl} ! The room will auto expire in 15 minutes if nobody joins.`,
+          content: `Room "${newRoom.name}" has been created at ${newRoom.roomUrl} ! The room will auto expire in 15 minutes if nobody joins.`,
         },
       });
     }catch(error){

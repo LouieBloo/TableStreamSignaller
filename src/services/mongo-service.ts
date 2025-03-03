@@ -3,6 +3,7 @@ import { Room } from "../domain/rooms/room";
 import { IMongoService } from "./interfaces/iMongoService";
 import { IMongoRepository } from "./interfaces/iMongoRepository";
 import { IMongoRoom } from "../infrastructure/mongo/models/room-model";
+import { Player } from "../domain/users/player";
 
 const trackingActive = process.env.MONGODB_URI ? true : false;
 
@@ -17,7 +18,7 @@ export class MongoService implements IMongoService {
     if (!trackingActive) {
       return null;
     }
-    await this._iMongoRepository.deleteRoomAsync(room);
+    await this._iMongoRepository.deleteRoomAsync(room.id);
   }
 
   async getTwoMonthsAnalytics(): Promise<MongoAnalytic[]> {
@@ -35,6 +36,25 @@ export class MongoService implements IMongoService {
   
     return analytics;
   }
+
+  async addRoom(room: Room): Promise<IMongoRoom> {
+    if (!trackingActive) { return null; }
+    try {
+      return await this._iMongoRepository.addRoomMongo(this.mapTableStreamRoomToMongoRoom(room));
+    } catch (error) {
+      console.error("Error adding mongo room: ", error);
+    }
+  }
+
+    async updateRoom(room: Room): Promise<IMongoRoom | null> {
+      if (!trackingActive) { return null; }
+      try {
+        return await this._iMongoRepository.updateRoomMongo(room.id, this.mapTableStreamRoomToMongoRoom(room));
+      } catch (error) {
+        console.error("Error updating mongo room: ", error);
+      }
+    }
+  
   
   private getDateTwoMonthsAgo(): Date {
     const currentDate = new Date();
@@ -45,10 +65,10 @@ export class MongoService implements IMongoService {
   
   private getTwoWeekPeriod(twoMonthsAgo: Date, periodIndex: number): { startDate: Date; endDate: Date } {
     const startDate = new Date(twoMonthsAgo);
-    startDate.setDate(startDate.getDate() + periodIndex * 14); // Each period is 14 days apart
+    startDate.setDate(startDate.getDate() + periodIndex * 14);
   
     const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + 14); // Add 14 days to the start date for the end date
+    endDate.setDate(endDate.getDate() + 14);
   
     return { startDate, endDate };
   }
@@ -85,6 +105,23 @@ export class MongoService implements IMongoService {
       }
       return sum + duration;
     }, 0);
+  }
+
+  private mapTableStreamRoomToMongoRoom(room: Room): Partial<IMongoRoom> {
+    let mappedRoom: Partial<IMongoRoom> = {
+      name: room.name,
+      playerIds: room.players.map((player: Player) => player.id),
+      gameType: room.game.gameType.toString(),
+      tableStreamId: room.id,
+      maxPlayers: room.maxPlayers,
+      scheduledRoom: room.scheduledRoom,
+      initialScheduleTTLInSeconds: room.initialScheduleTTLInSeconds,
+      inactivityTimeUntilDestroyedInSeconds: room.inactivityTimeUntilDestroyedInSeconds,
+      reactionsEnabled: room.reactionsEnabled,
+      allowPlayerKicking: room.allowPlayerKicking
+    };
+
+    return mappedRoom;
   }
   
 }

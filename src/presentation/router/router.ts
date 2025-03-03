@@ -1,4 +1,4 @@
-const express = require('express');
+import express, { Router, Request, Response, NextFunction } from 'express';
 const fs = require('fs');
 const fsExtra = require('fs-extra');
 const path = require('path');
@@ -6,25 +6,28 @@ const router = express.Router();
 const multer  = require('multer')
 const upload = multer();
 
-import { isRoomPasswordProtected} from "../../infrastructure/redis/redis";
 import axios from 'axios';
 import { handler } from "../../classifier-lambda";
 import discord from '../discord/discord-integration';
 import {verifyKeyMiddleware} from 'discord-interactions';
-import {createRoom} from '../../domain/rooms/room-controller';
 import { Room } from "../../domain/rooms/room";
 import { PlayingCard } from "../../domain/interfaces/cards";
 import {redisClient} from '../../infrastructure/redis/redis';
 import { logMessage } from "../../infrastructure/mongo/services/log-service";
 import { IMongoLog } from "../../infrastructure/mongo/models/log-model";
 import { search } from "../../domain/pokemon/pokemon-search";
-import RedisService from "../../services/redis.service";
+import {RedisService} from "../../services/redis.service";
 import { Analytic } from "../../domain/interfaces/analytic";
 import { MongoRepository } from "../../infrastructure/mongo/mongo-repository";
 import { MongoService } from "../../services/mongo-service";
+import { checkBearerToken } from './bearer-token-check';
+import { RedisRepository } from '../../infrastructure/redis/redis-repository';
+import { ICreateRoomParams } from '../../domain/interfaces/create-room-params';
 
 const mongoRepository = new MongoRepository();
-const roomService = new MongoService(mongoRepository);
+const mongoService = new MongoService(mongoRepository);
+const redisRepository = new RedisRepository();
+const redisService = new RedisService(redisRepository);
 
 router.get('/', (req: any, res: any) => {
   res.status(200).send('Beating...');
@@ -49,13 +52,13 @@ router.post('/log', async(req: any, res: any) => {
  *       200:
  *         description: Successful response with a list of users.
  */
-router.get('/analytics', async (req: any, res: any) => {
+router.get('/analytics', checkBearerToken, async (req: any, res: any) => {
   try {
-    const result = await roomService.getTwoMonthsAnalytics();
-    const redisResult = await RedisService.getCurrentRedisData();
+    const mongoAnalytics = await mongoService.getTwoMonthsAnalytics();
+    const redisAnalytic = await redisService.getRedisAnalytic();
     const analytic: Analytic = {
-      mongoAnalytics: result,
-      redisAnalytic: redisResult
+      mongoAnalytics: mongoAnalytics,
+      redisAnalytic: redisAnalytic
     }
     res.json(analytic);
   } catch (error) {
@@ -103,7 +106,7 @@ router.post('/password-check', async (req: any, res: any) => {
   const { roomId } = req.body;
 
   try {
-    let isPasswordPro = await isRoomPasswordProtected(roomId);
+    const isPasswordPro = await redisService.isRoomPasswordProtected(roomId);
     res.status(200).json({ result: isPasswordPro })
   }catch(error){
     console.error("Error checking password: ", error)
@@ -123,7 +126,7 @@ router.post('/classify', upload.any(), async (req: any, res: any) => {
 
 router.post('/create-room', async (req: any, res: any) => {
   try{
-    let newRoom = await createRoom({
+    const roomParams: ICreateRoomParams = {
       roomName: req.body.roomName,
       gameType: Room.gameTypeMapping(req.body.gameType),
       maxPlayers: req.body.maxPlayers,
@@ -131,9 +134,11 @@ router.post('/create-room', async (req: any, res: any) => {
       private: req.body.private,
       initialScheduleTTLInSeconds: req.body.initialScheduleTTLInSeconds,
       reactionsEnabled: req.body.reactionsEnabled,
-      allowPlayerKicking: req.body.allowPlayerKicking,
+      allowPlayerKicking:  req.body.allowPlayerKicking,
       scheduledRoom: true
-    });
+    }
+    const newRoom = new Room(roomParams);
+    //do i need to save or something here?? TODO
 
     res.status(201).json({ room: newRoom })
   }catch(error){
@@ -145,7 +150,6 @@ if(process.env.DISCORD_PUBLIC_KEY){
   router.post('/discord-interaction', verifyKeyMiddleware(process.env.DISCORD_PUBLIC_KEY), async(req: Request, res: Response) => {
     return await discord(req,res);
   })
-  
 }
 
 router.get('/pokemon-cards', async(req: any, res: any) => {

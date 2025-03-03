@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import MongoUser from '../../infrastructure/mongo/models/user-model';
 
-export const checkBearerToken = async (req: any, res: Response, next: NextFunction) => {
+export const checkBearerToken = async (req: any, res: any, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
 
