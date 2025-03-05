@@ -11,10 +11,20 @@ export interface IGameEvent {
     isPrivate?:boolean;
 }
 
+
+export interface IModifyGameProperty{
+    property:GameProperties;
+    value?:any;
+}
+
 export interface IModifyPlayerProperty{
     property:PlayerProperties;
     amountToModify:number;
     value?:any;
+}
+
+export enum GameProperties{
+    DayNightCycle
 }
 
 export enum PlayerProperties{
@@ -45,7 +55,8 @@ export enum GameEvent{
     ModifyToken,
     DeleteToken,
     RollDice,
-    KickPlayer
+    KickPlayer,
+    ModifyGameProperty
 }
 
 export enum GameType{
