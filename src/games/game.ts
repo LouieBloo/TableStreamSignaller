@@ -1,5 +1,5 @@
 import { Room } from "../rooms/room";
-import { GameError, GameErrorSeverity, GameErrorType, GameEvent, GameType, ICoinFlipResults, IGameEvent, IModifyPlayerProperty, PlayerProperties } from "../interfaces/game";
+import { GameError, GameErrorSeverity, GameErrorType, GameEvent, GameProperties, GameType, ICoinFlipResults, IGameEvent, IModifyGameProperty, IModifyPlayerProperty, PlayerProperties } from "../interfaces/game";
 import { Player } from "../users/player";
 import { PlayingCard, slimCard, Token } from "../interfaces/cards";
 import { Type } from "class-transformer";
@@ -20,12 +20,16 @@ export class Game {
     @Type(() => Date)
     startedAt:Date;
 
+    dayNightCycle:string;
+
     public event(gameEvent: IGameEvent, room: Room): any {
         switch (gameEvent.event) {
             case GameEvent.RandomizePlayerOrder:
                 return this.randomizePlayerOrder(room.players);
             case GameEvent.ModifyPlayerProperty:
                 return this.modifyPlayerProperty(gameEvent);
+            case GameEvent.ModifyGameProperty:
+                return this.modifyGameProperty(gameEvent);
             case GameEvent.StartGame:
                 return this.startGame(room);
             case GameEvent.ResetGame:
@@ -149,6 +153,22 @@ export class Game {
         return players.reduce((lowest, player) => 
             player.turnOrder < lowest.turnOrder ? player : lowest
         );
+    }
+
+    modifyGameProperty(gameEvent:IGameEvent): Game{
+        if(!this.active){
+            throw new GameError(GameErrorType.GameNotStarted, "The game has not started yet. Please start the game.",GameErrorSeverity.Error);
+        }
+
+        let modifyEvent:IModifyGameProperty = gameEvent.payload;
+
+        switch(modifyEvent.property){
+            case GameProperties.DayNightCycle:
+                this.dayNightCycle = modifyEvent.value;
+                break;
+        }
+        
+        return this;
     }
 
     modifyPlayerProperty(gameEvent: IGameEvent): Player {
