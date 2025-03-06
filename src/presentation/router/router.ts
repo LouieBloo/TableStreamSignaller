@@ -20,12 +20,8 @@ import { IMongoLog } from "../../infrastructure/mongo/models/log-model";
 import { search } from "../../domain/pokemon/pokemon-search";
 import RedisService from "../../services/redis.service";
 import { IAnalytic } from "../../domain/interfaces/IAnalytic";
-import { MongoRepository } from "../../infrastructure/mongo/mongo-repository";
-import { MongoService } from "../../services/mongo-service";
 import { checkBearerToken } from "./bearer-token-check";
-
-const mongoRepository = new MongoRepository();
-const roomService = new MongoService(mongoRepository);
+import { getTwoMonthsAnalytics } from "../../services/mongo-service";
 
 router.get('/', (req: any, res: any) => {
   res.status(200).send('Beating...');
@@ -52,7 +48,7 @@ router.post('/log', async(req: any, res: any) => {
  */
 router.get('/analytics', checkBearerToken, async (req: any, res: any) => {
   try {
-    const result = await roomService.getTwoMonthsAnalytics();
+    const result = await getTwoMonthsAnalytics();
     const redisResult = await RedisService.getCurrentRedisData();
     const analytic: IAnalytic = {
       mongoAnalytics: result,

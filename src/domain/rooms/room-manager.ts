@@ -2,9 +2,8 @@ import { GameError, GameErrorSeverity, GameErrorType, GameType } from "../interf
 import { Room } from "./room";
 import { plainToInstance } from 'class-transformer';
 import {lockRoomAndGetState, getRoomUnsafe, deleteRoomAndUnlock} from '../../infrastructure/redis/redis';
-import RoomService from '../../services/room-service';
 import { ICreateRoomParams } from "../interfaces/ICreateRoomParams";
-
+import { addRoom, deleteRoom } from "../../infrastructure/mongo/mongo-repository";
 
 class RoomManager {
 
@@ -37,7 +36,7 @@ class RoomManager {
       }
 
       //track in mongo
-      await RoomService.addRoom(room);
+      await addRoom(room);
     }else{
       room = this.parseRoom(redisResult.room);  
     }
@@ -89,6 +88,8 @@ class RoomManager {
     }catch(error){
       console.log("catching delete room: ", error);
     }
+
+    await deleteRoom(room);
   }
 
 }
