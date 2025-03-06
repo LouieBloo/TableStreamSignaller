@@ -47,7 +47,7 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 3001;
 
 
-app.use('/swagger', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+//app.use('/swagger', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use(express.json());
 app.use(cors());
 
@@ -66,6 +66,8 @@ io.on('connection', (socket:any) => {
   socket.on('joinRoom', async ({playerId, roomId, roomName, password, gameType, playerName, userType, maxPlayers, reactionsEnabled, isSharingImages }:any, callback:any) => {
     try{
       console.log("Join Room: " + " " + playerName + " - " + roomName + " - " + roomId + " - " + playerId)
+
+      console.log("password ", password)
 
       let currentRoom:Room = await RoomManager.getOrCreateRoom({roomName, roomId, password, gameType, maxPlayers, reactionsEnabled: reactionsEnabled});
       let newUser:User = null;
@@ -175,8 +177,6 @@ io.on('connection', (socket:any) => {
         if (room.playerSockets.length === 0 && !room.scheduledRoom) {
           console.log("deleting room")
           await RoomManager.deleteRoom(room);
-
-          //mongoService 
         }else{
           await room.saveAndClose();
         }

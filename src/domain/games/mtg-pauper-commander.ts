@@ -1,8 +1,8 @@
-import { Player } from "./users/player";
-import { IGameEvent, GameEvent, GameType, IModifyPlayerProperty, PlayerProperties } from "./interfaces/IGame";
-import { Room } from "./rooms/room";
+import { Player } from "../users/player";
+import { IGameEvent, GameEvent, GameType, IModifyPlayerProperty, PlayerProperties } from "../interfaces/IGame";
+import { Room } from "../rooms/room";
 import { Game } from "./game";
-import { ResetCommanderDamagesToZero, SetPlayerDefaults, SetCommander, ModifyPlayerCommanderDamage, ModifyPlayerCommanderCastAmount } from './games/services/mtg-commander-service';
+import { ResetCommanderDamagesToZero, SetPlayerDefaults, SetCommander, ModifyPlayerCommanderDamage, ModifyPlayerCommanderCastAmount } from '../games/services/mtg-commander-service';
 
 export class MTGPauperCommander extends Game {
   startingLifeTotal = 30;

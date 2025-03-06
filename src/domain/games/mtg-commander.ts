@@ -1,9 +1,9 @@
-import { Player } from "./users/player";
-import { IGameEvent, GameEvent, GameType, PlayerProperties, IModifyPlayerProperty } from "./interfaces/IGame";
-import { Room } from "./rooms/room";
+import { Player } from "../users/player";
+import { IGameEvent, GameEvent, GameType, PlayerProperties, IModifyPlayerProperty } from "../interfaces/IGame";
+import { Room } from "../rooms/room";
 import { Game } from "./game";
-import { ResetCommanderDamagesToZero, SetPlayerDefaults, SetCommander, ModifyPlayerCommanderDamage, RemoveCommanderDamagesFromPlayer, ModifyPlayerCommanderCastAmount } from './games/services/mtg-commander-service';
-import { IKickPlayerResponse } from "./interfaces/IKickPlayerReponse";
+import { ResetCommanderDamagesToZero, SetPlayerDefaults, SetCommander, ModifyPlayerCommanderDamage, RemoveCommanderDamagesFromPlayer, ModifyPlayerCommanderCastAmount } from '../games/services/mtg-commander-service';
+import { IKickPlayerResponse } from "../interfaces/IKickPlayerReponse";
 
 export class MTGCommander extends Game {
   startingLifeTotal = 40;

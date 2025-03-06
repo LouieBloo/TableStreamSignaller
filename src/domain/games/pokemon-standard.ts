@@ -1,7 +1,7 @@
-import { Room } from "./rooms/room";
-import { GameError, GameErrorSeverity, GameErrorType, GameEvent, GameType, IGameEvent, IModifyPlayerProperty, PlayerProperties } from "./interfaces/IGame";
+import { Room } from "../rooms/room";
+import { GameError, GameErrorSeverity, GameErrorType, GameEvent, GameType, IGameEvent, IModifyPlayerProperty, PlayerProperties } from "../interfaces/IGame";
 import { Game } from "./game";
-import { Player } from "./users/player";
+import { Player } from "../users/player";
 
 export class PokemonStandard extends Game {
   startingLifeTotal = 0;

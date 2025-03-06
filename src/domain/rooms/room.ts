@@ -1,18 +1,18 @@
-import { Game } from "../game";
+import { Game } from "../games/game";
 import { GameError, GameErrorSeverity, GameErrorType, GameType, IGameEvent } from "../interfaces/IGame";
 import { IMessage } from "../interfaces/IMessaging";
 import { Player } from "../users/player";
-import { MTGCommander } from "../mtg-commander";
+import { MTGCommander } from "../games/mtg-commander";
 import { Spectator } from "../users/spectator";
 import { saveRoomAndUnlock, unlockRoom } from "../../infrastructure/redis/redis";
 import { Type } from "class-transformer";
-import { MTGStandard } from "../mtg-standard";
-import { MTGModern } from "../mtg-modern";
-import { MTGVintage } from "../mtg-vintage";
-import { MTGLegacy } from "../mtg-legacy";
-import RoomService from '../../services/room-service';
-import { PokemonStandard } from "../pokemon-standard";
-import { MTGPauperCommander } from "../mtg-pauper-commander";
+import { MTGStandard } from "../games/mtg-standard";
+import { MTGModern } from "../games/mtg-modern";
+import { MTGVintage } from "../games/mtg-vintage";
+import { MTGLegacy } from "../games/mtg-legacy";
+import { PokemonStandard } from "../games/pokemon-standard";
+import { MTGPauperCommander } from "../games/mtg-pauper-commander";
+import { updateRoom } from "../../infrastructure/mongo/mongo-repository";
 
 const { v4: uuidv4 } = require('uuid');
 
@@ -159,7 +159,7 @@ export class Room {
       this.players.push(player)
 
       //send changes to mongo
-      RoomService.updateRoom(this);
+      updateRoom(this);
     } else {
       player.socketId = socketId;
     }

@@ -1,9 +1,9 @@
-import { Room } from "./rooms/room";
-import { GameError, GameErrorSeverity, GameErrorType, GameEvent, GameType, ICoinFlipResults, IGameEvent, IModifyPlayerProperty, PlayerProperties } from "./interfaces/IGame";
-import { Player } from "./users/player";
-import { IPlayingCard, slimCard, IToken } from "./interfaces/ICards";
+import { Room } from "../rooms/room";
+import { GameError, GameErrorSeverity, GameErrorType, GameEvent, GameProperties, GameType, ICoinFlipResults, IGameEvent, IModifyGameProperty, IModifyPlayerProperty, PlayerProperties } from "../interfaces/IGame";
+import { Player } from "../users/player";
+import { IPlayingCard, slimCard, IToken } from "../interfaces/ICards";
 import { Type } from "class-transformer";
-import { IKickPlayerResponse } from "./interfaces/IKickPlayerReponse";
+import { IKickPlayerResponse } from "../interfaces/IKickPlayerReponse";
 const { v4: uuidv4 } = require('uuid');
 
 export class Game {
