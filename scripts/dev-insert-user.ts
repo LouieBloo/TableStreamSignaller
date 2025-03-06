@@ -1,5 +1,5 @@
 import "../src/mongo/mongo";
-import MongoUser, { IMongoUser } from '../src/mongo/models/user-model';
+import MongoUser from '../src/infrastructure/mongo/models/user-model';
 const { v4: uuidv4 } = require('uuid');
 
 async function waitFiveSeconds() {
