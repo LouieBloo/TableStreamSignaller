@@ -1,4 +1,4 @@
-export interface IMongoAnalytic {
+export interface IMongoAnalyticByDate {
     startDate: Date,
     endDate: Date,
     roomCount: number;

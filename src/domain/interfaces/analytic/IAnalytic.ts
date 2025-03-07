@@ -2,6 +2,6 @@ import { IMongoAnalytic } from "./IMongoAnalytic";
 import { IRedisAnalytic } from "./IRedisAnalytic";
 
 export interface IAnalytic {
-    mongoAnalytics: IMongoAnalytic[];
+    mongoAnalytic: IMongoAnalytic;
     redisAnalytic: IRedisAnalytic;
 }

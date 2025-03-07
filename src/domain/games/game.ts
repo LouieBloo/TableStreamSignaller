@@ -1,5 +1,5 @@
 import { Room } from "../rooms/room";
-import { GameError, GameErrorSeverity, GameErrorType, GameEvent, GameProperties, GameType, ICoinFlipResults, IGameEvent, IModifyGameProperty, IModifyPlayerProperty, PlayerProperties } from "../interfaces/IGame";
+import { GameError, GameErrorSeverity, GameErrorType, GameEvent, GameProperties, GameType, IGameEvent, IModifyGameProperty, IModifyPlayerProperty, PlayerProperties } from "../interfaces/IGame";
 import { Player } from "../users/player";
 import { IPlayingCard, slimCard, IToken } from "../interfaces/ICards";
 import { Type } from "class-transformer";
