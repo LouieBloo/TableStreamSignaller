@@ -1,6 +1,6 @@
 import { ICreateRoomParams } from "../interfaces/ICreateRoomParams";
 import { GameType } from "../interfaces/IGame";
-import RoomManager  from "../rooms/room-manager"
+import RoomManager  from "../../services/room-manager"
 export interface IRoomCreationResponse{
     roomName: string;
     roomId:string;
