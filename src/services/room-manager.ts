@@ -1,9 +1,13 @@
-import { GameError, GameErrorSeverity, GameErrorType, GameType } from "../interfaces/IGame";
-import { Room } from "./room";
+import { GameError, GameErrorSeverity, GameErrorType } from "../domain/interfaces/IGame";
 import { plainToInstance } from 'class-transformer';
-import {lockRoomAndGetState, getRoomUnsafe, deleteRoomAndUnlock} from '../../infrastructure/redis/redis';
-import { ICreateRoomParams } from "../interfaces/ICreateRoomParams";
-import { addRoom, deleteRoom } from "../../infrastructure/mongo/mongo-repository";
+import {lockRoomAndGetState, getRoomUnsafe, deleteRoomAndUnlock} from '../infrastructure/redis/redis';
+import { ICreateRoomParams } from "../domain/interfaces/ICreateRoomParams";
+import { addRoom, deleteRoom } from "../infrastructure/mongo/mongo-repository";
+import { Room } from "../domain/rooms/room";
+
+//getOrCreateRoom can move all the if statements to the Room obj
+//update redis.ts so it returns a Room or null, not a string + a lock
+//move parseroom to redis.ts
 
 class RoomManager {
 
