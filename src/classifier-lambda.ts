@@ -5,7 +5,7 @@ import MongoTrainingImage, { IMongoTrainingImage } from './infrastructure/mongo/
 import axios from 'axios';
 import FormData from 'form-data';
 import * as fs from 'fs';
-import RoomManager from "./domain/rooms/room-manager";
+import RoomManager from "./services/room-manager";
 import { Room } from "./domain/rooms/room";
 import { Player } from "./domain/users/player";
 

@@ -18,10 +18,8 @@ import {redisClient} from '../../infrastructure/redis/redis';
 import { logMessage } from "../../infrastructure/mongo/services/log-service";
 import { IMongoLog } from "../../infrastructure/mongo/models/log-model";
 import { search } from "../../domain/pokemon/pokemon-search";
-import RedisService from "../../services/redis.service";
-import { IAnalytic } from "../../domain/interfaces/IAnalytic";
 import { checkBearerToken } from "./bearer-token-check";
-import { getTwoMonthsAnalytics } from "../../services/mongo-service";
+import { getAnalytic } from "../../services/analytics-service";
 
 router.get('/', (req: any, res: any) => {
   res.status(200).send('Beating...');
@@ -48,12 +46,7 @@ router.post('/log', async(req: any, res: any) => {
  */
 router.get('/analytics', checkBearerToken, async (req: any, res: any) => {
   try {
-    const result = await getTwoMonthsAnalytics();
-    const redisResult = await RedisService.getCurrentRedisData();
-    const analytic: IAnalytic = {
-      mongoAnalytics: result,
-      redisAnalytic: redisResult
-    }
+    const analytic = await getAnalytic();
     res.json(analytic);
   } catch (error) {
     console.error('Error fetching analytics data:', error);

@@ -1,7 +1,7 @@
 
 import "reflect-metadata";
 import { IMessage } from "./domain/interfaces/IMessaging";
-import RoomManager from "./domain/rooms/room-manager";
+import RoomManager from "./services/room-manager";
 import { GameErrorSeverity, GameErrorType, GameEvent, IGameEvent, UserType} from "./domain/interfaces/IGame";
 import { User } from "./domain/users/user";
 import { Room } from "./domain/rooms/room";
