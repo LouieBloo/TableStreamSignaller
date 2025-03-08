@@ -13,14 +13,11 @@ import { MTGLegacy } from "../games/mtg-legacy";
 import { PokemonStandard } from "../games/pokemon-standard";
 import { MTGPauperCommander } from "../games/mtg-pauper-commander";
 import { updateRoom } from "../../infrastructure/mongo/mongo-repository";
+import { YugiohStandard } from "../games/yugioh-standard";
 
 const { v4: uuidv4 } = require('uuid');
 
 export class Room {
-  name: string;
-
-  messages: IMessage[];
-
   @Type(() => Player)
   players: Player[];
 
@@ -31,22 +28,19 @@ export class Room {
   game: Game;
 
   maxPlayers:number = 4;
-
   playerSockets: string[] = [];
   spectatorSockets: string[] = [];
   bannedPlayerIpAddresses: string[] = [];
-
   redisLock: any;
-
   id: string;
   password:string;
-
   scheduledRoom:boolean = false;
   allowPlayerKicking:boolean = true;
   initialScheduleTTLInSeconds: number = 3600;// games waiting to be played will be destroyed after this time
   inactivityTimeUntilDestroyedInSeconds:number = 3600 // 1 hour default
-
   reactionsEnabled:boolean = true;
+  name: string;
+  messages: IMessage[];
 
   constructor(roomName: string,password:string, gameType: GameType, maxPlayers:number) {
     this.id = uuidv4();
@@ -56,7 +50,6 @@ export class Room {
     this.spectators = [];
     this.password = password;
     this.maxPlayers = maxPlayers;
-
     this.game = Room.createGame(gameType);
   }
 
@@ -91,6 +84,8 @@ export class Room {
         return new PokemonStandard();
       case GameType.MTGPauperCommander:
         return new MTGPauperCommander();
+      case GameType.YugiohStandard:
+        return new YugiohStandard();
     }
   }
 
@@ -110,6 +105,8 @@ export class Room {
         return GameType.PokemonStandard;
       case "MTGPauperCommander":
         return GameType.MTGPauperCommander;
+      case "YugiOhStandard":
+        return GameType.YugiohStandard;
     }
 
     return null;
