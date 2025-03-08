@@ -4,7 +4,8 @@ import { getRooms } from "../infrastructure/mongo/mongo-repository";
 import { IRedisAnalytic } from "../domain/interfaces/analytic/IRedisAnalytic";
 import { getAllRooms } from "../infrastructure/redis/redis";
 import { IAnalytic } from "../domain/interfaces/analytic/IAnalytic";
-import { IGameAnalytic, IMongoAnalytic } from "../domain/interfaces/analytic/IMongoAnalytic";
+import { IMongoAnalytic } from "../domain/interfaces/analytic/IMongoAnalytic";
+import { IGameAnalytic } from "../domain/interfaces/analytic/IGameAnalytic";
 
 export const getAnalytic = async (): Promise<IAnalytic> => {
   const mongoAnalytic = await getMongoAnalytic();
