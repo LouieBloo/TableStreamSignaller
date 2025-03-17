@@ -1,19 +1,34 @@
 
 import "reflect-metadata";
-import { IMessage } from "./interfaces/messaging";
-import { RoomState } from "./rooms/roomState";
-import { GameErrorSeverity, GameErrorType, GameEvent, IGameEvent, UserType} from "./interfaces/game";
-import { User } from "./users/user";
-import { Room } from "./rooms/room";
+import { IMessage } from "./domain/interfaces/IMessaging";
+import RoomManager from "./services/room-manager";
+import { GameErrorSeverity, GameErrorType, GameEvent, IGameEvent, UserType} from "./domain/interfaces/IGame";
+import { User } from "./domain/users/user";
+import { Room } from "./domain/rooms/room";
 import cors from 'cors';
-import router from './router/router'; // Path to the routes file
-import classifierTrainRouter from './router/classifier-router';
-import sttRouter from './router/stt-router';
-import "./mongo/mongo";
-import { checkBearerToken } from "./router/bearer-token-check";
-import { getClientIp } from "./socket/socket-service";
+import router from './presentation/router/router'; // Path to the routes file
+import classifierTrainRouter from './presentation/router/classifier-router';
+import sttRouter from './presentation/router/stt-router';
+import "./infrastructure/mongo/mongo";
+import { checkBearerToken } from "./presentation/router/bearer-token-check";
+import { getClientIp } from "./presentation/socket/socket-service";
+const swaggerJSDoc = require('swagger-jsdoc');
 
+const options = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'TableStream',
+      version: '1.0.0',
+      description: 'API documentation for your Node.js application',
+    },
+  },
+  apis: ['src/router/router.ts'], // Path to the API routes
+};
+
+const swaggerSpec = swaggerJSDoc(options);
 const express = require('express');
+const swaggerUi = require('swagger-ui-express');
 const http = require('http');
 const { Server } = require('socket.io');
 
@@ -31,8 +46,8 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3001;
 
-const roomState = new RoomState()
 
+//app.use('/swagger', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use(express.json());
 app.use(cors());
 
@@ -52,7 +67,9 @@ io.on('connection', (socket:any) => {
     try{
       console.log("Join Room: " + " " + playerName + " - " + roomName + " - " + roomId + " - " + playerId)
 
-      let currentRoom:Room = await roomState.getOrCreateRoom({roomName, roomId, password, gameType, maxPlayers, reactionsEnabled: reactionsEnabled});
+      console.log("password ", password)
+
+      let currentRoom:Room = await RoomManager.getOrCreateRoom({roomName, roomId, password, gameType, maxPlayers, reactionsEnabled: reactionsEnabled});
       let newUser:User = null;
   
       if (userType == UserType.Player && !currentRoom.canAddPlayer(playerId,socket.id)) {
@@ -94,7 +111,7 @@ io.on('connection', (socket:any) => {
       }); 
   
       socket.on('message', async(message:IMessage) => {
-        let room:Room = await roomState.getRoom(currentRoom.id);
+        let room:Room = await RoomManager.getRoom(currentRoom.id);
         let newMessage = room.addMessage(socket.id, message.text)
         if(newMessage){
           await room.saveAndClose();
@@ -104,7 +121,7 @@ io.on('connection', (socket:any) => {
   
       //primary game events
       socket.on('gameEvent', async(event:IGameEvent) => {
-        let room:Room = await roomState.getRoom(currentRoom.id);
+        let room:Room = await RoomManager.getRoom(currentRoom.id);
         try{
           event.response = room.gameEvent(socket.id, event)
           //if this event results in messages, add them
@@ -135,7 +152,7 @@ io.on('connection', (socket:any) => {
 
       //private game events such as personal settings
       socket.on('privateGameEvent', async(event: IGameEvent, callback:any) => {
-        let room:Room = await roomState.getRoom(currentRoom.id);
+        let room:Room = await RoomManager.getRoom(currentRoom.id);
         try{
           event.isPrivate = true;
           event.response = room.gameEvent(socket.id, event)
@@ -151,7 +168,7 @@ io.on('connection', (socket:any) => {
   
       socket.on('disconnect', async() => {
         console.log('A user disconnected:', socket.id);
-        let room:Room = await roomState.getRoom(currentRoom.id);
+        let room:Room = await RoomManager.getRoom(currentRoom.id);
         if(!room){return;}
   
         room.userDisconnected(socket.id, null);
@@ -159,7 +176,7 @@ io.on('connection', (socket:any) => {
         //auto delete the room if its not a bot created room 
         if (room.playerSockets.length === 0 && !room.scheduledRoom) {
           console.log("deleting room")
-          await roomState.deleteRoom(room)
+          await RoomManager.deleteRoom(room);
         }else{
           await room.saveAndClose();
         }

@@ -1,6 +1,6 @@
 import "../src/mongo/mongo";
-import { TrainingImageService } from "../src/mongo/services/training-image-service";
-import MongoTrainingImage, { IMongoTrainingImage } from '../src/mongo/models/training-image-model';
+import { TrainingImageService } from "../src/infrastructure/mongo/services/training-image-service";
+import MongoTrainingImage, { IMongoTrainingImage } from '../src/infrastructure/mongo/models/training-image-model';
 import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
