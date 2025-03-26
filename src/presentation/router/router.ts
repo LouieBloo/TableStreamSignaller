@@ -17,7 +17,8 @@ import { IPlayingCard } from "../../domain/interfaces/ICards";
 import {redisClient} from '../../infrastructure/redis/redis';
 import { logMessage } from "../../infrastructure/mongo/services/log-service";
 import { IMongoLog } from "../../infrastructure/mongo/models/log-model";
-import { search } from "../../domain/pokemon/pokemon-search";
+import { search as PokemonSearch } from "../../services/pokemon-search";
+import { search as YugiohSearch } from "../../services/yugioh-search";
 import { checkBearerToken } from "./bearer-token-check";
 import { getAnalytic } from "../../services/analytics-service";
 
@@ -139,11 +140,31 @@ if(process.env.DISCORD_PUBLIC_KEY){
 }
 
 router.get('/pokemon-cards', async(req: any, res: any) => {
-  let response:IPlayingCard[] = await search(req.query.query);
-
+  const response:IPlayingCard[] = await PokemonSearch(req.query.query);
   res.status(200).json({data: response});
 })
 
+/**
+ * @swagger
+ * /yugioh-cards:
+ *   get:
+ *     summary: Get Yugioh card data
+ *     parameters:
+ *       - in: query
+ *         name: fname
+ *         required: false
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Successful response with a list of Yugioh cards.
+ */
+router.get('/yugioh-cards', async (req: any, res: any) => {
+  const fname: string = req.query.fname as string;
+  let response: IPlayingCard[] = await YugiohSearch(fname);
+
+  res.status(200).json({ data: response });
+});
 
 //local developing only
 if (false) {
