@@ -65,7 +65,8 @@ export enum GameType{
     MTGLegacy,
     MTGVintage,
     PokemonStandard,
-    MTGPauperCommander
+    MTGPauperCommander,
+    YugiohStandard
 }
 
 export interface ICommanderDamage{

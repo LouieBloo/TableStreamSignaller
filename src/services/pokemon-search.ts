@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { IPlayingCard, IPokemonCard } from '../interfaces/ICards';
+import { IPlayingCard, IPokemonCard } from '../domain/interfaces/ICards';
 
 export async function search(query: string): Promise<IPlayingCard[]> {
   try {

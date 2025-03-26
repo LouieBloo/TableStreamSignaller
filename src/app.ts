@@ -6,7 +6,7 @@ import { GameErrorSeverity, GameErrorType, GameEvent, IGameEvent, UserType} from
 import { User } from "./domain/users/user";
 import { Room } from "./domain/rooms/room";
 import cors from 'cors';
-import router from './presentation/router/router'; // Path to the routes file
+import router from './presentation/router/router';
 import classifierTrainRouter from './presentation/router/classifier-router';
 import sttRouter from './presentation/router/stt-router';
 import "./infrastructure/mongo/mongo";
@@ -23,7 +23,7 @@ const options = {
       description: 'API documentation for your Node.js application',
     },
   },
-  apis: ['src/router/router.ts'], // Path to the API routes
+  apis: ['src/presentation/router/router.ts'], // Path to the API routes
 };
 
 const swaggerSpec = swaggerJSDoc(options);
