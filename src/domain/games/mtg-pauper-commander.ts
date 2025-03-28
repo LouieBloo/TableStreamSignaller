@@ -3,8 +3,9 @@ import { IGameEvent, GameEvent, GameType, IModifyPlayerProperty, PlayerPropertie
 import { Room } from "../rooms/room";
 import { Game } from "./game";
 import { ResetCommanderDamagesToZero, SetPlayerDefaults, SetCommander, ModifyPlayerCommanderDamage, ModifyPlayerCommanderCastAmount } from '../games/services/mtg-commander-service';
+import { MTGGame } from "./mtg-game";
 
-export class MTGPauperCommander extends Game {
+export class MTGPauperCommander extends MTGGame {
   startingLifeTotal = 30;
   maxCommanderDamageUntilDead: number = 16;
 
@@ -32,6 +33,8 @@ export class MTGPauperCommander extends Game {
   }
 
   modifyPlayerProperty(gameEvent: IGameEvent): Player {
+    this.modifyPlayerPropertySecurityCheck(gameEvent);
+
     let modifyEvent: IModifyPlayerProperty = gameEvent.payload;
 
     switch (modifyEvent.property) {

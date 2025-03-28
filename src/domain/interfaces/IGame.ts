@@ -33,7 +33,8 @@ export enum PlayerProperties{
     citiesBlessing,
     prizeCards,
     sharingImages,
-    commanderCastAmount
+    commanderCastAmount,
+    initiative
 }
 
 export enum GameEvent{
@@ -54,7 +55,8 @@ export enum GameEvent{
     DeleteToken,
     RollDice,
     KickPlayer,
-    ModifyGameProperty
+    ModifyGameProperty,
+    ToggleInitiative
 }
 
 export enum GameType{
