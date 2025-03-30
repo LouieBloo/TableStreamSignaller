@@ -38,8 +38,6 @@ export class Game {
                 return this.endCurrentTurn(room);
             case GameEvent.ShareCard:
                 return this.shareCard(gameEvent);
-            case GameEvent.ToggleMonarch:
-                return this.toggleMonarch(gameEvent, room);
             case GameEvent.FlipCoins:
                 return this.flipCoins(gameEvent);
             case GameEvent.RollDice:
@@ -72,6 +70,7 @@ export class Game {
             room.players[x].currentTurnStartTime = null;
             room.players[x].isMonarch = false;
             room.players[x].hasCitiesBlessing = false;
+            room.players[x].hasInitiative = false;
             room.players[x].poisonTotal = 0;
             room.players[x].energyTotal = 0;
             room.players[x].lifeTotal = this.startingLifeTotal;
@@ -171,11 +170,15 @@ export class Game {
         return this;
     }
 
-    modifyPlayerProperty(gameEvent: IGameEvent): Player {
-        // dont allow players to modify anything when the game hasn't started unless its a private property
+    // dont allow players to modify anything when the game hasn't started unless its a private property
+    modifyPlayerPropertySecurityCheck = (gameEvent: IGameEvent)=>{
         if(!this.active && !gameEvent.isPrivate){
             throw new GameError(GameErrorType.GameNotStarted, "The game has not started yet. Please start the game.",GameErrorSeverity.Error);
         }
+    }
+
+    modifyPlayerProperty(gameEvent: IGameEvent): Player {
+        this.modifyPlayerPropertySecurityCheck(gameEvent);
 
         let modifyEvent:IModifyPlayerProperty = gameEvent.payload;
 
@@ -183,17 +186,6 @@ export class Game {
             case PlayerProperties.lifeTotal:
                 gameEvent.callingPlayer.lifeTotal += modifyEvent.amountToModify;
                 gameEvent.callingPlayer.isDead = gameEvent.callingPlayer.lifeTotal <= 0 ? true : false;
-                break;
-            case PlayerProperties.poisonTotal:
-                gameEvent.callingPlayer.poisonTotal += modifyEvent.amountToModify;
-                if(gameEvent.callingPlayer.poisonTotal < 0){gameEvent.callingPlayer.poisonTotal = 0;}
-                break;
-            case PlayerProperties.energyTotal:
-                gameEvent.callingPlayer.energyTotal += modifyEvent.amountToModify;
-                if(gameEvent.callingPlayer.energyTotal < 0){gameEvent.callingPlayer.energyTotal = 0;}
-                break;
-            case PlayerProperties.citiesBlessing:
-                gameEvent.callingPlayer.hasCitiesBlessing = !gameEvent.callingPlayer.hasCitiesBlessing;
                 break;
             case PlayerProperties.sharingImages:
                 gameEvent.callingPlayer.isSharingImages = gameEvent.payload.value;
@@ -284,27 +276,6 @@ export class Game {
         return gameEvent.payload;
     }
 
-    // this is seperated from modify player properties since its touching all players
-    toggleMonarch = (gameEvent: IGameEvent, room: Room)=>{
-
-        if(!this.active){
-            throw new GameError(GameErrorType.GameNotStarted, "The game has not started yet. Please start the game.", GameErrorSeverity.Error);
-        }
-
-        if(gameEvent.callingPlayer.isMonarch){
-            gameEvent.callingPlayer.isMonarch = false;
-        }else{
-            room.players.forEach(player=>{
-                if(player.id == gameEvent.callingPlayer.id){
-                    player.isMonarch = true;
-                }else{
-                    player.isMonarch = false;
-                }
-            })
-        }
-
-        return room.players;
-    }
 
     flipCoins = (gameEvent: IGameEvent): any=>{
         let coinFlips: string[] = [];

@@ -1,11 +1,11 @@
 import { Player } from "../users/player";
 import { IGameEvent, GameEvent, GameType, PlayerProperties, IModifyPlayerProperty } from "../interfaces/IGame";
 import { Room } from "../rooms/room";
-import { Game } from "./game";
 import { ResetCommanderDamagesToZero, SetPlayerDefaults, SetCommander, ModifyPlayerCommanderDamage, RemoveCommanderDamagesFromPlayer, ModifyPlayerCommanderCastAmount } from '../games/services/mtg-commander-service';
 import { IKickPlayerResponse } from "../interfaces/IKickPlayerReponse";
+import { MTGGame } from "./mtg-game";
 
-export class MTGCommander extends Game {
+export class MTGCommander extends MTGGame {
   startingLifeTotal = 40;
   maxCommanderDamageUntilDead: number = 21;
 
@@ -35,6 +35,8 @@ export class MTGCommander extends Game {
   }
 
   modifyPlayerProperty(gameEvent: IGameEvent): Player {
+    this.modifyPlayerPropertySecurityCheck(gameEvent);
+    
     let modifyEvent: IModifyPlayerProperty = gameEvent.payload;
 
     switch (modifyEvent.property) {
