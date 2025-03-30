@@ -15,6 +15,8 @@ export class PokemonStandard extends Game {
   public event(gameEvent: IGameEvent, room: Room): any {
     switch (gameEvent.event) {
       case GameEvent.ModifyPlayerProperty:
+        this.modifyPlayerPropertySecurityCheck(gameEvent);
+        
         let modifyEvent: IModifyPlayerProperty = gameEvent.payload;
         if (modifyEvent.property == PlayerProperties.prizeCards) {
           if (!this.active) {
