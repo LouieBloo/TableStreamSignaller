@@ -21,6 +21,8 @@ import { search as PokemonSearch } from "../../services/pokemon-search";
 import { search as YugiohSearch } from "../../services/yugioh-search";
 import { checkBearerToken } from "./bearer-token-check";
 import { getAnalytic } from "../../services/analytics-service";
+import { getIceServerList } from "../../infrastructure/twilio/twilio-service";
+import { ApiV2010AccountTokenIceServers } from "twilio/lib/rest/api/v2010/account/token";
 
 router.get('/', (req: any, res: any) => {
   res.status(200).send('Beating...');
@@ -164,6 +166,38 @@ router.get('/yugioh-cards', async (req: any, res: any) => {
   let response: IPlayingCard[] = await YugiohSearch(fname);
 
   res.status(200).json({ data: response });
+});
+
+/**
+ * @swagger
+ * /turn-id:
+ *   get:
+ *     summary: Gest a TURN ID for ice candidates
+ *     description: Generates and returns a TURN credential ID for connecting to the TURN server.
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved TURN ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                   description: The generated TURN credential ID
+ *                   example: "abc123xyz"
+ *       500:
+ *         description: Failed to generate TURN ID
+ */
+
+router.get('/turn-id', async(req: any, res: any) => {
+  try{
+    let iceServers:ApiV2010AccountTokenIceServers[] = await getIceServerList();
+    res.status(200).json({servers: iceServers});
+  }catch(error){
+    console.log("Error getting turn id: ", error)
+    res.status(500).json({ message: 'Failed to get turn id'});
+  }
 });
 
 //local developing only

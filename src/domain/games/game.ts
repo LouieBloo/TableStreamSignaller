@@ -362,11 +362,16 @@ export class Game {
 
     modifyToken = (gameEvent: IGameEvent): any => {
         let payloadTokenToModify:IToken = gameEvent.payload;
-        let tokenToModify = this.tokens.find(token=> token.id == payloadTokenToModify.id && token.ownerId == gameEvent.callingPlayer.id)
+        let tokenToModify = this.tokens.find(token=> token.id == payloadTokenToModify.id)
 
         if(tokenToModify){
-            tokenToModify.name = payloadTokenToModify.name;
-            tokenToModify.card = payloadTokenToModify.card ? slimCard(payloadTokenToModify.card) : null;
+            // only the owner can change the name and card
+            if(tokenToModify.ownerId == gameEvent.callingPlayer.id){
+                tokenToModify.name = payloadTokenToModify.name;
+                tokenToModify.card = payloadTokenToModify.card ? slimCard(payloadTokenToModify.card) : null;
+            }
+            
+            //all players can change the position and tap it 
             tokenToModify.xPosition = payloadTokenToModify.xPosition;
             tokenToModify.yPosition = payloadTokenToModify.yPosition;
             tokenToModify.tapped = payloadTokenToModify.tapped;
