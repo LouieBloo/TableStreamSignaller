@@ -37,6 +37,7 @@
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "ts-node": "^10.9.2",
+    "twilio": "^5.5.1",
     "typescript": "^5.7.2",
     "uuid": "^10.0.0"
   },
