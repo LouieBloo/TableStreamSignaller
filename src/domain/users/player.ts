@@ -21,6 +21,7 @@ export class Player extends User {
     isMonarch:boolean = false;
     isSharingImages:boolean = true;
     hasCitiesBlessing:boolean = false;
+    hasInitiative:boolean = false;
 
     poisonTotal:number;
     energyTotal:number;

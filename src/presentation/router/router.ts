@@ -17,9 +17,13 @@ import { IPlayingCard } from "../../domain/interfaces/ICards";
 import {redisClient} from '../../infrastructure/redis/redis';
 import { logMessage } from "../../infrastructure/mongo/services/log-service";
 import { IMongoLog } from "../../infrastructure/mongo/models/log-model";
-import { search } from "../../domain/pokemon/pokemon-search";
+import { search as PokemonSearch } from "../../services/pokemon-search";
+import { search as YugiohSearch } from "../../services/yugioh-search";
 import { checkBearerToken } from "./bearer-token-check";
 import { getAnalytic } from "../../services/analytics-service";
+import { getIceServerList } from "../../infrastructure/xirsys/xirsys-service";
+// import { getIceServerList } from "../../infrastructure/twilio/twilio-service";
+// import { ApiV2010AccountTokenIceServers } from "twilio/lib/rest/api/v2010/account/token";
 
 router.get('/', (req: any, res: any) => {
   res.status(200).send('Beating...');
@@ -139,11 +143,64 @@ if(process.env.DISCORD_PUBLIC_KEY){
 }
 
 router.get('/pokemon-cards', async(req: any, res: any) => {
-  let response:IPlayingCard[] = await search(req.query.query);
-
+  const response:IPlayingCard[] = await PokemonSearch(req.query.query);
   res.status(200).json({data: response});
 })
 
+/**
+ * @swagger
+ * /yugioh-cards:
+ *   get:
+ *     summary: Get Yugioh card data
+ *     parameters:
+ *       - in: query
+ *         name: fname
+ *         required: false
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Successful response with a list of Yugioh cards.
+ */
+router.get('/yugioh-cards', async (req: any, res: any) => {
+  const fname: string = req.query.fname as string;
+  let response: IPlayingCard[] = await YugiohSearch(fname);
+
+  res.status(200).json({ data: response });
+});
+
+/**
+ * @swagger
+ * /turn-id:
+ *   get:
+ *     summary: Gest a TURN ID for ice candidates
+ *     description: Generates and returns a TURN credential ID for connecting to the TURN server.
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved TURN ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                   description: The generated TURN credential ID
+ *                   example: "abc123xyz"
+ *       500:
+ *         description: Failed to generate TURN ID
+ */
+
+router.get('/turn-id', async(req: any, res: any) => {
+  try{
+    //let iceServers:ApiV2010AccountTokenIceServers[] = await getIceServerList();
+    let iceServers:any[] = await getIceServerList();
+    res.status(200).json({servers: iceServers});
+  }catch(error){
+    console.log("Error getting turn id: ", error)
+    res.status(500).json({ message: 'Failed to get turn id'});
+  }
+});
 
 //local developing only
 if (false) {
