@@ -43,6 +43,10 @@ export class MTGGame extends Game {
       case PlayerProperties.citiesBlessing:
         gameEvent.callingPlayer.hasCitiesBlessing = !gameEvent.callingPlayer.hasCitiesBlessing;
         return gameEvent.callingPlayer;
+      case PlayerProperties.radiationTotal:
+        gameEvent.callingPlayer.radiationTotal += modifyEvent.amountToModify;
+        if (gameEvent.callingPlayer.radiationTotal < 0) { gameEvent.callingPlayer.radiationTotal = 0; }
+        return gameEvent.callingPlayer;
     }
 
     return super.modifyPlayerProperty(gameEvent);

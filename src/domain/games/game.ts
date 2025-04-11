@@ -73,6 +73,7 @@ export class Game {
             room.players[x].hasInitiative = false;
             room.players[x].poisonTotal = 0;
             room.players[x].energyTotal = 0;
+            room.players[x].radiationTotal = 0;
             room.players[x].lifeTotal = this.startingLifeTotal;
             room.players[x].isDead = false;
         }
