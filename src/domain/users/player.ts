@@ -25,6 +25,7 @@ export class Player extends User {
 
     poisonTotal:number;
     energyTotal:number;
+    radiationTotal:number;
 
     commanderDamages: { [playerId: string]: { [cardId: string]: ICommanderDamage } } = {};
 
@@ -39,6 +40,7 @@ export class Player extends User {
         this.lifeTotal = startingLifeTotal;
         this.poisonTotal = 0;
         this.energyTotal = 0;
+        this.radiationTotal = 0;
 
         this.totalTurns = 0;
         this.totalTurnTime = 0;
