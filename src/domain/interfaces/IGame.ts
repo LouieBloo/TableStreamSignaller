@@ -34,7 +34,8 @@ export enum PlayerProperties{
     prizeCards,
     sharingImages,
     commanderCastAmount,
-    initiative
+    initiative,
+    radiationTotal
 }
 
 export enum GameEvent{
