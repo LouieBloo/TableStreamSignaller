@@ -21,7 +21,8 @@ import { search as PokemonSearch } from "../../services/pokemon-search";
 import { search as YugiohSearch } from "../../services/yugioh-search";
 import { checkBearerToken } from "./bearer-token-check";
 import { getAnalytic } from "../../services/analytics-service";
-import { getIceServerList } from "../../infrastructure/xirsys/xirsys-service";
+import { getIceServerList } from "../../infrastructure/metered/metered-service";
+// import { getIceServerList } from "../../infrastructure/xirsys/xirsys-service";
 // import { getIceServerList } from "../../infrastructure/twilio/twilio-service";
 // import { ApiV2010AccountTokenIceServers } from "twilio/lib/rest/api/v2010/account/token";
 
