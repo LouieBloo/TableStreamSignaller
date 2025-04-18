@@ -79,7 +79,7 @@ io.on('connection', (socket:any) => {
       }else if(userType == UserType.Player){
         //new player
         try{
-          newUser = currentRoom.addPlayer(playerId, playerName, socket.id, password, userIp, isSharingImages)
+          newUser = await currentRoom.addPlayer(playerId, playerName, socket.id, password, userIp, isSharingImages)
           currentRoom.playerSockets.push(socket.id);
         }catch(error){
           throw error;
@@ -89,7 +89,7 @@ io.on('connection', (socket:any) => {
       }else if(userType == UserType.Spectator){
         //new spectator
         try{
-          newUser = currentRoom.addSpectator(playerId, playerName, socket.id, password)
+          newUser = await currentRoom.addSpectator(playerId, playerName, socket.id, password)
           currentRoom.spectatorSockets.push(socket.id);
         }catch(error){
           throw error;

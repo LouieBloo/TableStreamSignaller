@@ -14,6 +14,7 @@ import { PokemonStandard } from "../games/pokemon-standard";
 import { MTGPauperCommander } from "../games/mtg-pauper-commander";
 import { updateRoom } from "../../infrastructure/mongo/mongo-repository";
 import { YugiohStandard } from "../games/yugioh-standard";
+import { getIceServerList } from "../../infrastructure/metered/metered-service";
 
 const { v4: uuidv4 } = require('uuid');
 
@@ -41,6 +42,8 @@ export class Room {
   reactionsEnabled:boolean = true;
   name: string;
   messages: IMessage[];
+
+  iceServerList: any[];
 
   constructor(roomName: string,password:string, gameType: GameType, maxPlayers:number) {
     this.id = uuidv4();
@@ -129,7 +132,7 @@ export class Room {
     return this.players.length < this.maxPlayers;
   }
 
-  public addPlayer(playerId: string, playerName: string, socketId: string, password:string, ipAddress:string, isSharingImages:boolean): Player {
+  public async addPlayer(playerId: string, playerName: string, socketId: string, password:string, ipAddress:string, isSharingImages:boolean): Promise<Player> {
 
     if(this.bannedPlayerIpAddresses.includes(ipAddress)){
       throw new GameError(GameErrorType.EnteringBannedRoom, "You have been banned from this room.", GameErrorSeverity.Error);
@@ -142,6 +145,8 @@ export class Room {
       if(this.password && !this.verifyPassword(password)){
         throw new GameError(GameErrorType.InvalidPassword, "Invalid Password",GameErrorSeverity.Error);
       }
+
+      await this.setIceServerList()
 
       player = new Player(playerName, socketId, this.players.length, this.game.startingLifeTotal);
       player.ipAddress = ipAddress;
@@ -164,7 +169,7 @@ export class Room {
     return player;
   }
 
-  public addSpectator(playerId: string, spectatorName: string, socketId: string, password:string): Spectator {
+  public async addSpectator(playerId: string, spectatorName: string, socketId: string, password:string): Promise<Spectator> {
     let spectator = this.spectators.find(e => e.id === playerId);
 
     if (!spectator) {
@@ -172,6 +177,8 @@ export class Room {
       if(this.password && !this.verifyPassword(password)){
         throw new GameError(GameErrorType.InvalidPassword, "Invalid Password",GameErrorSeverity.Error);
       }
+
+      await this.setIceServerList()
 
       spectator = new Spectator(spectatorName, socketId);
       this.spectators.push(spectator)
@@ -256,5 +263,8 @@ export class Room {
     return password;
   }
 
-
+  setIceServerList = async() => {
+    if(this.iceServerList){return;}
+    this.iceServerList = await getIceServerList();
+  }
 }
