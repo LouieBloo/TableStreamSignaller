@@ -22,9 +22,9 @@ import { search as YugiohSearch } from "../../services/yugioh-search";
 import { checkBearerToken } from "./bearer-token-check";
 import { getAnalytic } from "../../services/analytics-service";
 import { getIceServerList } from "../../infrastructure/metered/metered-service";
-// import { getIceServerList } from "../../infrastructure/xirsys/xirsys-service";
-// import { getIceServerList } from "../../infrastructure/twilio/twilio-service";
-// import { ApiV2010AccountTokenIceServers } from "twilio/lib/rest/api/v2010/account/token";
+import { parseIncomingDonation } from "../../infrastructure/kofi/kofi-service";
+import { IKoFiDonation } from "../../infrastructure/kofi/interfaces/IKofiInterface";
+import { getDonations } from "../../infrastructure/mongo/services/donation-service";
 
 router.get('/', (req: any, res: any) => {
   res.status(200).send('Beating...');
@@ -191,7 +191,6 @@ router.get('/yugioh-cards', async (req: any, res: any) => {
  *       500:
  *         description: Failed to generate TURN ID
  */
-
 router.get('/turn-id', async(req: any, res: any) => {
   try{
     //let iceServers:ApiV2010AccountTokenIceServers[] = await getIceServerList();
@@ -202,6 +201,42 @@ router.get('/turn-id', async(req: any, res: any) => {
     res.status(500).json({ message: 'Failed to get turn id'});
   }
 });
+
+
+router.get('/donations', async (req: any, res: any) => {
+  try {
+    if(!process.env.MONGODB_URI){
+      return res.status(200).json({donations: []});
+    }
+
+    const donations = await getDonations({sort: {createdAt: 'desc'}, isPublic: true, limit: 30}, true);
+
+    res.status(200).json({ donations });
+  } catch (error) {
+    console.error("Error getting donations:", error);
+    res.status(500).json({ message: 'Failed to get donations' });
+  }
+});
+
+
+router.post('/donations',express.urlencoded({extended: true}), async(req: any, res: any) => {
+  try{
+    const rawData = req.body.data;
+    const parsedData:IKoFiDonation = JSON.parse(rawData);
+
+    const validToken = process.env.KOFI_WEBHOOK_SECRET;
+    if (parsedData.verification_token !== validToken) {
+      return res.status(403).send('Nope'); 
+    }
+
+    let response = await parseIncomingDonation(parsedData)
+    res.status(200).json({response: "ok"});
+  }catch(error){
+    console.log("Error creating donation: ", error)
+    res.status(500).json({ message: 'Failed to create donation'});
+  }
+});
+
 
 //local developing only
 if (false) {
