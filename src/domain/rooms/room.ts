@@ -15,6 +15,7 @@ import { MTGPauperCommander } from "../games/mtg-pauper-commander";
 import { updateRoom } from "../../infrastructure/mongo/mongo-repository";
 import { YugiohStandard } from "../games/yugioh-standard";
 import { getIceServerList } from "../../infrastructure/metered/metered-service";
+import { YugiohDomain } from "../games/yugioh-domain";
 
 const { v4: uuidv4 } = require('uuid');
 
@@ -89,6 +90,8 @@ export class Room {
         return new MTGPauperCommander();
       case GameType.YugiohStandard:
         return new YugiohStandard();
+      case GameType.YugiohDomain:
+        return new YugiohDomain();
     }
   }
 
@@ -108,8 +111,10 @@ export class Room {
         return GameType.PokemonStandard;
       case "MTGPauperCommander":
         return GameType.MTGPauperCommander;
-      case "YugiOhStandard":
+      case "YugiohStandard":
         return GameType.YugiohStandard;
+      case "YugiohDomain":
+        return GameType.YugiohDomain;
     }
 
     return null;
