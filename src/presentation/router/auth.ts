@@ -14,6 +14,7 @@ import {
   englishRecommendedTransformers,
 } from 'obscenity';
 import { sendEmail } from '../../infrastructure/emails/email-service';
+const { v4: uuidv4 } = require('uuid');
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'replace_me';
@@ -56,38 +57,41 @@ router.post(
     // reject bad usernames
     if (matcher.getAllMatches(name).length > 0) {
       return res.status(400).json({
-        errors: [apiError("Inappropriate Name Detected","name")]
+        errors: [apiError("Inappropriate Name Detected", "name")]
       });
     }
 
     // duplicate email?
     if (await User.exists({ email })) {
       return res.status(409).json({
-        errors: [apiError("Invalid Email","email")]
+        errors: [apiError("Invalid Email", "email")]
       });
     }
 
     // hash password
     const passwordHash = await bcrypt.hash(password, 12);
 
-    const user = await User.create({ name, email, passwordHash });
+    //verify email token
+    const verifiyEmailToken: string = uuidv4();
 
-    try{
+    const user = await User.create({ name, email, passwordHash, verifiyEmailToken });
+
+    try {
       await sendEmail({
         email: email,
         name: name,
         subject: "Verify Email",
         templateId: '351ndgwk9wxgzqx8',
         data: {
-          url: "https://www.google.com",
+          url: process.env.APP_URL + "/verify-email?token=" + verifiyEmailToken,
           name: name
         }
       })
-    }catch(e){
+    } catch (e) {
       console.error(e);
       return res.status(400).json({ message: "User created but verification email failed to send" });
     }
-    
+
     //send email
     res.status(201).json({ message: "ok" });
   }
@@ -104,16 +108,16 @@ router.post(
   ]),
   async (req: any, res: any) => {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email, verifiedEmail: true });
     if (!user) {
       return res.status(401).json({
-        errors: [apiError("Invalid Credentials","password")]
+        errors: [apiError("Invalid Credentials", "password")]
       });
     }
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) {
       return res.status(401).json({
-        errors: [apiError("Invalid Credentials","password")]
+        errors: [apiError("Invalid Credentials", "password")]
       });
     }
     const token = jwt.sign({ sub: user._id }, JWT_SECRET, {
@@ -135,13 +139,23 @@ router.post(
     if (!user) {
       return res.status(200).json({ message: 'Reset link sent if email exists.' });
     }
-    const token = crypto.randomBytes(32).toString('hex');
+    const token = uuidv4();
     user.resetPasswordToken = token;
     user.resetPasswordExpires = new Date(Date.now() + 3600_000); // 1h
     await user.save();
 
     // TODO: send email with link: `${process.env.FRONTEND_URL}/reset-password?token=${token}`
     // console.log(`RESET LINK: https://your.app/reset-password?token=${token}`);
+    await sendEmail({
+      email: email,
+      name: "Reset Password",
+      subject: "Reset Password",
+      templateId: 'yzkq340nmpkgd796',
+      data: {
+        url: process.env.APP_URL + "/reset-password?token=" + token,
+        name: "Reset Password"
+      }
+    })
 
     res.json({ message: 'Reset link sent if email exists.' });
   }
@@ -164,7 +178,7 @@ router.post(
     });
     if (!user) {
       return res.status(400).json({
-        errors: [apiError("Invalid or Expired Token","token")]
+        errors: [apiError("Invalid or Expired Token", "token")]
       });
     }
     user.passwordHash = await bcrypt.hash(password, 12);
@@ -175,8 +189,28 @@ router.post(
   }
 );
 
-router.get('/validate', authenticateToken, (req:any, res:any)=>{
-  return res.json({message: "you are logged in"})
+// Verify Email
+router.post('/verify-email', validate([
+  body('token').notEmpty(),
+]),
+  async (req: any, res: any) => {
+    const { token } = req.body;
+    const user = await User.findOne({
+      verifiyEmailToken: token,
+    });
+    if (!user) {
+      return res.status(400).json({
+        errors: [apiError("Invalid or Expired Token", "token")]
+      });
+    }
+    user.verifiedEmail = true;
+    await user.save();
+    res.json({ message: 'Email verified successfully' });
+})
+
+// Returns 200 if valid token, helpful for front end to know if logged in
+router.get('/validate', authenticateToken, (req: any, res: any) => {
+  return res.json({ message: "you are logged in" })
 })
 
 // ------------------------------------------------------------------
@@ -190,7 +224,7 @@ export function authenticateToken(
   const auth = req.headers.authorization;
   if (!auth?.startsWith('Bearer ')) {
     return res.status(401).json({
-      errors: [apiError("you are not allowed to do that","token")]
+      errors: [apiError("you are not allowed to do that", "token")]
     });
   }
   const token = auth.slice(7);
@@ -200,7 +234,7 @@ export function authenticateToken(
     return next();
   } catch {
     return res.status(401).json({
-      errors: [apiError("you are not allowed to do that","token")]
+      errors: [apiError("you are not allowed to do that", "token")]
     });
   }
 }
