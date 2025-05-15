@@ -8,6 +8,7 @@ export interface IMongoUser extends Document {
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   verifiedEmail?:boolean;
+  verifiyEmailToken?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -21,6 +22,7 @@ const UserSchema: Schema = new Schema(
     resetPasswordToken:   { type: String },
     resetPasswordExpires: { type: Date },
     verifiedEmail: { type: Boolean, default: false },
+    verifiyEmailToken:{ type: String },
   },
   {
     timestamps: true,
