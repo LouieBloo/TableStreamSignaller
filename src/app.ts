@@ -7,7 +7,7 @@ import { User } from "./domain/users/user";
 import { Room } from "./domain/rooms/room";
 import cors from 'cors';
 import router from './presentation/router/router';
-import userRouter from './presentation/router/auth';
+import userRouter from './presentation/router/user-router';
 import classifierTrainRouter from './presentation/router/classifier-router';
 import sttRouter from './presentation/router/stt-router';
 import "./infrastructure/mongo/mongo";

@@ -14,6 +14,7 @@ import {
   englishRecommendedTransformers,
 } from 'obscenity';
 import { sendEmail } from '../../infrastructure/emails/email-service';
+import { trimUser } from '../../infrastructure/mongo/services/user-service';
 const { v4: uuidv4 } = require('uuid');
 
 const router = Router();
@@ -207,6 +208,14 @@ router.post('/verify-email', validate([
     await user.save();
     res.json({ message: 'Email verified successfully' });
 })
+
+
+router.get('/me', authenticateToken, async(req: any, res: any) => {
+  const user:IMongoUser = await User.findById(req.user._id);
+  return res.json({ user: trimUser(user) })
+})
+
+
 
 // Returns 200 if valid token, helpful for front end to know if logged in
 router.get('/validate', authenticateToken, (req: any, res: any) => {
