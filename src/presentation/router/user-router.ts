@@ -7,26 +7,14 @@ import User, { IMongoUser } from '../../infrastructure/mongo/models/user-model';
 import { apiError } from './services/router-error-service';
 import { JwtPayload } from 'jsonwebtoken';
 
-import {
-  RegExpMatcher,
-  TextCensor,
-  englishDataset,
-  englishRecommendedTransformers,
-} from 'obscenity';
 import { sendEmail } from '../../infrastructure/emails/email-service';
-import { trimUser } from '../../infrastructure/mongo/services/user-service';
+import { trimUser, updateUser, validName } from '../../infrastructure/mongo/services/user-service';
+import { IAPIError } from './interfaces/IAPIError';
 const { v4: uuidv4 } = require('uuid');
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'replace_me';
-const JWT_EXPIRES_IN = '12h';
-
-// profanity matcher setup
-const censor = new TextCensor();
-const matcher = new RegExpMatcher({
-  ...englishDataset.build(),
-  ...englishRecommendedTransformers,
-});
+const JWT_EXPIRES_IN = '48h';
 
 // ------------------------------------------------------------------
 //  Middleware to validate & sanitize input
@@ -56,7 +44,7 @@ router.post(
     const { name, email, password } = req.body;
 
     // reject bad usernames
-    if (matcher.getAllMatches(name).length > 0) {
+    if (!validName(name)) {
       return res.status(400).json({
         errors: [apiError("Inappropriate Name Detected", "name")]
       });
@@ -215,6 +203,23 @@ router.get('/me', authenticateToken, async(req: any, res: any) => {
   return res.json({ user: trimUser(user) })
 })
 
+
+router.post('/', authenticateToken, async(req: any, res: any) => {
+  const user = await User.findById(req.user._id);
+  if (!user) return res.sendStatus(404);
+
+  const updates = {
+    name: req.body.name,
+  };
+
+  const errors = await updateUser(user, updates);
+
+  if (errors.length) {
+    return res.status(400).json({ errors });
+  }
+
+  return res.json({ user: trimUser(user) });
+})
 
 
 // Returns 200 if valid token, helpful for front end to know if logged in
