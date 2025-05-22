@@ -31,7 +31,7 @@ const validate = (rules: any[]) => [
 ];
 
 // ------------------------------------------------------------------
-//  1) SIGNUP
+// SIGNUP
 // ------------------------------------------------------------------
 router.post(
   '/signup',
@@ -87,7 +87,7 @@ router.post(
 );
 
 // ------------------------------------------------------------------
-//  2) LOGIN
+// LOGIN
 // ------------------------------------------------------------------
 router.post(
   '/login',
@@ -117,7 +117,7 @@ router.post(
 );
 
 // ------------------------------------------------------------------
-//  3) REQUEST PASSWORD RESET
+// REQUEST PASSWORD RESET
 // ------------------------------------------------------------------
 router.post(
   '/request-password-reset',
@@ -151,7 +151,7 @@ router.post(
 );
 
 // ------------------------------------------------------------------
-//  4) RESET PASSWORD
+// RESET PASSWORD
 // ------------------------------------------------------------------
 router.post(
   '/reset-password',
@@ -178,7 +178,9 @@ router.post(
   }
 );
 
-// Verify Email
+// ------------------------------------------------------------------
+//  Verify Email
+// ------------------------------------------------------------------
 router.post('/verify-email', validate([
   body('token').notEmpty(),
 ]),
@@ -203,16 +205,18 @@ router.get('/me', authenticateToken, async(req: any, res: any) => {
   return res.json({ user: trimUser(user) })
 })
 
-
-router.post('/', authenticateToken, async(req: any, res: any) => {
+// ------------------------------------------------------------------
+// Update User
+// ------------------------------------------------------------------
+router.post('/', authenticateToken, validate([body('name').isLength({ min: 3, max: 30 }),]), async(req: any, res: any) => {
   const user = await User.findById(req.user._id);
   if (!user) return res.sendStatus(404);
 
-  const updates = {
-    name: req.body.name,
-  };
+  // const updates:U = {
+  //   name: req.body.name,
+  // };
 
-  const errors = await updateUser(user, updates);
+  const errors = await updateUser(user, req.body);
 
   if (errors.length) {
     return res.status(400).json({ errors });
@@ -222,13 +226,8 @@ router.post('/', authenticateToken, async(req: any, res: any) => {
 })
 
 
-// Returns 200 if valid token, helpful for front end to know if logged in
-router.get('/validate', authenticateToken, (req: any, res: any) => {
-  return res.json({ message: "you are logged in" })
-})
-
 // ------------------------------------------------------------------
-//  5) JWT Validator Middleware
+// JWT Validator Middleware
 // ------------------------------------------------------------------
 export function authenticateToken(
   req: any & { user?: IMongoUser },

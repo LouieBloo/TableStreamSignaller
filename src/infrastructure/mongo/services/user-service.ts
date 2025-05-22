@@ -1,7 +1,7 @@
 import { IAPIError } from "../../../presentation/router/interfaces/IAPIError";
 import { IUser } from "../../../domain/interfaces/IPlayer";
 import { IMongoUser } from "../models/user-model";
-import { ITrimmedUser, IUpdateUserPayload } from "../../../presentation/router/interfaces/IUser";
+import { IProfileSettings, ITrimmedUser, IUpdateUserPayload } from "../../../presentation/router/interfaces/IUser";
 import { apiError } from "../../../presentation/router/services/router-error-service";
 import {
   RegExpMatcher,
@@ -43,6 +43,17 @@ export const updateUser = async (
     }
   }
 
+  //profile settings
+  if(updates.profileSettings){
+    if(!user.profileSettings){ user.profileSettings = {};}
+
+    if(!validProfileSettings(updates.profileSettings)){
+      errors.push(apiError(`Invalid profile setting.`,'profileSetting'))
+    }else{
+      user.profileSettings.icon = updates.profileSettings.icon;
+    }
+  }
+
   // SAVE IF NO ERRORS
   if (errors.length > 0) {
     return errors;
@@ -57,7 +68,8 @@ export const trimUser = (mongoUser: IMongoUser): ITrimmedUser => {
     name: mongoUser.name,
     email: mongoUser.email,
     createdAt: mongoUser.createdAt,
-    lastNameUpdate: mongoUser.lastNameUpdate
+    lastNameUpdate: mongoUser.lastNameUpdate,
+    profileSettings: mongoUser.profileSettings
   }
 }
 
@@ -66,6 +78,16 @@ export const validName = (name: string): boolean => {
 
   if (matcher.getAllMatches(name).length > 0) {
     return false;
+  }
+
+  return true;
+}
+
+export const validProfileSettings = (profileSetting:IProfileSettings)=>{
+  if(!profileSetting){return true}
+  if(profileSetting && profileSetting.icon){
+    if(profileSetting.icon.color && profileSetting.icon.color.length > 12){return false;}
+    if(profileSetting.icon.id && profileSetting.icon.color.length > 100){return false;}
   }
 
   return true;
