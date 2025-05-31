@@ -4,15 +4,16 @@ import { apiError } from './services/router-error-service';
 import { IAPIError } from './interfaces/IAPIError';
 import { getAllRooms } from '../../infrastructure/redis/redis';
 import { IRoom } from './interfaces/IRoom';
+import { authenticateToken } from './user-router';
 
 const router = Router();
 
-router.get('/', async(req: any, res: any) => {
+router.get('/',authenticateToken, async(req: any, res: any) => {
 //   const allRooms:any[] = await getAllRooms({public: true, hasEmptySpots: true});
   const allRooms:any[] = await getAllRooms();
 
   let parsedRooms:IRoom[] = allRooms.map((room:any)=>{
-    return {
+    return { 
         id: room.id,
         name: room.name,
         gameType: room.game?.gameType,
