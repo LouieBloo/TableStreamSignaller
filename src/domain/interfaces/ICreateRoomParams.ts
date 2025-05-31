@@ -10,5 +10,6 @@ export interface ICreateRoomParams{
   scheduledRoom?:boolean;
   initialScheduleTTLInSeconds?:number;
   reactionsEnabled?:boolean;
-  allowPlayerKicking?:boolean
+  allowPlayerKicking?:boolean;
+  public?:boolean;
 }
