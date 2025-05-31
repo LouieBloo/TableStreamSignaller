@@ -8,6 +8,7 @@ import { Room } from "./domain/rooms/room";
 import cors from 'cors';
 import router from './presentation/router/router';
 import userRouter from './presentation/router/user-router';
+import roomRouter from './presentation/router/room-router';
 import classifierTrainRouter from './presentation/router/classifier-router';
 import sttRouter from './presentation/router/stt-router';
 import "./infrastructure/mongo/mongo";
@@ -58,8 +59,8 @@ app.use(router)
 app.use('/classify/train', checkBearerToken, classifierTrainRouter);
 
 app.use('/transcribe', sttRouter);
-
 app.use('/users',userRouter);
+app.use('/rooms',roomRouter);
 
 io.on('connection', (socket:any) => {
   console.log('A user connected:', socket.id);

@@ -38,6 +38,9 @@ class RoomManager {
       if(params.allowPlayerKicking == false){
         room.allowPlayerKicking = false;
       }
+      if(params.public != undefined && params.public != null){
+        room.public = params.public;
+      }
 
       //track in mongo
       await addRoom(room);

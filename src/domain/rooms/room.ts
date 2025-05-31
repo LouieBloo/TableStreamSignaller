@@ -37,6 +37,7 @@ export class Room {
   id: string;
   password:string;
   scheduledRoom:boolean = false;
+  public:boolean = false;
   allowPlayerKicking:boolean = true;
   initialScheduleTTLInSeconds: number = 3600;// games waiting to be played will be destroyed after this time
   inactivityTimeUntilDestroyedInSeconds:number = 3600 // 1 hour default
