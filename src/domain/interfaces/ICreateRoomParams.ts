@@ -12,4 +12,5 @@ export interface ICreateRoomParams{
   reactionsEnabled?:boolean;
   allowPlayerKicking?:boolean;
   public?:boolean;
+  creatorJwtToken?:string;
 }

@@ -6,15 +6,14 @@ import crypto from 'crypto';
 import User, { IMongoUser } from '../../infrastructure/mongo/models/user-model';
 import { apiError } from './services/router-error-service';
 import { JwtPayload } from 'jsonwebtoken';
-
+import {JWT_SECRET,JWT_EXPIRES_IN} from '../../domain/users/services/user-service';
 import { sendEmail } from '../../infrastructure/emails/email-service';
 import { trimUser, updateUser, validName } from '../../infrastructure/mongo/services/user-service';
 import { IAPIError } from './interfaces/IAPIError';
 const { v4: uuidv4 } = require('uuid');
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'replace_me';
-const JWT_EXPIRES_IN = '48h';
+
 
 // ------------------------------------------------------------------
 //  Middleware to validate & sanitize input

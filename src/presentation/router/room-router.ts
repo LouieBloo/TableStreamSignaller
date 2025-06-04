@@ -8,7 +8,7 @@ import { authenticateToken } from './user-router';
 
 const router = Router();
 
-router.get('/',authenticateToken, async(req: any, res: any) => {
+router.get('/', async(req: any, res: any) => {
 //   const allRooms:any[] = await getAllRooms({public: true, hasEmptySpots: true});
   const allRooms:any[] = await getAllRooms();
 

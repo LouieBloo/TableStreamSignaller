@@ -4,6 +4,7 @@ import {lockRoomAndGetState, getRoomUnsafe, deleteRoomAndUnlock} from '../infras
 import { ICreateRoomParams } from "../domain/interfaces/ICreateRoomParams";
 import { addRoom, deleteRoom } from "../infrastructure/mongo/mongo-repository";
 import { Room } from "../domain/rooms/room";
+import { getUserIdFromToken } from '../domain/users/services/user-service';
 
 //getOrCreateRoom can move all the if statements to the Room obj
 //update redis.ts so it returns a Room or null, not a string + a lock
@@ -17,6 +18,13 @@ class RoomManager {
     if(!redisResult.room){
       if(!params.roomName){
         throw new GameError(GameErrorType.GameNotStarted, "Room name required",GameErrorSeverity.Error);
+      }
+
+      if(params.public){
+        const creatorUserId:string | null  = await getUserIdFromToken(params.creatorJwtToken);
+        if(!creatorUserId){
+          throw new GameError(GameErrorType.InvalidAction, "You must be logged in to create public games", GameErrorSeverity.Error);
+        }
       }
 
       //create new room
