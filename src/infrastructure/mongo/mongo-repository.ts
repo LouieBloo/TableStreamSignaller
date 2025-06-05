@@ -1,6 +1,7 @@
 import { Player } from "../../domain/users/player";
 import { Room } from "../../domain/rooms/room";
 import MongoRoom, { IMongoRoom } from "../../infrastructure/mongo/models/room-model";
+import mongoose from "mongoose";
 
 const trackingActive = process.env.MONGODB_URI ? true : false;
 
@@ -64,6 +65,12 @@ const mapTableStreamRoomToMongoRoom = (room: Room): Partial<IMongoRoom> => {
   let mappedRoom: Partial<IMongoRoom> = {
     name: room.name,
     playerIds: room.players.map((player: Player) => player.id),
+    players: room.players.map((player: Player) => {
+      if(player.mongoUserId){
+        return {id: player.id, userId: new mongoose.Types.ObjectId(player.mongoUserId) }
+      }
+      return {id: player.id}
+    }),
     gameType: room.game.gameType.toString(),
     tableStreamId: room.id,
     maxPlayers: room.maxPlayers,
@@ -71,7 +78,8 @@ const mapTableStreamRoomToMongoRoom = (room: Room): Partial<IMongoRoom> => {
     initialScheduleTTLInSeconds: room.initialScheduleTTLInSeconds,
     inactivityTimeUntilDestroyedInSeconds: room.inactivityTimeUntilDestroyedInSeconds,
     reactionsEnabled: room.reactionsEnabled,
-    allowPlayerKicking: room.allowPlayerKicking
+    allowPlayerKicking: room.allowPlayerKicking,
+    public: room.public
   };
 
   return mappedRoom;
