@@ -11,6 +11,7 @@ export interface ICreateRoomParams{
   initialScheduleTTLInSeconds?:number;
   reactionsEnabled?:boolean;
   allowPlayerKicking?:boolean;
+  allowSpectators?:boolean;
   public?:boolean;
   creatorJwtToken?:string;
 }

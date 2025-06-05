@@ -49,6 +49,9 @@ class RoomManager {
       if(params.public != undefined && params.public != null){
         room.public = params.public;
       }
+      if(!params.public && params.allowSpectators != undefined && params.allowSpectators != null){
+        room.allowSpectators = params.allowSpectators;
+      }
 
       //track in mongo
       await addRoom(room);

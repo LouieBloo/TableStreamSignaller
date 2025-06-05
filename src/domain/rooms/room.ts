@@ -42,6 +42,7 @@ export class Room {
   scheduledRoom:boolean = false;
   public:boolean = false;
   allowPlayerKicking:boolean = true;
+  allowSpectators:boolean = false;
   initialScheduleTTLInSeconds: number = 3600;// games waiting to be played will be destroyed after this time
   inactivityTimeUntilDestroyedInSeconds:number = 3600 // 1 hour default
   reactionsEnabled:boolean = true;
@@ -190,6 +191,10 @@ export class Room {
   }
 
   public async addSpectator(playerId: string, spectatorName: string, socketId: string, password:string): Promise<Spectator> {
+    if(!this.allowSpectators){
+      throw new GameError(GameErrorType.InvalidAction, "No spectators allowed",GameErrorSeverity.Error);
+    }
+
     let spectator = this.spectators.find(e => e.id === playerId);
 
     if (!spectator) {
@@ -231,7 +236,7 @@ export class Room {
     }
 
     this.bannedPlayerIpAddresses.push(playerToKick.ipAddress);
-    
+
     if(playerToKick.mongoUserId){
       this.bannedUserIds.push(playerToKick.mongoUserId);
     }
