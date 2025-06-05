@@ -84,7 +84,7 @@ io.on('connection', (socket:any) => {
       }else if(userType == UserType.Player){
         //new player
         try{
-          newUser = await currentRoom.addPlayer(playerId, playerName, socket.id, password, userIp, isSharingImages)
+          newUser = await currentRoom.addPlayer({playerId, playerName, socketId: socket.id, password, ipAddress: userIp, isSharingImages, jwtToken: joinerJwtToken})
           currentRoom.playerSockets.push(socket.id);
         }catch(error){
           throw error;

@@ -1,8 +1,9 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export interface IMongoRoom extends Document {
   name: string;
   playerIds?: string[];
+  players?: { id: string; userId?: Types.ObjectId }[];
   gameType: string;
   maxPlayers: number;
   tableStreamId: string; // UUID, not the primary key
@@ -10,6 +11,7 @@ export interface IMongoRoom extends Document {
   initialScheduleTTLInSeconds: number;
   inactivityTimeUntilDestroyedInSeconds: number;
   reactionsEnabled?:boolean;
+  public?:boolean;
   allowPlayerKicking?:boolean;
   createdAt?: Date;
   updatedAt?: Date;
@@ -20,6 +22,12 @@ const RoomSchema: Schema = new Schema(
   {
     name: { type: String, required: false },
     playerIds: { type: [String], required: false },
+    players: [
+      {
+        id: { type: String, required: true },
+        userId: { type: Types.ObjectId, ref: 'User', required: false },
+      },
+    ],
     gameType: { type: String, required: false },
     maxPlayers: { type: Number, required: false },
     tableStreamId: { type: String, required: false, unique: true },
@@ -27,6 +35,7 @@ const RoomSchema: Schema = new Schema(
     initialScheduleTTLInSeconds: { type: Number, required: false },
     inactivityTimeUntilDestroyedInSeconds: { type: Number, required: false },
     reactionsEnabled: { type: Boolean, required: false },
+    public: { type: Boolean, required: false },
     allowPlayerKicking: { type: Boolean, required: false },
     deletedAt: { type: Date, required: false },
   },
