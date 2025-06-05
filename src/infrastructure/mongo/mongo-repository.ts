@@ -79,6 +79,7 @@ const mapTableStreamRoomToMongoRoom = (room: Room): Partial<IMongoRoom> => {
     inactivityTimeUntilDestroyedInSeconds: room.inactivityTimeUntilDestroyedInSeconds,
     reactionsEnabled: room.reactionsEnabled,
     allowPlayerKicking: room.allowPlayerKicking,
+    allowSpectators: room.allowSpectators,
     public: room.public
   };
 

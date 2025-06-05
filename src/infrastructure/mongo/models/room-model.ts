@@ -13,6 +13,7 @@ export interface IMongoRoom extends Document {
   reactionsEnabled?:boolean;
   public?:boolean;
   allowPlayerKicking?:boolean;
+  allowSpectators?:boolean;
   createdAt?: Date;
   updatedAt?: Date;
   deletedAt?: Date;
@@ -37,6 +38,7 @@ const RoomSchema: Schema = new Schema(
     reactionsEnabled: { type: Boolean, required: false },
     public: { type: Boolean, required: false },
     allowPlayerKicking: { type: Boolean, required: false },
+    allowSpectators: { type: Boolean, required: false },
     deletedAt: { type: Date, required: false },
   },
   {

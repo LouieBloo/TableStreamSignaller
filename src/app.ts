@@ -67,14 +67,11 @@ io.on('connection', (socket:any) => {
 
   const userIp:string = getClientIp(socket);
 
-  socket.on('joinRoom', async ({playerId, roomId, roomName, password, gameType, playerName, userType, maxPlayers, reactionsEnabled, isSharingImages, isPublic, joinerJwtToken }:any, callback:any) => {
+  socket.on('joinRoom', async ({playerId, roomId, roomName, password, gameType, playerName, userType, maxPlayers, reactionsEnabled, isSharingImages, isPublic, joinerJwtToken, allowSpectators }:any, callback:any) => {
     try{
       console.log("Join Room: " + " " + playerName + " - " + roomName + " - " + roomId + " - " + playerId)
 
-      console.log("token: ", joinerJwtToken)
-      console.log("password ", password)
-
-      let currentRoom:Room = await RoomManager.getOrCreateRoom({roomName, roomId, password, gameType, maxPlayers, reactionsEnabled: reactionsEnabled, public: isPublic, creatorJwtToken: joinerJwtToken });
+      let currentRoom:Room = await RoomManager.getOrCreateRoom({roomName, roomId, password, gameType, maxPlayers, reactionsEnabled: reactionsEnabled, public: isPublic, creatorJwtToken: joinerJwtToken, allowSpectators });
       let newUser:User = null;
   
       if (userType == UserType.Player && !currentRoom.canAddPlayer(playerId,socket.id)) {
