@@ -5,6 +5,12 @@ import { ICreateRoomParams } from "../domain/interfaces/ICreateRoomParams";
 import { addRoom, deleteRoom } from "../infrastructure/mongo/mongo-repository";
 import { Room } from "../domain/rooms/room";
 import { getUserIdFromToken } from '../domain/users/services/user-service';
+import {
+  RegExpMatcher,
+  englishDataset,
+  englishRecommendedTransformers,
+} from 'obscenity';
+
 
 //getOrCreateRoom can move all the if statements to the Room obj
 //update redis.ts so it returns a Room or null, not a string + a lock
@@ -17,13 +23,19 @@ class RoomManager {
     let room = null;
     if(!redisResult.room){
       if(!params.roomName){
-        throw new GameError(GameErrorType.GameNotStarted, "Room name required",GameErrorSeverity.Error);
+        throw new GameError(GameErrorType.GameNotStarted, "Room name required", GameErrorSeverity.Error);
       }
 
       if(params.public){
+        //validate user is logged in
         const creatorUserId:string | null  = await getUserIdFromToken(params.creatorJwtToken);
         if(!creatorUserId){
           throw new GameError(GameErrorType.InvalidAction, "You must be logged in to create public games", GameErrorSeverity.Error);
+        }
+
+        //validate room name is not vulgar
+        if(!this.validRoomName(params.roomName)){
+          throw new GameError(GameErrorType.InvalidAction, "Inappropriate Room Name", GameErrorSeverity.Error);
         }
       }
 
@@ -108,6 +120,17 @@ class RoomManager {
     }
 
     await deleteRoom(room);
+  }
+
+  validRoomName = (name: string): boolean => {
+    const matcher = new RegExpMatcher({
+      ...englishDataset.build(),
+      ...englishRecommendedTransformers,
+    });
+    if (matcher.getAllMatches(name).length > 0) {
+      return false;
+    }
+    return true;
   }
 
 }
