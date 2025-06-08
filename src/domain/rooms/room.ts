@@ -18,6 +18,7 @@ import { getIceServerList } from "../../infrastructure/metered/metered-service";
 import { YugiohDomain } from "../games/yugioh-domain";
 import { IAddPlayerParams } from "../interfaces/IPlayer";
 import { getUserIdFromToken } from "../users/services/user-service";
+import User, { IMongoUser } from '../../infrastructure/mongo/models/user-model';
 
 const { v4: uuidv4 } = require('uuid');
 
@@ -166,9 +167,17 @@ export class Room {
         throw new GameError(GameErrorType.InvalidPassword, "Invalid Password",GameErrorSeverity.Error);
       }
 
+      //if logged in user, force name to be the one saved in mongo
+      let name:string = playerParams.playerName;
+
+      if(this.public && userId){
+        const mongoUser:IMongoUser = await User.findById(userId);
+        name = mongoUser.name;
+      }
+
       await this.setIceServerList()
 
-      player = new Player(playerParams.playerName, playerParams.socketId, this.players.length, this.game.startingLifeTotal);
+      player = new Player(name, playerParams.socketId, this.players.length, this.game.startingLifeTotal);
       player.ipAddress = playerParams.ipAddress;
       player.isSharingImages = playerParams.isSharingImages == false ? false: true;
       player.mongoUserId = userId;
