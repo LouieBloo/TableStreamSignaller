@@ -152,20 +152,29 @@ export async function isRoomPasswordProtected(roomId:string):Promise<boolean>{
   return parsedRoom.password ? true : false;
 }
 
-export async function getAllRooms(): Promise<any[]> {
-  const rooms = [];
-  
-  // Use SCAN to get keys matching the pattern `game_room:*`
-  let cursor = '0'; // Start scanning from the beginning
+export async function getAllRooms(params?: { public?: boolean, hasEmptySpots?: boolean }): Promise<any[]> {
+  const rooms: any[] = [];
+
+  let cursor = '0';
   do {
     const [newCursor, keys] = await redisClient.scan(cursor, 'MATCH', 'game_room:*', 'COUNT', 100);
-    cursor = newCursor; // Update cursor for next iteration
+    cursor = newCursor;
     for (const key of keys) {
       const roomData = await redisClient.get(key);
       if (roomData) {
         try {
-          // Parse the room data as JSON
           const roomJson = JSON.parse(roomData);
+
+          //public filter
+          if (params?.public != undefined && roomJson.public !== params.public) {
+            continue;
+          }
+
+          //empty player spots
+          if(params?.hasEmptySpots && roomJson.players.length >= roomJson.maxPlayers){            
+            continue;
+          }
+
           rooms.push(roomJson);
         } catch (error) {
           console.error(`Failed to parse room data for key ${key}:`, error);
@@ -173,9 +182,10 @@ export async function getAllRooms(): Promise<any[]> {
       }
     }
   } while (cursor !== '0');
-  
+
   return rooms;
 }
+
 
 
 export { redisClient, redlock };

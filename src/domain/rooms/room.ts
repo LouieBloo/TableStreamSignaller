@@ -16,6 +16,8 @@ import { updateRoom } from "../../infrastructure/mongo/mongo-repository";
 import { YugiohStandard } from "../games/yugioh-standard";
 import { getIceServerList } from "../../infrastructure/metered/metered-service";
 import { YugiohDomain } from "../games/yugioh-domain";
+import { IAddPlayerParams } from "../interfaces/IPlayer";
+import { getUserIdFromToken } from "../users/services/user-service";
 
 const { v4: uuidv4 } = require('uuid');
 
@@ -33,11 +35,14 @@ export class Room {
   playerSockets: string[] = [];
   spectatorSockets: string[] = [];
   bannedPlayerIpAddresses: string[] = [];
+  bannedUserIds: string[] = [];
   redisLock: any;
   id: string;
   password:string;
   scheduledRoom:boolean = false;
+  public:boolean = false;
   allowPlayerKicking:boolean = true;
+  allowSpectators:boolean = false;
   initialScheduleTTLInSeconds: number = 3600;// games waiting to be played will be destroyed after this time
   inactivityTimeUntilDestroyedInSeconds:number = 3600 // 1 hour default
   reactionsEnabled:boolean = true;
@@ -137,25 +142,36 @@ export class Room {
     return this.players.length < this.maxPlayers;
   }
 
-  public async addPlayer(playerId: string, playerName: string, socketId: string, password:string, ipAddress:string, isSharingImages:boolean): Promise<Player> {
+  public async addPlayer(playerParams:IAddPlayerParams): Promise<Player> {
 
-    if(this.bannedPlayerIpAddresses.includes(ipAddress)){
+    if(this.bannedPlayerIpAddresses.includes(playerParams.ipAddress)){
       throw new GameError(GameErrorType.EnteringBannedRoom, "You have been banned from this room.", GameErrorSeverity.Error);
     }
 
-    let player = this.players.find(e => e.id === playerId);
+    const userId:string | null = await getUserIdFromToken(playerParams.jwtToken);
+
+    if(userId && this.bannedUserIds.includes(userId)){
+      throw new GameError(GameErrorType.EnteringBannedRoom, "You have been banned from this room.", GameErrorSeverity.Error);
+    }
+
+    if(this.public && !userId){
+      throw new GameError(GameErrorType.InvalidAction, "You must be logged in to join a public room.", GameErrorSeverity.Error);
+    }
+ 
+    let player = this.players.find(e => e.id === playerParams.playerId);
 
     if (!player) {
       //we only check password on new players
-      if(this.password && !this.verifyPassword(password)){
+      if(this.password && !this.verifyPassword(playerParams.password)){
         throw new GameError(GameErrorType.InvalidPassword, "Invalid Password",GameErrorSeverity.Error);
       }
 
       await this.setIceServerList()
 
-      player = new Player(playerName, socketId, this.players.length, this.game.startingLifeTotal);
-      player.ipAddress = ipAddress;
-      player.isSharingImages = isSharingImages == false ? false: true;
+      player = new Player(playerParams.playerName, playerParams.socketId, this.players.length, this.game.startingLifeTotal);
+      player.ipAddress = playerParams.ipAddress;
+      player.isSharingImages = playerParams.isSharingImages == false ? false: true;
+      player.mongoUserId = userId;
       
       if (this.players.length == 0) {
         player.admin = true;
@@ -168,13 +184,17 @@ export class Room {
       //send changes to mongo
       updateRoom(this);
     } else {
-      player.socketId = socketId;
+      player.socketId = playerParams.socketId;
     }
 
     return player;
   }
 
   public async addSpectator(playerId: string, spectatorName: string, socketId: string, password:string): Promise<Spectator> {
+    if(!this.allowSpectators){
+      throw new GameError(GameErrorType.InvalidAction, "No spectators allowed",GameErrorSeverity.Error);
+    }
+
     let spectator = this.spectators.find(e => e.id === playerId);
 
     if (!spectator) {
@@ -217,7 +237,14 @@ export class Room {
 
     this.bannedPlayerIpAddresses.push(playerToKick.ipAddress);
 
+    if(playerToKick.mongoUserId){
+      this.bannedUserIds.push(playerToKick.mongoUserId);
+    }
+
     this.userDisconnected(playerToKick.socketId, playerToKick.id);
+
+    //send changes to mongo
+    updateRoom(this);
 
     return playerToKick;
   }

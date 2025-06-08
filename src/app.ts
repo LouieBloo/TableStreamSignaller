@@ -8,6 +8,7 @@ import { Room } from "./domain/rooms/room";
 import cors from 'cors';
 import router from './presentation/router/router';
 import userRouter from './presentation/router/user-router';
+import roomRouter from './presentation/router/room-router';
 import classifierTrainRouter from './presentation/router/classifier-router';
 import sttRouter from './presentation/router/stt-router';
 import "./infrastructure/mongo/mongo";
@@ -58,21 +59,19 @@ app.use(router)
 app.use('/classify/train', checkBearerToken, classifierTrainRouter);
 
 app.use('/transcribe', sttRouter);
-
 app.use('/users',userRouter);
+app.use('/rooms',roomRouter);
 
 io.on('connection', (socket:any) => {
   console.log('A user connected:', socket.id);
 
   const userIp:string = getClientIp(socket);
 
-  socket.on('joinRoom', async ({playerId, roomId, roomName, password, gameType, playerName, userType, maxPlayers, reactionsEnabled, isSharingImages }:any, callback:any) => {
+  socket.on('joinRoom', async ({playerId, roomId, roomName, password, gameType, playerName, userType, maxPlayers, reactionsEnabled, isSharingImages, isPublic, joinerJwtToken, allowSpectators }:any, callback:any) => {
     try{
       console.log("Join Room: " + " " + playerName + " - " + roomName + " - " + roomId + " - " + playerId)
 
-      console.log("password ", password)
-
-      let currentRoom:Room = await RoomManager.getOrCreateRoom({roomName, roomId, password, gameType, maxPlayers, reactionsEnabled: reactionsEnabled});
+      let currentRoom:Room = await RoomManager.getOrCreateRoom({roomName, roomId, password, gameType, maxPlayers, reactionsEnabled: reactionsEnabled, public: isPublic, creatorJwtToken: joinerJwtToken, allowSpectators });
       let newUser:User = null;
   
       if (userType == UserType.Player && !currentRoom.canAddPlayer(playerId,socket.id)) {
@@ -82,7 +81,7 @@ io.on('connection', (socket:any) => {
       }else if(userType == UserType.Player){
         //new player
         try{
-          newUser = await currentRoom.addPlayer(playerId, playerName, socket.id, password, userIp, isSharingImages)
+          newUser = await currentRoom.addPlayer({playerId, playerName, socketId: socket.id, password, ipAddress: userIp, isSharingImages, jwtToken: joinerJwtToken})
           currentRoom.playerSockets.push(socket.id);
         }catch(error){
           throw error;

@@ -5,3 +5,12 @@ export interface IUser {
     createdAt?: Date;
 }
 
+export interface IAddPlayerParams{
+    playerId: string;
+    playerName: string;
+    socketId: string;
+    password?:string;
+    ipAddress?:string;
+    isSharingImages?:boolean;
+    jwtToken?:string;
+}
