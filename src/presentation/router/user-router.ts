@@ -6,15 +6,22 @@ import crypto from 'crypto';
 import User, { IMongoUser } from '../../infrastructure/mongo/models/user-model';
 import { apiError } from './services/router-error-service';
 import { JwtPayload } from 'jsonwebtoken';
-
+import { JWT_SECRET, JWT_EXPIRES_IN } from '../../domain/users/services/user-service';
 import { sendEmail } from '../../infrastructure/emails/email-service';
 import { trimUser, updateUser, validName } from '../../infrastructure/mongo/services/user-service';
 import { IAPIError } from './interfaces/IAPIError';
+import MongoReport, { IMongoReport } from '../../infrastructure/mongo/models/report-model';
+import mongoose from 'mongoose';
+import { Room } from '../../domain/rooms/room';
+import { getRoomUnsafe } from '../../infrastructure/redis/redis';
+import { IMongoRoom } from '../../infrastructure/mongo/models/room-model';
+import RoomManager from "../../services/room-manager";
+import { getRoomByTableStreamId } from '../../infrastructure/mongo/mongo-repository';
+
 const { v4: uuidv4 } = require('uuid');
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'replace_me';
-const JWT_EXPIRES_IN = '48h';
+
 
 // ------------------------------------------------------------------
 //  Middleware to validate & sanitize input
@@ -197,18 +204,18 @@ router.post('/verify-email', validate([
     user.verifiedEmail = true;
     await user.save();
     res.json({ message: 'Email verified successfully' });
-})
+  })
 
 
-router.get('/me', authenticateToken, async(req: any, res: any) => {
-  const user:IMongoUser = await User.findById(req.user._id);
+router.get('/me', authenticateToken, async (req: any, res: any) => {
+  const user: IMongoUser = await User.findById(req.user._id);
   return res.json({ user: trimUser(user) })
 })
 
 // ------------------------------------------------------------------
 // Update User
 // ------------------------------------------------------------------
-router.post('/', authenticateToken, validate([body('name').isLength({ min: 3, max: 30 }),]), async(req: any, res: any) => {
+router.post('/', authenticateToken, validate([body('name').isLength({ min: 3, max: 30 }),]), async (req: any, res: any) => {
   const user = await User.findById(req.user._id);
   if (!user) return res.sendStatus(404);
 
@@ -224,6 +231,71 @@ router.post('/', authenticateToken, validate([body('name').isLength({ min: 3, ma
 
   return res.json({ user: trimUser(user) });
 })
+
+// ------------------------------------------------------------------
+// Report User
+// ------------------------------------------------------------------
+router.post('/reports', authenticateToken, [
+  body('offenderPlayerId').isMongoId().withMessage('offenderPlayerId must be a valid ObjectId'),
+  body('reason')
+    .isIn(['GRIEFING', 'CAMERA_ABUSE', 'AUDIO_ABUSE', 'HARASSMENT', 'CHAT_ABUSE', 'OTHER'])
+    .withMessage('Invalid reason'),
+  body('roomId').isString().withMessage('roomId required'),
+  body('notes').optional().isString().withMessage('notes must be a string'),
+], async (req: any, res: any) => {
+  try {
+    const {
+      offenderPlayerId,
+      reason,
+      notes,
+      roomId,
+    } = req.body;
+
+    //find rooms
+    const redisRoom: Room = await RoomManager.getRoomUnsafe(roomId);
+
+    //verify both these players are in the room
+    const reporterIndex = redisRoom.players.findIndex(
+      (p) => p.mongoUserId.toString() === req.user._id //note we look at mongo user id
+    );
+
+    const offenderPlayer = redisRoom.players.find(
+      (p) => p.id === offenderPlayerId // note we look at normal room player id, not mongo id as the front end doesnt know the real mongo user ids
+    );
+
+    const offendingPlayerMongoId = offenderPlayer.mongoUserId;
+
+    // Validate
+    if (reporterIndex === -1 || !offendingPlayerMongoId) {
+      return res.status(400).json({
+        errors: [apiError("Invalid report, players not found", "offenderUserId")]
+      });
+    }
+
+    const mongoRoom:IMongoRoom = await getRoomByTableStreamId(roomId);
+
+    // Create the new report
+    const newReport: Partial<IMongoReport> = {
+      reporterUserId: new mongoose.Types.ObjectId(req.user._id), // assuming req.user.id is the ObjectId of the authenticated user
+      offenderUserId: new mongoose.Types.ObjectId(offendingPlayerMongoId),
+      reason,
+      notes,
+      roomId: new mongoose.Types.ObjectId(mongoRoom._id),
+      messages: redisRoom.messages
+    };
+
+    const savedReport = await MongoReport.create(newReport);
+
+    res.status(201).json({
+      message: 'Report created successfully',
+    });
+  } catch (err) {
+    console.error('Error creating report:', err);
+    res.status(500).json({
+      errors: [apiError(err, "general")]
+    });
+  }
+});
 
 
 // ------------------------------------------------------------------

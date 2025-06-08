@@ -1,6 +1,7 @@
 import { Player } from "../../domain/users/player";
 import { Room } from "../../domain/rooms/room";
 import MongoRoom, { IMongoRoom } from "../../infrastructure/mongo/models/room-model";
+import mongoose from "mongoose";
 
 const trackingActive = process.env.MONGODB_URI ? true : false;
 
@@ -50,6 +51,12 @@ export const deleteRoom = async (room: Room): Promise<IMongoRoom | null> => {
   }
 }
 
+export const getRoomByTableStreamId = async (tableStreamId: string): Promise<IMongoRoom | null> => {
+  const mongoRoom: IMongoRoom | null = await MongoRoom.findOne({ tableStreamId: tableStreamId });
+
+  return mongoRoom;
+}
+
 export const getRooms = async (startDate: Date, endDate: Date): Promise<IMongoRoom[] | null> => {
   const mongoRooms = await MongoRoom.find({
     createdAt: { $gte: startDate, $lte: endDate },
@@ -64,6 +71,12 @@ const mapTableStreamRoomToMongoRoom = (room: Room): Partial<IMongoRoom> => {
   let mappedRoom: Partial<IMongoRoom> = {
     name: room.name,
     playerIds: room.players.map((player: Player) => player.id),
+    players: room.players.map((player: Player) => {
+      if(player.mongoUserId){
+        return {id: player.id, userId: new mongoose.Types.ObjectId(player.mongoUserId) }
+      }
+      return {id: player.id}
+    }),
     gameType: room.game.gameType.toString(),
     tableStreamId: room.id,
     maxPlayers: room.maxPlayers,
@@ -71,7 +84,12 @@ const mapTableStreamRoomToMongoRoom = (room: Room): Partial<IMongoRoom> => {
     initialScheduleTTLInSeconds: room.initialScheduleTTLInSeconds,
     inactivityTimeUntilDestroyedInSeconds: room.inactivityTimeUntilDestroyedInSeconds,
     reactionsEnabled: room.reactionsEnabled,
-    allowPlayerKicking: room.allowPlayerKicking
+    allowPlayerKicking: room.allowPlayerKicking,
+    allowSpectators: room.allowSpectators,
+    bannedUserIds: room.bannedUserIds.map((userId: string) => {
+      return  new mongoose.Types.ObjectId(userId)
+    }),
+    public: room.public
   };
 
   return mappedRoom;

@@ -14,8 +14,8 @@ const run = async()=>{
     await waitFiveSeconds();
 
     const user = new MongoUser({
-        name: "Marty McCann",
-        email: "martymccann71@gmail.com",
+        name: "",
+        email: "",
         developerToken: uuidv4()
     });
 

@@ -7,7 +7,7 @@ export class User {
     socketId: string;
     id: string;
     ipAddress: string;
-
+    mongoUserId:string;
     type: UserType;
 
     constructor(name:string, socketId:string, type:UserType) {

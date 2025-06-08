@@ -10,6 +10,7 @@ export interface IRoomCreationResponse{
     password?:string;
     scheduledRoom?:boolean;
     allowPlayerKicking?:boolean;
+    allowSpectators?:boolean;
 }
 
 export const createRoom = async(params:ICreateRoomParams):Promise<IRoomCreationResponse>=>{
