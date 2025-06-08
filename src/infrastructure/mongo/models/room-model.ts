@@ -1,6 +1,7 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export interface IMongoRoom extends Document {
+  _id: mongoose.Types.ObjectId;
   name: string;
   playerIds?: string[];
   players?: { id: string; userId?: Types.ObjectId }[];
@@ -14,6 +15,7 @@ export interface IMongoRoom extends Document {
   public?:boolean;
   allowPlayerKicking?:boolean;
   allowSpectators?:boolean;
+  bannedUserIds?: Types.ObjectId[];
   createdAt?: Date;
   updatedAt?: Date;
   deletedAt?: Date;
@@ -39,6 +41,7 @@ const RoomSchema: Schema = new Schema(
     public: { type: Boolean, required: false },
     allowPlayerKicking: { type: Boolean, required: false },
     allowSpectators: { type: Boolean, required: false },
+    bannedUserIds: [{ type: Types.ObjectId, ref: 'User' }],
     deletedAt: { type: Date, required: false },
   },
   {

@@ -243,6 +243,9 @@ export class Room {
 
     this.userDisconnected(playerToKick.socketId, playerToKick.id);
 
+    //send changes to mongo
+    updateRoom(this);
+
     return playerToKick;
   }
 

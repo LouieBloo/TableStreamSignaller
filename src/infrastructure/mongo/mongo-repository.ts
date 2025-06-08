@@ -51,6 +51,12 @@ export const deleteRoom = async (room: Room): Promise<IMongoRoom | null> => {
   }
 }
 
+export const getRoomByTableStreamId = async (tableStreamId: string): Promise<IMongoRoom | null> => {
+  const mongoRoom: IMongoRoom | null = await MongoRoom.findOne({ tableStreamId: tableStreamId });
+
+  return mongoRoom;
+}
+
 export const getRooms = async (startDate: Date, endDate: Date): Promise<IMongoRoom[] | null> => {
   const mongoRooms = await MongoRoom.find({
     createdAt: { $gte: startDate, $lte: endDate },
@@ -80,6 +86,9 @@ const mapTableStreamRoomToMongoRoom = (room: Room): Partial<IMongoRoom> => {
     reactionsEnabled: room.reactionsEnabled,
     allowPlayerKicking: room.allowPlayerKicking,
     allowSpectators: room.allowSpectators,
+    bannedUserIds: room.bannedUserIds.map((userId: string) => {
+      return  new mongoose.Types.ObjectId(userId)
+    }),
     public: room.public
   };
 
