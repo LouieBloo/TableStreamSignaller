@@ -74,7 +74,7 @@ export const handler = async (req: any, res: any) => {
       const filePath = `${fileName}.jpg`;
       try{
         const file = base64ToJpg(response.data.card_image_base64, fileName);
-        await sendFileToS3andMongo([file], req.body.roomId, true, "scryfall_" + response.data.detected_card + "_");
+        await sendFileToS3andMongo([file], req.body.roomId, true, "scryfall_" + response.data.scryfall_data.id + "_");
       }catch(error){
         console.log("Error uploading classifier image to s3: ", error)
       } finally {
@@ -90,10 +90,9 @@ export const handler = async (req: any, res: any) => {
     // Send back the response from the target endpoint
     res.status(response.status).send({
       classification_confidence: response.data.classification_confidence,
-      detected_card: response.data.detected_card,
       scryfall_data: response.data.scryfall_data,
       bounding_box: response.data.bounding_box,
-      top_guesses: response.data.top_guesses
+      all_guesses: response.data.all_guesses
     });
   } catch (error: any) {
     console.error('Error:', error);
