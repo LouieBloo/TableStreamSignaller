@@ -45,6 +45,7 @@ export interface IPlayingCard {
     classificationConfidence? :number;
     card_faces?:IPlayingCard[]
     castAmount?:number;
+    allGuesses?:IPlayingCard[];
 }
 
 export const slimCard = (card:IPlayingCard):IPlayingCard =>{
@@ -65,6 +66,10 @@ export const slimCard = (card:IPlayingCard):IPlayingCard =>{
 
   if(card.classificationConfidence > 0){
     slimObj.classificationConfidence = card.classificationConfidence;
+  }
+
+  if(card.allGuesses){
+    slimObj.allGuesses = card.allGuesses.map(c => slimCard(c))
   }
 
   return slimObj;

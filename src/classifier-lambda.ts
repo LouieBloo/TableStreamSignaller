@@ -69,12 +69,13 @@ export const handler = async (req: any, res: any) => {
       },
     });
 
+
     if(canSavePlayerImage && process.env.SAVE_CLASSIFIED_IMAGES && process.env.SAVE_CLASSIFIED_IMAGES == 'true' && response && response.data && response.data.card_image_base64){
       const fileName = `tempsave`;
       const filePath = `${fileName}.jpg`;
       try{
         const file = base64ToJpg(response.data.card_image_base64, fileName);
-        await sendFileToS3andMongo([file], req.body.roomId, true, "scryfall_" + response.data.detected_card + "_");
+        await sendFileToS3andMongo([file], req.body.roomId, true, "scryfall_" + response.data.scryfall_data.oracle_id + "_", req.body.classifier || "CNN");
       }catch(error){
         console.log("Error uploading classifier image to s3: ", error)
       } finally {
@@ -90,10 +91,9 @@ export const handler = async (req: any, res: any) => {
     // Send back the response from the target endpoint
     res.status(response.status).send({
       classification_confidence: response.data.classification_confidence,
-      detected_card: response.data.detected_card,
       scryfall_data: response.data.scryfall_data,
       bounding_box: response.data.bounding_box,
-      top_guesses: response.data.top_guesses
+      all_guesses: response.data.all_guesses
     });
   } catch (error: any) {
     console.error('Error:', error);
@@ -118,7 +118,7 @@ const canSavePlayerImages = async(playerId:string, roomId:string):Promise<boolea
   return false;
 }
 
-const sendFileToS3andMongo = async(files:any, roomId:string, isSingleCard:boolean, postString:string=null)=>{
+const sendFileToS3andMongo = async(files:any, roomId:string, isSingleCard:boolean, postString:string=null, classifier:string = null)=>{
   const bucket = 'card-classifier';
   const uploadPromises = files.map(async (file: any) => {
     const fileName = `${roomId}-${isSingleCard ? "CARD" : "BOARD"}-${postString ? postString + "-" : ""}${new Date().toISOString().replace(/[:.]/g, "-")}.jpg`// Replace : and . with -
@@ -140,6 +140,7 @@ const sendFileToS3andMongo = async(files:any, roomId:string, isSingleCard:boolea
       imageName: fileName,
       imageLocation: `${bucket}/${fileKey}`,
       imageType: isSingleCard ? "CARD" : "BOARD",
+      classifier: classifier,
       status: isSingleCard ? "PENDING_CLASSIFICATION" : "PENDING_SLICE"
     });
 
