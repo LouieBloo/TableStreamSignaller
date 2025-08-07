@@ -1,4 +1,4 @@
-import "../src/mongo/mongo";
+import "../src/infrastructure/mongo/mongo";
 import { TrainingImageService } from "../src/infrastructure/mongo/services/training-image-service";
 import MongoTrainingImage, { IMongoTrainingImage } from '../src/infrastructure/mongo/models/training-image-model';
 import fs from 'fs';

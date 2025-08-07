@@ -8,6 +8,7 @@ export interface IMongoTrainingImage extends Document {
   possibleOracleIds:string[];
   votesToDelete:number;
   votesNotSure:number;
+  classifier?:string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -28,7 +29,8 @@ const TrainingImageSchema: Schema = new Schema(
     },
     possibleOracleIds:{type: [String]},
     votesToDelete: {type: Number},
-    votesNotSure: {type: Number}
+    votesNotSure: {type: Number},
+    classifier: { type: String, required: false },
   },
   {
     timestamps: true,
