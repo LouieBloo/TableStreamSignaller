@@ -27,7 +27,7 @@ export class Game {
             case GameEvent.RandomizePlayerOrder:
                 return this.randomizePlayerOrder(room.players);
             case GameEvent.ModifyPlayerProperty:
-                return this.modifyPlayerProperty(gameEvent);
+                return this.modifyPlayerProperty(gameEvent, room);
             case GameEvent.ModifyGameProperty:
                 return this.modifyGameProperty(gameEvent);
             case GameEvent.StartGame:
@@ -147,14 +147,6 @@ export class Game {
         }
     }
 
-    findPlayerWithLowestTurnOrder(players: Player[]): Player | undefined {
-        if (players.length === 0) return undefined;
-    
-        return players.reduce((lowest, player) => 
-            player.turnOrder < lowest.turnOrder ? player : lowest
-        );
-    }
-
     modifyGameProperty(gameEvent:IGameEvent): Game{
         if(!this.active){
             throw new GameError(GameErrorType.GameNotStarted, "The game has not started yet. Please start the game.",GameErrorSeverity.Error);
@@ -178,22 +170,28 @@ export class Game {
         }
     }
 
-    modifyPlayerProperty(gameEvent: IGameEvent): Player {
+    modifyPlayerProperty(gameEvent: IGameEvent, room: Room): Player[] {
         this.modifyPlayerPropertySecurityCheck(gameEvent);
 
-        let modifyEvent:IModifyPlayerProperty = gameEvent.payload;
+        const modifyEvent:IModifyPlayerProperty = gameEvent.payload; 
+        const callingPlayer = gameEvent.callingPlayer;
+        const updatedPlayers: Player[] = [callingPlayer];
 
         switch(modifyEvent.property){
             case PlayerProperties.lifeTotal:
-                gameEvent.callingPlayer.lifeTotal += modifyEvent.amountToModify;
-                gameEvent.callingPlayer.isDead = gameEvent.callingPlayer.lifeTotal <= 0 ? true : false;
+                callingPlayer.lifeTotal += modifyEvent.amountToModify;
+                callingPlayer.isDead = callingPlayer.lifeTotal <= 0 ? true : false;
                 break;
             case PlayerProperties.sharingImages:
-                gameEvent.callingPlayer.isSharingImages = gameEvent.payload.value;
+               callingPlayer.isSharingImages = modifyEvent.value;
+                break;
+            case PlayerProperties.isAdmin:
+                const newAdmin = room.setNewAdmin(modifyEvent.value, callingPlayer)
+                updatedPlayers.push(newAdmin);
                 break;
         }
         
-        return gameEvent.callingPlayer;
+        return updatedPlayers;
     }
 
     public kickPlayer(gameEvent: IGameEvent, room:Room):IKickPlayerResponse{
