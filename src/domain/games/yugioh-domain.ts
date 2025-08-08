@@ -15,7 +15,7 @@ export class YugiohDomain extends Game {
   public event(gameEvent: IGameEvent, room: Room): any {
     switch (gameEvent.event) {
       case GameEvent.ModifyPlayerProperty:
-        return this.modifyPlayerProperty(gameEvent)
+        return this.modifyPlayerProperty(gameEvent, room)
       case GameEvent.SetCommander:
         return this.setCommander(gameEvent, room);
     }
@@ -23,17 +23,17 @@ export class YugiohDomain extends Game {
     return super.event(gameEvent, room);
   }
 
-  modifyPlayerProperty(gameEvent: IGameEvent): Player {
+  modifyPlayerProperty(gameEvent: IGameEvent, room: Room): Player[] {
     this.modifyPlayerPropertySecurityCheck(gameEvent);
 
     let modifyEvent: IModifyPlayerProperty = gameEvent.payload;
 
     switch (modifyEvent.property) {
       case PlayerProperties.commanderCastAmount:
-        return this.modifyPlayerCommanderCastAmount(gameEvent);
+        return [this.modifyPlayerCommanderCastAmount(gameEvent)];
     }
 
-    return super.modifyPlayerProperty(gameEvent);
+    return super.modifyPlayerProperty(gameEvent, room);
   }
 
   setPlayerDefaults(newPlayer: Player, room: Room) {

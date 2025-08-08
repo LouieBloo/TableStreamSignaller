@@ -278,6 +278,22 @@ export class Room {
     }
   }
 
+  setNewAdmin(id: string, callingPlayer: Player): Player{
+
+    if(!callingPlayer.admin){
+      throw new GameError(GameErrorType.InvalidAction, "Calling player is not admin", GameErrorSeverity.Error);
+    }
+    
+    const newAdmin = this.players.find(p => p.id === id)
+
+    if(!newAdmin)
+      throw new GameError(GameErrorType.GenericWarning, "Could not find player", GameErrorSeverity.Error)
+
+    newAdmin.setAdmin(true);
+    callingPlayer.setAdmin(false);
+    return newAdmin;
+  }
+
   getPlayer(socketId: string) {
     return this.players.find(p => p.socketId === socketId);
   }

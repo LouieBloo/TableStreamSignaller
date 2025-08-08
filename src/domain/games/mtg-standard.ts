@@ -1,7 +1,4 @@
-import { Player } from "../users/player";
-import { IGameEvent, GameEvent, ICommanderDamage, GameType } from "../interfaces/IGame";
-import { Game } from "./game";
-import { slimCard } from "../interfaces/ICards";
+import { GameType } from "../interfaces/IGame";
 import { MTGGame } from "./mtg-game";
 
 
