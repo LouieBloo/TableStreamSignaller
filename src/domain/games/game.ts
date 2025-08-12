@@ -188,6 +188,7 @@ export class Game {
             case PlayerProperties.isAdmin:
                 const newAdmin = room.setNewAdmin(modifyEvent.value, callingPlayer)
                 updatedPlayers.push(newAdmin);
+                this.sendMessage(" gave admin privileges to " + newAdmin.name, gameEvent);
                 break;
         }
         
