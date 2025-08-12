@@ -28,23 +28,23 @@ export class MTGCommander extends MTGGame {
       case GameEvent.KickPlayer:
         return this.kickPlayer(gameEvent, room)
       case GameEvent.ModifyPlayerProperty:
-        return this.modifyPlayerProperty(gameEvent)
+        return this.modifyPlayerProperty(gameEvent, room)
     }
 
     return super.event(gameEvent, room);
   }
 
-  modifyPlayerProperty(gameEvent: IGameEvent): Player {
+  modifyPlayerProperty(gameEvent: IGameEvent, room: Room): Player[] {
     this.modifyPlayerPropertySecurityCheck(gameEvent);
     
     let modifyEvent: IModifyPlayerProperty = gameEvent.payload;
 
     switch (modifyEvent.property) {
       case PlayerProperties.commanderCastAmount:
-        return ModifyPlayerCommanderCastAmount(gameEvent);
+        return [ModifyPlayerCommanderCastAmount(gameEvent)];
     }
 
-    return super.modifyPlayerProperty(gameEvent);
+    return super.modifyPlayerProperty(gameEvent, room);
   }
 
   startGame(room: Room): Room {
