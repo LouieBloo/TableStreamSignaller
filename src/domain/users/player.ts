@@ -69,4 +69,8 @@ export class Player extends User {
 
         return this;
     }
+
+    setAdmin(isAdmin: boolean){
+        this.admin = isAdmin;
+    }
  }

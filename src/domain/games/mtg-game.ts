@@ -1,9 +1,8 @@
 import { Player } from "../users/player";
-import { IGameEvent, GameEvent, GameType, PlayerProperties, IModifyPlayerProperty, GameError, GameErrorSeverity, GameErrorType } from "../interfaces/IGame";
+import { IGameEvent, GameEvent, PlayerProperties, IModifyPlayerProperty } from "../interfaces/IGame";
 import { Room } from "../rooms/room";
 import { Game } from "./game";
-import { ResetCommanderDamagesToZero, SetPlayerDefaults, SetCommander, ModifyPlayerCommanderDamage, RemoveCommanderDamagesFromPlayer, ModifyPlayerCommanderCastAmount } from '../games/services/mtg-commander-service';
-import { IKickPlayerResponse } from "../interfaces/IKickPlayerReponse";
+import {  ModifyPlayerCommanderCastAmount } from '../games/services/mtg-commander-service';
 
 export class MTGGame extends Game {
 
@@ -18,38 +17,40 @@ export class MTGGame extends Game {
       case GameEvent.ToggleInitiative:
         return this.toggleInitiative(gameEvent, room);
       case GameEvent.ModifyPlayerProperty:
-        return this.modifyPlayerProperty(gameEvent)
+        return this.modifyPlayerProperty(gameEvent, room)
     }
 
     return super.event(gameEvent, room);
   }
 
-  modifyPlayerProperty(gameEvent: IGameEvent): Player {
+  modifyPlayerProperty(gameEvent: IGameEvent, room: Room): Player[] {
     this.modifyPlayerPropertySecurityCheck(gameEvent);
 
-    let modifyEvent: IModifyPlayerProperty = gameEvent.payload;
+    const modifyEvent: IModifyPlayerProperty = gameEvent.payload;
+    const callingPlayer = gameEvent.callingPlayer;
+    const amountToModify = modifyEvent.amountToModify
 
     switch (modifyEvent.property) {
       case PlayerProperties.commanderCastAmount:
-        return ModifyPlayerCommanderCastAmount(gameEvent);
+        return [ModifyPlayerCommanderCastAmount(gameEvent)];
       case PlayerProperties.poisonTotal:
-        gameEvent.callingPlayer.poisonTotal += modifyEvent.amountToModify;
-        if (gameEvent.callingPlayer.poisonTotal < 0) { gameEvent.callingPlayer.poisonTotal = 0; }
-        return gameEvent.callingPlayer;
+        callingPlayer.poisonTotal += amountToModify;
+        if (callingPlayer.poisonTotal < 0) { callingPlayer.poisonTotal = 0; }
+        return [callingPlayer];
       case PlayerProperties.energyTotal:
-        gameEvent.callingPlayer.energyTotal += modifyEvent.amountToModify;
-        if (gameEvent.callingPlayer.energyTotal < 0) { gameEvent.callingPlayer.energyTotal = 0; }
-        return gameEvent.callingPlayer;
+        callingPlayer.energyTotal += amountToModify;
+        if (callingPlayer.energyTotal < 0) { callingPlayer.energyTotal = 0; }
+        return [callingPlayer];
       case PlayerProperties.citiesBlessing:
-        gameEvent.callingPlayer.hasCitiesBlessing = !gameEvent.callingPlayer.hasCitiesBlessing;
-        return gameEvent.callingPlayer;
+        callingPlayer.hasCitiesBlessing = !callingPlayer.hasCitiesBlessing;
+        return [callingPlayer];
       case PlayerProperties.radiationTotal:
-        gameEvent.callingPlayer.radiationTotal += modifyEvent.amountToModify;
-        if (gameEvent.callingPlayer.radiationTotal < 0) { gameEvent.callingPlayer.radiationTotal = 0; }
-        return gameEvent.callingPlayer;
+        callingPlayer.radiationTotal += amountToModify;
+        if (callingPlayer.radiationTotal < 0) { callingPlayer.radiationTotal = 0; }
+        return [callingPlayer];
     }
 
-    return super.modifyPlayerProperty(gameEvent);
+    return super.modifyPlayerProperty(gameEvent, room);
   }
 
   // This is not a player property event as it changes multiple players
