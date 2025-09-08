@@ -142,8 +142,9 @@ io.on('connection', (socket:any) => {
             })
           }
 
-          await room.saveAndClose();
+          await room.saveAndClose(event);
           io.in(currentRoom.id).emit('gameEvent', event);
+          // io.in(currentRoom.id).emit('historyEvent', event);
         }
         catch(error){
           console.log(error)

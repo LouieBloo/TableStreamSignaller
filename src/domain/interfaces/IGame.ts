@@ -1,6 +1,7 @@
 import { Player } from "../users/player";
 import { IPlayingCard } from "./ICards";
 import { IMessage } from "./IMessaging";
+import { IRoomHistoryEvent } from "./IRoom";
 
 export interface IGameEvent {
     callingPlayer:Player;
@@ -9,6 +10,7 @@ export interface IGameEvent {
     response?: any;
     messages?:IMessage[];
     isPrivate?:boolean;
+    history?:IRoomHistoryEvent;
 }
 
 export interface IModifyGameProperty{

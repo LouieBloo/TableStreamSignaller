@@ -1,5 +1,5 @@
 import { Game } from "../games/game";
-import { GameError, GameErrorSeverity, GameErrorType, GameType, IGameEvent } from "../interfaces/IGame";
+import { GameError, GameErrorSeverity, GameErrorType, GameEvent, GameType, IGameEvent, PlayerProperties } from "../interfaces/IGame";
 import { IMessage } from "../interfaces/IMessaging";
 import { Player } from "../users/player";
 import { MTGCommander } from "../games/mtg-commander";
@@ -19,6 +19,7 @@ import { YugiohDomain } from "../games/yugioh-domain";
 import { IAddPlayerParams } from "../interfaces/IPlayer";
 import { getUserIdFromToken } from "../users/services/user-service";
 import User, { IMongoUser } from '../../infrastructure/mongo/models/user-model';
+import { IRoomEvent, IRoomHistoryEvent, RoomEvent } from "../interfaces/IRoom";
 
 const { v4: uuidv4 } = require('uuid');
 
@@ -52,6 +53,8 @@ export class Room {
 
   iceServerList: any[];
 
+  history: IRoomHistoryEvent[] = [];
+
   constructor(roomName: string,password:string, gameType: GameType, maxPlayers:number) {
     this.id = uuidv4();
     this.name = roomName;
@@ -63,8 +66,9 @@ export class Room {
     this.game = Room.createGame(gameType);
   }
 
-  saveAndClose = async (setScheduledTTL:boolean = false) => {
+  saveAndClose = async (gameEvent: IGameEvent = null, setScheduledTTL:boolean = false) => {
     try{
+      this.logGameEvent(gameEvent);
       saveRoomAndUnlock(this,setScheduledTTL);
     }catch(error){
       console.log("catching save and close: ", error)
@@ -190,6 +194,14 @@ export class Room {
 
       this.players.push(player)
 
+      this.logRoomEvent({
+        event: RoomEvent.PlayerAdded,
+        value: {
+          id: player.id,
+          name: player.name
+        }
+      })
+
       //send changes to mongo
       updateRoom(this);
     } else {
@@ -251,6 +263,14 @@ export class Room {
     }
 
     this.userDisconnected(playerToKick.socketId, playerToKick.id);
+
+    this.logRoomEvent({
+        event: RoomEvent.PlayerRemoved,
+        value: {
+          id: playerToKick.id,
+          name: playerToKick.name
+        }
+    })
 
     //send changes to mongo
     updateRoom(this);
@@ -323,5 +343,73 @@ export class Room {
   setIceServerList = async() => {
     if(this.iceServerList){return;}
     this.iceServerList = await getIceServerList();
+  }
+
+  logHistory = async(event: IRoomHistoryEvent)=>{
+    if(!event){return;}
+
+    event.createdAt = new Date();
+    this.history.push(event);
+  }
+
+  logRoomEvent = (event: IRoomEvent) =>{
+    console.log(event)
+    if(!event){return;}
+
+    let historyEvent:IRoomHistoryEvent = {
+      type: RoomEvent[event.event],
+      player: event.callingPlayer
+    }
+
+    switch(event.event){
+      case RoomEvent.PlayerAdded:
+        historyEvent.value = event.value;
+        break;
+      case RoomEvent.PlayerRemoved:
+        historyEvent.value = event.value;
+        break;
+    }
+
+    this.logHistory(historyEvent);
+  }
+
+  logGameEvent = (event: IGameEvent)=>{
+    console.log(event)
+    if(!event){return;}
+    let historyEvent:IRoomHistoryEvent = {
+      player: {
+        id: event.callingPlayer.id,
+        name: event.callingPlayer.name
+      },
+      type: GameEvent[event.event]
+    }
+
+    switch (event.event) {
+      case GameEvent.RandomizePlayerOrder:
+      case GameEvent.SetPlayerTurnOrders:
+        historyEvent.value = this.players.sort((a, b) => a.turnOrder - b.turnOrder).map(player => player.name).join(', ');
+        break;
+      case GameEvent.ModifyPlayerProperty:
+        historyEvent.property = PlayerProperties[event.payload.property];
+        historyEvent.value = event.payload.amountToModify;
+        // @ts-ignore
+        historyEvent.currentValue = event.callingPlayer[PlayerProperties[event.payload.property]] ;
+        break;
+      case GameEvent.ModifyGameProperty:
+        break;
+      case GameEvent.ResetGame:
+        break;
+      case GameEvent.FlipCoins:
+        historyEvent.property = event.payload.coinsToFlip + " coin flip"
+        historyEvent.value = event.response.results;
+        break;
+      case GameEvent.RollDice:
+        historyEvent.property = event.payload.sidedDice;
+        historyEvent.value = event.response.results;
+        break;
+    }
+
+    event.history = historyEvent;
+    this.logHistory(historyEvent);
   }
 }
