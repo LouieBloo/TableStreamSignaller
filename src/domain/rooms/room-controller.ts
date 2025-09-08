@@ -33,7 +33,7 @@ export const createRoom = async(params:ICreateRoomParams):Promise<IRoomCreationR
 
     let newRoom = await RoomManager.getOrCreateRoom(params);
     //save room in redis
-    await newRoom.saveAndClose(params.scheduledRoom);
+    await newRoom.saveAndClose(null, params.scheduledRoom);
 
     const response:IRoomCreationResponse = {
         roomName: newRoom.name,
