@@ -10,7 +10,6 @@ export interface IGameEvent {
     response?: any;
     messages?:IMessage[];
     isPrivate?:boolean;
-    history?:IRoomHistoryEvent;
 }
 
 export interface IModifyGameProperty{

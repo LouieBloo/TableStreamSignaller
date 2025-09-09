@@ -66,9 +66,8 @@ export class Room {
     this.game = Room.createGame(gameType);
   }
 
-  saveAndClose = async (gameEvent: IGameEvent = null, setScheduledTTL:boolean = false) => {
+  saveAndClose = async (setScheduledTTL:boolean = false) => {
     try{
-      this.logGameEvent(gameEvent);
       saveRoomAndUnlock(this,setScheduledTTL);
     }catch(error){
       console.log("catching save and close: ", error)
@@ -194,14 +193,6 @@ export class Room {
 
       this.players.push(player)
 
-      this.logRoomEvent({
-        event: RoomEvent.PlayerAdded,
-        value: {
-          id: player.id,
-          name: player.name
-        }
-      })
-
       //send changes to mongo
       updateRoom(this);
     } else {
@@ -235,13 +226,24 @@ export class Room {
     return spectator;
   }
 
-  public userDisconnected(socketId: string, playerId: string | null) {
+  public userDisconnected(socketId: string, playerId: string | null): IRoomHistoryEvent {
+    console.log(socketId + " " + playerId)
+    const disconnectingPlayer:Player = this.players.find(p => p.socketId == socketId);
     this.playerSockets = this.playerSockets.filter((id: any) => id !== socketId);
     this.spectatorSockets = this.spectatorSockets.filter((id: any) => id !== socketId);
 
     if(playerId)
       this.players = this.players.filter(p => p.id != playerId)
-    
+
+    if(disconnectingPlayer){
+      return this.logRoomEvent({
+        event: RoomEvent.PlayerRemoved,
+        value: {
+          id: disconnectingPlayer.id,
+          name: disconnectingPlayer.name
+        }
+      })
+    }
   }
 
 
@@ -263,14 +265,6 @@ export class Room {
     }
 
     this.userDisconnected(playerToKick.socketId, playerToKick.id);
-
-    this.logRoomEvent({
-        event: RoomEvent.PlayerRemoved,
-        value: {
-          id: playerToKick.id,
-          name: playerToKick.name
-        }
-    })
 
     //send changes to mongo
     updateRoom(this);
@@ -345,15 +339,16 @@ export class Room {
     this.iceServerList = await getIceServerList();
   }
 
-  logHistory = async(event: IRoomHistoryEvent)=>{
+  private logHistory = (event: IRoomHistoryEvent)=>{
     if(!event){return;}
 
     event.createdAt = new Date();
     this.history.push(event);
+
+    return event;
   }
 
-  logRoomEvent = (event: IRoomEvent) =>{
-    console.log(event)
+  logRoomEvent = (event: IRoomEvent) : IRoomHistoryEvent =>{
     if(!event){return;}
 
     let historyEvent:IRoomHistoryEvent = {
@@ -370,46 +365,87 @@ export class Room {
         break;
     }
 
-    this.logHistory(historyEvent);
+    return this.logHistory(historyEvent);
   }
 
-  logGameEvent = (event: IGameEvent)=>{
+  logGameEvent = (event: IGameEvent) : IRoomHistoryEvent=>{
     console.log(event)
     if(!event){return;}
-    let historyEvent:IRoomHistoryEvent = {
-      player: {
-        id: event.callingPlayer.id,
-        name: event.callingPlayer.name
-      },
-      type: GameEvent[event.event]
-    }
 
-    switch (event.event) {
-      case GameEvent.RandomizePlayerOrder:
-      case GameEvent.SetPlayerTurnOrders:
-        historyEvent.value = this.players.sort((a, b) => a.turnOrder - b.turnOrder).map(player => player.name).join(', ');
-        break;
-      case GameEvent.ModifyPlayerProperty:
-        historyEvent.property = PlayerProperties[event.payload.property];
-        historyEvent.value = event.payload.amountToModify;
-        // @ts-ignore
-        historyEvent.currentValue = event.callingPlayer[PlayerProperties[event.payload.property]] ;
-        break;
-      case GameEvent.ModifyGameProperty:
-        break;
-      case GameEvent.ResetGame:
-        break;
-      case GameEvent.FlipCoins:
-        historyEvent.property = event.payload.coinsToFlip + " coin flip"
-        historyEvent.value = event.response.results;
-        break;
-      case GameEvent.RollDice:
-        historyEvent.property = event.payload.sidedDice;
-        historyEvent.value = event.response.results;
-        break;
-    }
+    try{
+      let historyEvent:IRoomHistoryEvent = {
+        player: {
+          id: event.callingPlayer.id,
+          name: event.callingPlayer.name
+        },
+        type: GameEvent[event.event]
+      }
 
-    event.history = historyEvent;
-    this.logHistory(historyEvent);
+      let skipHistory:boolean = false;
+
+      switch (event.event) {
+        case GameEvent.KickPlayer:
+          historyEvent.value = {
+            id: event.response.kickedPlayer.id,
+            name: event.response.kickedPlayer.name
+          }
+          break;
+        case GameEvent.RandomizePlayerOrder:
+        case GameEvent.SetPlayerTurnOrders:
+          historyEvent.value = this.players.sort((a, b) => a.turnOrder - b.turnOrder).map(player => player.name).join(', ');
+          break;
+        case GameEvent.ModifyPlayerProperty:
+          historyEvent.property = PlayerProperties[event.payload.property];
+          historyEvent.value = event.payload.amountToModify;
+          // @ts-ignore
+          historyEvent.currentValue = event.callingPlayer[PlayerProperties[event.payload.property]] ;
+          break;
+        case GameEvent.ModifyPlayerCommanderDamage:
+          historyEvent.value = {
+            damagingPlayer:{
+              id: event.payload.damagingPlayer.id,
+              name: event.payload.damagingPlayer.name,
+              card: event.payload.card
+            },
+            amount: event.payload.amount,
+            total: event.callingPlayer.commanderDamages[event.payload.damagingPlayer.id][event.payload.card.id].damage,
+            lifeTotal: event.callingPlayer.lifeTotal
+          }
+          break;
+        // case GameEvent.ModifyGameProperty:
+        //   break;
+        case GameEvent.ResetGame:
+          break;
+        case GameEvent.FlipCoins:
+          historyEvent.property = event.payload.coinsToFlip + " coin flip"
+          historyEvent.value = event.response.results;
+          break;
+        case GameEvent.RollDice:
+          historyEvent.property = event.payload.sidedDice;
+          historyEvent.value = event.response.results;
+          break;
+        case GameEvent.SetCommander:
+          historyEvent.value = event.payload.card.name;
+        case GameEvent.StartGame:
+          break;
+        case GameEvent.ToggleMonarch:
+          historyEvent.value = event.callingPlayer.isMonarch;
+          break;
+        case GameEvent.ToggleInitiative:
+          historyEvent.value = event.callingPlayer.hasInitiative;
+          break;
+        default:
+          skipHistory = true;
+      }
+
+      if(skipHistory){
+        return null;
+      }
+
+      return this.logHistory(historyEvent);
+    }catch(e){
+      console.error("Error logging game event: ", e);
+    }
+    
   }
 }
