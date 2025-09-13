@@ -14,6 +14,7 @@ import sttRouter from './presentation/router/stt-router';
 import "./infrastructure/mongo/mongo";
 import { checkBearerToken } from "./presentation/router/bearer-token-check";
 import { getClientIp } from "./presentation/socket/socket-service";
+import { IRoomHistoryEvent, RoomEvent } from "./domain/interfaces/IRoom";
 const swaggerJSDoc = require('swagger-jsdoc');
 
 const options = {
@@ -83,6 +84,13 @@ io.on('connection', (socket:any) => {
         try{
           newUser = await currentRoom.addPlayer({playerId, playerName, socketId: socket.id, password, ipAddress: userIp, isSharingImages, jwtToken: joinerJwtToken})
           currentRoom.playerSockets.push(socket.id);
+          socket.to(currentRoom.id).emit('historyEvent', currentRoom.logRoomEvent({
+            event: RoomEvent.PlayerAdded,
+            value: {
+              id: newUser.id,
+              name: newUser.name
+            }
+          }));
         }catch(error){
           throw error;
         }finally{
@@ -142,6 +150,7 @@ io.on('connection', (socket:any) => {
             })
           }
 
+          io.in(currentRoom.id).emit('historyEvent', room.logGameEvent(event));
           await room.saveAndClose();
           io.in(currentRoom.id).emit('gameEvent', event);
         }
@@ -173,13 +182,14 @@ io.on('connection', (socket:any) => {
         let room:Room = await RoomManager.getRoom(currentRoom.id);
         if(!room){return;}
   
-        room.userDisconnected(socket.id, null);
+        let history:IRoomHistoryEvent = room.userDisconnected(socket.id, null);
         socket.to(currentRoom.id).emit('peerDisconnected', { socketId: socket.id });
         //auto delete the room if its not a bot created room 
         if (room.playerSockets.length === 0 && !room.scheduledRoom) {
           console.log("deleting room")
           await RoomManager.deleteRoom(room);
         }else{
+          io.in(currentRoom.id).emit('historyEvent',history);
           await room.saveAndClose();
         }
       });
