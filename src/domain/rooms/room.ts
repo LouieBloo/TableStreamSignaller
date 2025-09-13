@@ -20,6 +20,7 @@ import { IAddPlayerParams } from "../interfaces/IPlayer";
 import { getUserIdFromToken } from "../users/services/user-service";
 import User, { IMongoUser } from '../../infrastructure/mongo/models/user-model';
 import { IRoomEvent, IRoomHistoryEvent, RoomEvent } from "../interfaces/IRoom";
+import { scheduleRoomSave } from "../../infrastructure/mongo/services/room-update-scheduler";
 
 const { v4: uuidv4 } = require('uuid');
 
@@ -344,6 +345,8 @@ export class Room {
 
     event.createdAt = new Date();
     this.history.push(event);
+
+    scheduleRoomSave(this.id);
 
     return event;
   }
