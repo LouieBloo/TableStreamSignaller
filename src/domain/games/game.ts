@@ -78,6 +78,8 @@ export class Game {
             room.players[x].isDead = false;
         }
 
+        this.dayNightCycle = '';
+
         let firstPlayer:Player = room.players.find(p=> p.turnOrder == 0);
         this.startPlayerTurn(firstPlayer, room);
 

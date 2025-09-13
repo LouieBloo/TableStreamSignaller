@@ -1,5 +1,5 @@
 import { Game } from "../games/game";
-import { GameError, GameErrorSeverity, GameErrorType, GameType, IGameEvent } from "../interfaces/IGame";
+import { GameError, GameErrorSeverity, GameErrorType, GameEvent, GameType, IGameEvent, PlayerProperties } from "../interfaces/IGame";
 import { IMessage } from "../interfaces/IMessaging";
 import { Player } from "../users/player";
 import { MTGCommander } from "../games/mtg-commander";
@@ -19,6 +19,8 @@ import { YugiohDomain } from "../games/yugioh-domain";
 import { IAddPlayerParams } from "../interfaces/IPlayer";
 import { getUserIdFromToken } from "../users/services/user-service";
 import User, { IMongoUser } from '../../infrastructure/mongo/models/user-model';
+import { IRoomEvent, IRoomHistoryEvent, RoomEvent } from "../interfaces/IRoom";
+import { scheduleRoomSave } from "../../infrastructure/mongo/services/room-update-scheduler";
 
 const { v4: uuidv4 } = require('uuid');
 
@@ -51,6 +53,8 @@ export class Room {
   messages: IMessage[];
 
   iceServerList: any[];
+
+  history: IRoomHistoryEvent[] = [];
 
   constructor(roomName: string,password:string, gameType: GameType, maxPlayers:number) {
     this.id = uuidv4();
@@ -223,13 +227,24 @@ export class Room {
     return spectator;
   }
 
-  public userDisconnected(socketId: string, playerId: string | null) {
+  public userDisconnected(socketId: string, playerId: string | null): IRoomHistoryEvent {
+    console.log(socketId + " " + playerId)
+    const disconnectingPlayer:Player = this.players.find(p => p.socketId == socketId);
     this.playerSockets = this.playerSockets.filter((id: any) => id !== socketId);
     this.spectatorSockets = this.spectatorSockets.filter((id: any) => id !== socketId);
 
     if(playerId)
       this.players = this.players.filter(p => p.id != playerId)
-    
+
+    if(disconnectingPlayer){
+      return this.logRoomEvent({
+        event: RoomEvent.PlayerRemoved,
+        value: {
+          id: disconnectingPlayer.id,
+          name: disconnectingPlayer.name
+        }
+      })
+    }
   }
 
 
@@ -323,5 +338,131 @@ export class Room {
   setIceServerList = async() => {
     if(this.iceServerList){return;}
     this.iceServerList = await getIceServerList();
+  }
+
+  private logHistory = (event: IRoomHistoryEvent)=>{
+    if(!event){return;}
+
+    event.createdAt = new Date();
+    this.history.push(event);
+
+    scheduleRoomSave(this.id);
+
+    return event;
+  }
+
+  logRoomEvent = (event: IRoomEvent) : IRoomHistoryEvent =>{
+    if(!event){return;}
+
+    let historyEvent:IRoomHistoryEvent = {
+      type: RoomEvent[event.event],
+      player: event.callingPlayer
+    }
+
+    switch(event.event){
+      case RoomEvent.PlayerAdded:
+        historyEvent.value = event.value;
+        break;
+      case RoomEvent.PlayerRemoved:
+        historyEvent.value = event.value;
+        break;
+    }
+
+    return this.logHistory(historyEvent);
+  }
+
+  logGameEvent = (event: IGameEvent) : IRoomHistoryEvent=>{
+    if(!event){return;}
+
+    try{
+      let historyEvent:IRoomHistoryEvent = {
+        player: {
+          id: event.callingPlayer.id,
+          name: event.callingPlayer.name
+        },
+        type: GameEvent[event.event]
+      }
+
+      let skipHistory:boolean = false;
+
+      switch (event.event) {
+        case GameEvent.KickPlayer:
+          historyEvent.value = {
+            id: event.response.kickedPlayer.id,
+            name: event.response.kickedPlayer.name
+          }
+          break;
+        case GameEvent.RandomizePlayerOrder:
+        case GameEvent.SetPlayerTurnOrders:
+          historyEvent.value = this.players.sort((a, b) => a.turnOrder - b.turnOrder).map(player => player.name).join(', ');
+          break;
+        case GameEvent.ModifyPlayerProperty:
+          historyEvent.property = PlayerProperties[event.payload.property];
+
+          switch(event.payload.property){
+            case PlayerProperties.commanderCastAmount:
+              historyEvent.value = {
+               commander: {
+                id: event.payload.commander.id,
+                name: event.payload.commander.name
+               },
+               amount: event.payload.amountToModify
+              }
+              historyEvent.currentValue = event.payload.commander.castAmount + event.payload.amountToModify;
+              break;
+            default:
+              historyEvent.value = event.payload.amountToModify;
+              // @ts-ignore
+              historyEvent.currentValue = event.callingPlayer[PlayerProperties[event.payload.property]] ;
+          }
+          
+          break;
+        case GameEvent.ModifyPlayerCommanderDamage:
+          historyEvent.value = {
+            damagingPlayer:{
+              id: event.payload.damagingPlayer.id,
+              name: event.payload.damagingPlayer.name,
+              card: event.payload.card
+            },
+            amount: event.payload.amount,
+            total: event.callingPlayer.commanderDamages[event.payload.damagingPlayer.id][event.payload.card.id].damage,
+            lifeTotal: event.callingPlayer.lifeTotal
+          }
+          break;
+        // case GameEvent.ModifyGameProperty:
+        //   break;
+        case GameEvent.ResetGame:
+          break;
+        case GameEvent.FlipCoins:
+          historyEvent.property = event.payload.coinsToFlip + " coin flip"
+          historyEvent.value = event.response.results;
+          break;
+        case GameEvent.RollDice:
+          historyEvent.property = event.payload.sidedDice;
+          historyEvent.value = event.response.results;
+          break;
+        case GameEvent.SetCommander:
+          historyEvent.value = event.payload.card.name;
+        case GameEvent.StartGame:
+          break;
+        case GameEvent.ToggleMonarch:
+          historyEvent.value = event.callingPlayer.isMonarch;
+          break;
+        case GameEvent.ToggleInitiative:
+          historyEvent.value = event.callingPlayer.hasInitiative;
+          break;
+        default:
+          skipHistory = true;
+      }
+
+      if(skipHistory){
+        return null;
+      }
+
+      return this.logHistory(historyEvent);
+    }catch(e){
+      console.error("Error logging game event: ", e);
+    }
+    
   }
 }
