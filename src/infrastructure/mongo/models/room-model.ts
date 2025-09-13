@@ -6,6 +6,7 @@ export interface IMongoRoom extends Document {
   playerIds?: string[];
   players?: { id: string; userId?: Types.ObjectId }[];
   gameType: string;
+  log: any;
   maxPlayers: number;
   tableStreamId: string; // UUID, not the primary key
   scheduledRoom: boolean;
@@ -32,6 +33,7 @@ const RoomSchema: Schema = new Schema(
       },
     ],
     gameType: { type: String, required: false },
+    log:{ type: Schema.Types.Mixed , required: false},
     maxPlayers: { type: Number, required: false },
     tableStreamId: { type: String, required: false, unique: true },
     scheduledRoom: { type: Boolean, required: false },

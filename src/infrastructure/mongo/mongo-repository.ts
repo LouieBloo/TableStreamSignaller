@@ -78,6 +78,7 @@ const mapTableStreamRoomToMongoRoom = (room: Room): Partial<IMongoRoom> => {
       return {id: player.id}
     }),
     gameType: room.game.gameType.toString(),
+    log: room.history,
     tableStreamId: room.id,
     maxPlayers: room.maxPlayers,
     scheduledRoom: room.scheduledRoom,
