@@ -369,7 +369,6 @@ export class Room {
   }
 
   logGameEvent = (event: IGameEvent) : IRoomHistoryEvent=>{
-    console.log(event)
     if(!event){return;}
 
     try{
@@ -396,9 +395,24 @@ export class Room {
           break;
         case GameEvent.ModifyPlayerProperty:
           historyEvent.property = PlayerProperties[event.payload.property];
-          historyEvent.value = event.payload.amountToModify;
-          // @ts-ignore
-          historyEvent.currentValue = event.callingPlayer[PlayerProperties[event.payload.property]] ;
+
+          switch(event.payload.property){
+            case PlayerProperties.commanderCastAmount:
+              historyEvent.value = {
+               commander: {
+                id: event.payload.commander.id,
+                name: event.payload.commander.name
+               },
+               amount: event.payload.amountToModify
+              }
+              historyEvent.currentValue = event.payload.commander.castAmount + event.payload.amountToModify;
+              break;
+            default:
+              historyEvent.value = event.payload.amountToModify;
+              // @ts-ignore
+              historyEvent.currentValue = event.callingPlayer[PlayerProperties[event.payload.property]] ;
+          }
+          
           break;
         case GameEvent.ModifyPlayerCommanderDamage:
           historyEvent.value = {
