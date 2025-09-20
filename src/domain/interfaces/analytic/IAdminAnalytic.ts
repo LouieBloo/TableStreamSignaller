@@ -1,7 +1,7 @@
 import { IMongoAnalytic } from "./IMongoAnalytic";
 import { IRedisAnalytic } from "./IRedisAnalytic";
 
-export interface IAnalytic {
+export interface IAdminAnalytic {
     mongoAnalytic: IMongoAnalytic;
     redisAnalytic: IRedisAnalytic;
 }
