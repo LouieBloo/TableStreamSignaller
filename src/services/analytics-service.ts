@@ -1,23 +1,38 @@
 import { IMongoRoom } from "../infrastructure/mongo/models/room-model";
 import { IMongoAnalyticByDate } from "../domain/interfaces/analytic/IMongoAnalyticByDate";
-import { getRooms } from "../infrastructure/mongo/mongo-repository";
 import { IRedisAnalytic } from "../domain/interfaces/analytic/IRedisAnalytic";
 import { getAllRooms } from "../infrastructure/redis/redis";
-import { IAnalytic } from "../domain/interfaces/analytic/IAnalytic";
+import { IAdminAnalytic } from "../domain/interfaces/analytic/IAdminAnalytic";
 import { IMongoAnalytic } from "../domain/interfaces/analytic/IMongoAnalytic";
 import { IGameAnalytic } from "../domain/interfaces/analytic/IGameAnalytic";
+import { IHomeAnalytic } from "../domain/interfaces/analytic/IHomeAnalytic";
+import { getRooms as getMongoRooms } from "../infrastructure/mongo/mongo-repository";
+import mongoose from "mongoose";
 
-export const getAnalytic = async (): Promise<IAnalytic> => {
+
+export const getHomeAnalytic = async (): Promise<IHomeAnalytic> => {
+  const redisAnalytic = await getRedisAnalytic();
+  const allRoomsCount = await getAllRoomsCount();
+
+  return {
+    redisAnalytic,
+    allRoomsCount
+  } as IHomeAnalytic
+} 
+
+export const getAdminAnalytic = async (): Promise<IAdminAnalytic> => {
   const mongoAnalytic = await getMongoAnalytic();
   const redisAnalytic = await getRedisAnalytic();
 
   return {
     mongoAnalytic: mongoAnalytic,
     redisAnalytic: redisAnalytic
-  }
+  } as IAdminAnalytic
 }
 
-const getMongoAnalytic = async (): Promise<IMongoAnalytic> => {
+const getMongoAnalytic = async (): Promise<IMongoAnalytic|null> => {
+  if (!isMongoConnected()) return null;
+
   const fourMonthsAgo = getDateFourMonthsAgo();
   const mongoAnalytics = [];
   let allRooms: IMongoRoom[] = [];
@@ -25,7 +40,7 @@ const getMongoAnalytic = async (): Promise<IMongoAnalytic> => {
   // Loop over each month of the last 4 months
   for (let i = 0; i < 4; i++) {
     const { startDate, endDate } = getOneMonthPeriod(fourMonthsAgo, i);
-    const rooms = await getRooms(startDate, endDate);
+    const rooms = await getMongoRooms(startDate, endDate);
     const analytic = calculateAnalyticForPeriod(rooms, startDate, endDate);
     mongoAnalytics.push(analytic);
     allRooms = allRooms.concat(rooms);
@@ -142,6 +157,15 @@ const calculateTotalPlayers = (rooms: any[]): number => {
   return rooms.reduce((sum, room) => sum + room.playerIds.length, 0);
 }
 
+const getAllRoomsCount = async(): Promise<number|null> => {
+if (!isMongoConnected()) return null;
+
+  const beginningOfTime = new Date(0);
+  const now = new Date();
+  const rooms = await getMongoRooms(beginningOfTime, now);
+  return rooms.length;
+}
+
 const calculateTotalRoomDuration = (rooms: any[], maximumGameLength: number): number => {
   return rooms.reduce((sum, room) => {
     const endTime = room.deletedAt || new Date();
@@ -152,3 +176,5 @@ const calculateTotalRoomDuration = (rooms: any[], maximumGameLength: number): nu
     return sum + duration;
   }, 0);
 }
+
+const isMongoConnected = (): boolean => mongoose.connection.readyState === 1;
