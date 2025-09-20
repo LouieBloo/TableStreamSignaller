@@ -349,14 +349,16 @@ export class Game {
             name: gameEvent.callingPlayer.name + "'s token",
             xPosition: 0.5,
             yPosition: 0.5,
-            power_mod: 0,
-            toughness_mod: 0
+            power: 0,
+            toughness: 0
         }
 
         if(gameEvent.payload){
             let copyFromToken:IToken = gameEvent.payload;
             newToken.name = copyFromToken.name;
             newToken.card = copyFromToken.card;
+            newToken.power = copyFromToken.power;
+            newToken.toughness = copyFromToken.toughness;
         }
 
         this.tokens.push(newToken)
@@ -372,8 +374,8 @@ export class Game {
             if(tokenToModify.ownerId == gameEvent.callingPlayer.id){
                 tokenToModify.name = payloadTokenToModify.name;
                 tokenToModify.card = payloadTokenToModify.card ? slimCard(payloadTokenToModify.card) : null;
-                tokenToModify.power_mod = payloadTokenToModify.power_mod;
-                tokenToModify.toughness_mod = payloadTokenToModify.toughness_mod;
+                tokenToModify.power = payloadTokenToModify.power;
+                tokenToModify.toughness = payloadTokenToModify.toughness;
             }
             
             //all players can change the position and tap it 
