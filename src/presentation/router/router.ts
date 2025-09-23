@@ -20,7 +20,7 @@ import { IMongoLog } from "../../infrastructure/mongo/models/log-model";
 import { search as PokemonSearch } from "../../services/pokemon-search";
 import { search as YugiohSearch } from "../../services/yugioh-search";
 import { checkBearerToken } from "./bearer-token-check";
-import { getAnalytic } from "../../services/analytics-service";
+import { getAdminAnalytic, getHomeAnalytic } from "../../services/analytics-service";
 import { getIceServerList } from "../../infrastructure/metered/metered-service";
 import { parseIncomingDonation } from "../../infrastructure/kofi/kofi-service";
 import { IKoFiDonation } from "../../infrastructure/kofi/interfaces/IKofiInterface";
@@ -45,19 +45,34 @@ router.post('/log', async(req: any, res: any) => {
  * /analytics:
  *   get:
  *     summary: Get dashboard analytics
- *     responses:
- *       200:
- *         description: Successful response with a list of users.
  */
 router.get('/analytics', checkBearerToken, async (req: any, res: any) => {
   try {
-    const analytic = await getAnalytic();
+    const analytic = await getAdminAnalytic();
     res.json(analytic);
   } catch (error) {
     console.error('Error fetching analytics data:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+
+/**
+ * @swagger
+ * /homeAnalytic:
+ *   get:
+ *     summary: Get home analytic
+ */
+
+router.get('/homeAnalytic', async (req: any, res: any) => {
+  try {
+    const analytic = await getHomeAnalytic();
+    res.json(analytic);
+  } catch (error) {
+    console.error('Error fetching analytics data:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 
 router.get('/news', async(req: any, res: any) => {
   try{
