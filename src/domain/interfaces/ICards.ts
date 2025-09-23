@@ -96,4 +96,6 @@ export interface IToken{
   xPosition?:number;
   yPosition?:number;
   tapped?:boolean;
+  power: number;
+  toughness: number;
 }
