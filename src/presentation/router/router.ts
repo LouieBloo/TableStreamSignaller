@@ -44,6 +44,22 @@ router.post('/log', async(req: any, res: any) => {
 
 /**
  * @swagger
+ * /qrcodetoken:
+ *   get:
+ *     summary: gets qrcode token
+ */
+router.get('/qrcodetoken', async (req: any, res: any) => {
+  try {
+    res.json("abcd");
+  } catch (error) {
+    console.error('Error fetching token:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
+/**
+ * @swagger
  * /analytics:
  *   get:
  *     summary: Get dashboard analytics

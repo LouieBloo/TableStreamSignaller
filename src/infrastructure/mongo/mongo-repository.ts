@@ -106,3 +106,11 @@ const mapTableStreamRoomToMongoRoom = (room: Room): Partial<IMongoRoom> => {
 
   return mappedRoom;
 }
+
+export const mongoRepository = {
+  addRoom,
+  updateRoom,
+  deleteRoom,
+  getRoomByTableStreamId,
+  getRooms
+};

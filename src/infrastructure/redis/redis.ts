@@ -3,9 +3,9 @@ import Redlock, { ResourceLockedError } from 'redlock';
 import { Room } from '../../domain/rooms/room';
 
 const redisClient = new Redis({
-  host: process.env.REDIS_HOST,  
-  port: 19210,
-  password: process.env.REDIS_PASSWORD,       
+  host: 'localhost',
+  port: 6379,
+  password: process.env.REDIS_PASSWORD,
 });
 
 console.log("starting redis!!!!");

@@ -1,39 +1,36 @@
-
+import cors from "cors";
 import "reflect-metadata";
-import { IMessage } from "./domain/interfaces/IMessaging";
-import RoomManager from "./services/room-manager";
-import { GameErrorSeverity, GameErrorType, GameEvent, IGameEvent, UserType} from "./domain/interfaces/IGame";
-import { User } from "./domain/users/user";
-import { Room } from "./domain/rooms/room";
-import cors from 'cors';
-import router from './presentation/router/router';
-import userRouter from './presentation/router/user-router';
-import roomRouter from './presentation/router/room-router';
-import classifierTrainRouter from './presentation/router/classifier-router';
-import sttRouter from './presentation/router/stt-router';
+import {
+  GameType,
+  UserType
+} from "./domain/interfaces/IGame";
 import "./infrastructure/mongo/mongo";
 import { checkBearerToken } from "./presentation/router/bearer-token-check";
-import { getClientIp } from "./presentation/socket/socket-service";
-import { IRoomHistoryEvent, RoomEvent } from "./domain/interfaces/IRoom";
-const swaggerJSDoc = require('swagger-jsdoc');
+import classifierTrainRouter from "./presentation/router/classifier-router";
+import roomRouter from "./presentation/router/room-router";
+import router from "./presentation/router/router";
+import sttRouter from "./presentation/router/stt-router";
+import userRouter from "./presentation/router/user-router";
+import { setupSocketHandlers } from "./presentation/socket/socket-handler";
+const swaggerJSDoc = require("swagger-jsdoc");
 
 const options = {
   definition: {
-    openapi: '3.0.0',
+    openapi: "3.0.0",
     info: {
-      title: 'TableStream',
-      version: '1.0.0',
-      description: 'API documentation for your Node.js application',
+      title: "TableStream",
+      version: "1.0.0",
+      description: "API documentation for your Node.js application",
     },
   },
-  apis: ['src/presentation/router/router.ts'], // Path to the API routes
+  apis: ["src/presentation/router/router.ts"], // Path to the API routes
 };
 
 const swaggerSpec = swaggerJSDoc(options);
-const express = require('express');
-const swaggerUi = require('swagger-ui-express');
-const http = require('http');
-const { Server } = require('socket.io');
+const express = require("express");
+const swaggerUi = require("swagger-ui-express");
+const http = require("http");
+const { Server } = require("socket.io");
 
 const app = express();
 
@@ -41,167 +38,45 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: true, // Allow requests from your client
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type'],
-    credentials: true
-  }
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
+    credentials: true,
+  },
 });
 
 const PORT = process.env.PORT || 3001;
 
-
-//app.use('/swagger', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use(express.json());
 app.use(cors());
 
-app.use(router)
+app.use(router);
 
 //very careful with exposing this
-app.use('/classify/train', checkBearerToken, classifierTrainRouter);
+app.use("/classify/train", checkBearerToken, classifierTrainRouter);
 
-app.use('/transcribe', sttRouter);
-app.use('/users',userRouter);
-app.use('/rooms',roomRouter);
+app.use("/transcribe", sttRouter);
+app.use("/users", userRouter);
+app.use("/rooms", roomRouter);
 
-io.on('connection', (socket:any) => {
-  console.log('A user connected:', socket.id);
+export interface JoinRoomPayload {
+  playerId: string;
+  roomId: string;
+  roomName: string;
+  password: string;
+  gameType: GameType;
+  playerName: string;
+  userType: UserType;
+  maxPlayers: number;
+  reactionEnabled: boolean;
+  isSharingImages: boolean;
+  isPublic: boolean;
+  joinerJwtToken: string;
+  allowSpectators: boolean;
+  isPhoneCamera?: boolean;
+}
 
-  const userIp:string = getClientIp(socket);
-
-  socket.on('joinRoom', async ({playerId, roomId, roomName, password, gameType, playerName, userType, maxPlayers, reactionsEnabled, isSharingImages, isPublic, joinerJwtToken, allowSpectators }:any, callback:any) => {
-    try{
-      console.log("Join Room: " + " " + playerName + " - " + roomName + " - " + roomId + " - " + playerId)
-
-      let currentRoom:Room = await RoomManager.getOrCreateRoom({roomName, roomId, password, gameType, maxPlayers, reactionsEnabled: reactionsEnabled, public: isPublic, creatorJwtToken: joinerJwtToken, allowSpectators });
-      let newUser:User = null;
-  
-      if (userType == UserType.Player && !currentRoom.canAddPlayer(playerId,socket.id)) {
-        socket.emit('roomFull');
-        callback(null,null,{type: GameErrorType.RoomFull, message: "Room full", severity: GameErrorSeverity.Error})
-        return;
-      }else if(userType == UserType.Player){
-        //new player
-        try{
-          newUser = await currentRoom.addPlayer({playerId, playerName, socketId: socket.id, password, ipAddress: userIp, isSharingImages, jwtToken: joinerJwtToken})
-          currentRoom.playerSockets.push(socket.id);
-          socket.to(currentRoom.id).emit('historyEvent', currentRoom.logRoomEvent({
-            event: RoomEvent.PlayerAdded,
-            value: {
-              id: newUser.id,
-              name: newUser.name
-            }
-          }));
-        }catch(error){
-          throw error;
-        }finally{
-          await currentRoom.saveAndClose();
-        }
-      }else if(userType == UserType.Spectator){
-        //new spectator
-        try{
-          newUser = await currentRoom.addSpectator(playerId, playerName, socket.id, password)
-          currentRoom.spectatorSockets.push(socket.id);
-        }catch(error){
-          throw error;
-        }finally{
-          await currentRoom.saveAndClose();
-        }
-      }else{
-        console.error("Idk whats happening here: ", roomName, playerName, userType);
-        socket.emit('error');
-        return;
-      }
-  
-      socket.join(currentRoom.id);
-      //socket.emit('roomJoined', { roomName, socketId: socket.id });
-      socket.to(currentRoom.id).emit('newPeer', { socketId: socket.id, user: newUser, players: currentRoom.playerSockets, spectators: currentRoom.spectatorSockets });
-  
-      socket.on('signal', (data:any) => {
-        io.to(data.to).emit('signal', { from: socket.id, signal: data.signal, user: newUser });
-      }); 
-  
-      socket.on('message', async(message:IMessage) => {
-        let room:Room = await RoomManager.getRoom(currentRoom.id);
-        let newMessage = room.addMessage(socket.id, message.text)
-        if(newMessage){
-          await room.saveAndClose();
-          io.in(currentRoom.id).emit('message', newMessage);
-        }
-      });
-  
-      //primary game events
-      socket.on('gameEvent', async(event:IGameEvent) => {
-        let room:Room = await RoomManager.getRoom(currentRoom.id);
-        try{
-          event.response = room.gameEvent(socket.id, event)
-          //if this event results in messages, add them
-          if(event.messages){
-            event.messages.forEach((message:IMessage)=>{
-              room.addMessage(event.callingPlayer.socketId, message.text)
-              //I dont like this flip coins check here but its fine for now
-              if(event.event == GameEvent.FlipCoins){
-                //for coin flips we add a delay so people can watch the animation instead of looking at chat
-                setTimeout(()=>{
-                  io.in(currentRoom.id).emit('message', message);
-                },2000)
-              }else{
-                io.in(currentRoom.id).emit('message', message);
-              }
-            })
-          }
-
-          io.in(currentRoom.id).emit('historyEvent', room.logGameEvent(event));
-          await room.saveAndClose();
-          io.in(currentRoom.id).emit('gameEvent', event);
-        }
-        catch(error){
-          console.log(error)
-          await room.close();
-          socket.emit('errorResponse', {type: error.type, message: error.message, severity: error.severity});
-        }
-      });
-
-      //private game events such as personal settings
-      socket.on('privateGameEvent', async(event: IGameEvent, callback:any) => {
-        let room:Room = await RoomManager.getRoom(currentRoom.id);
-        try{
-          event.isPrivate = true;
-          event.response = room.gameEvent(socket.id, event)
-          await room.saveAndClose();
-          callback(event);
-        }
-        catch(error){
-          console.log(error)
-          await room.close();
-          socket.emit('errorResponse', {type: error.type, message: error.message, severity: error.severity});
-        }
-      });
-  
-      socket.on('disconnect', async() => {
-        console.log('A user disconnected:', socket.id);
-        let room:Room = await RoomManager.getRoom(currentRoom.id);
-        if(!room){return;}
-  
-        let history:IRoomHistoryEvent = room.userDisconnected(socket.id, null);
-        socket.to(currentRoom.id).emit('peerDisconnected', { socketId: socket.id });
-        //auto delete the room if its not a bot created room 
-        if (room.playerSockets.length === 0 && !room.scheduledRoom) {
-          console.log("deleting room")
-          await RoomManager.deleteRoom(room);
-        }else{
-          io.in(currentRoom.id).emit('historyEvent',history);
-          await room.saveAndClose();
-        }
-      });
-  
-      callback(newUser,currentRoom);
-    }catch(error){
-      console.log(error);
-      callback(null,null,{type: error.type, message: error.message, severity: error.severity})
-    }
-    
-  });
-});
+setupSocketHandlers(io);
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
