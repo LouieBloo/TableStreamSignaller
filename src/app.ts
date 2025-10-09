@@ -1,18 +1,36 @@
-
+import cors from "cors";
 import "reflect-metadata";
-import { IMessage } from "./interfaces/messaging";
-import { RoomState } from "./roomState";
-import {GameError, GameEvent, IGameEvent, UserType} from "./interfaces/game";
-import { User } from "./users/user";
-import { Room } from "./room";
-import axios from 'axios';
-import cors from 'cors';
+import {
+  GameType,
+  UserType
+} from "./domain/interfaces/IGame";
+import "./infrastructure/mongo/mongo";
+import { checkBearerToken } from "./presentation/router/bearer-token-check";
+import classifierTrainRouter from "./presentation/router/classifier-router";
+import roomRouter from "./presentation/router/room-router";
+import router from "./presentation/router/router";
+import sttRouter from "./presentation/router/stt-router";
+import userRouter from "./presentation/router/user-router";
+import { setupSocketHandlers } from "./presentation/socket/socket-handler";
+const swaggerJSDoc = require("swagger-jsdoc");
+
+const options = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "TableStream",
+      version: "1.0.0",
+      description: "API documentation for your Node.js application",
+    },
+  },
+  apis: ["src/presentation/router/router.ts"], // Path to the API routes
+};
 
 const swaggerSpec = swaggerJSDoc(options);
-const express = require('express');
-const swaggerUi = require('swagger-ui-express');
-const http = require('http');
-const { Server } = require('socket.io');
+const express = require("express");
+const swaggerUi = require("swagger-ui-express");
+const http = require("http");
+const { Server } = require("socket.io");
 
 const app = express();
 
@@ -20,136 +38,45 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: true, // Allow requests from your client
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type'],
-    credentials: true
-  }
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
+    credentials: true,
+  },
 });
 
 const PORT = process.env.PORT || 3001;
 
-const roomState = new RoomState()
-
+app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use(express.json());
 app.use(cors());
 
-app.get('/', (req:any, res:any) => {
-  res.status(200).send('Beating...');
-});
+app.use(router);
 
-app.post('/report-issue', async (req:any, res:any) => {
-  const { title, body } = req.body;
-  try {
-    const response = await axios.post(
-      'https://api.github.com/repos/louiebloo/TableStreamUI/issues',
-      {
-        title: title,
-        body: body,
-        labels:['user_submitted_issues']
-      },
-      {
-        headers: {
-          Authorization: `token ${process.env.REPORT_GITHUB_CODE}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+//very careful with exposing this
+app.use("/classify/train", checkBearerToken, classifierTrainRouter);
 
-    res.status(200).json({ message: 'Issue created successfully!', data: response.data });
-  } catch (error) {
-    console.error('Error creating issue:', error);
-    res.status(500).json({ message: 'Failed to create issue', error: error.response.data });
-  }
-});
+app.use("/transcribe", sttRouter);
+app.use("/users", userRouter);
+app.use("/rooms", roomRouter);
 
-// const getRoom = (roomName: string)=>{
-//   return roomState.rooms[roomName]
-// }
+export interface JoinRoomPayload {
+  playerId: string;
+  roomId: string;
+  roomName: string;
+  password: string;
+  gameType: GameType;
+  playerName: string;
+  userType: UserType;
+  maxPlayers: number;
+  reactionEnabled: boolean;
+  isSharingImages: boolean;
+  isPublic: boolean;
+  joinerJwtToken: string;
+  allowSpectators: boolean;
+  isPhoneCamera?: boolean;
+}
 
-io.on('connection', (socket:any) => {
-  console.log('A user connected:', socket.id);
-
-  socket.on('joinRoom', async ({playerId, roomId, roomName, playerName, userType }:any, callback:any) => {
-    try{
-      console.log("Join Room: " + " " + playerName + " - " + roomName + " - " + roomId)
-
-      let currentRoom:Room = await roomState.getOrCreateRoom(roomName, roomId);
-  
-      let newUser:User = null;
-  
-      if (userType == UserType.Player && currentRoom.playerSockets.length >= 4) {
-        socket.emit('roomFull');
-        return;
-      }else if(userType == UserType.Player){
-        //new player
-        currentRoom.playerSockets.push(socket.id);
-        newUser = currentRoom.addPlayer(playerId, playerName, socket.id)
-        await currentRoom.saveAndClose();
-      }else if(userType == UserType.Spectator){
-        //new spectator
-        currentRoom.spectatorSockets.push(socket.id);
-        newUser = currentRoom.addSpectator(playerName, socket.id)
-        await currentRoom.saveAndClose();
-      }else{
-        console.error("Idk whats happening here: ", roomName, playerName, userType);
-        socket.emit('error');
-        return;
-      }
-  
-      
-  
-      socket.join(currentRoom.id);
-      //socket.emit('roomJoined', { roomName, socketId: socket.id });
-      socket.to(currentRoom.id).emit('newPeer', { socketId: socket.id, user: newUser, players: currentRoom.playerSockets, spectators: currentRoom.spectatorSockets });
-  
-      socket.on('signal', (data:any) => {
-        io.to(data.to).emit('signal', { from: socket.id, signal: data.signal, user: newUser });
-      }); 
-  
-      socket.on('message', async(message:IMessage) => {
-        let room:Room = await roomState.getRoom(currentRoom.id);
-        let newMessage = room.addMessage(socket.id, message.text)
-        if(newMessage){
-          await room.saveAndClose();
-          io.in(currentRoom.id).emit('message', newMessage);
-        }
-      });
-  
-      socket.on('gameEvent', async(event:IGameEvent) => {
-        let room:Room = await roomState.getRoom(currentRoom.id);
-        try{
-          event.response = room.gameEvent(socket.id, event)
-          await room.saveAndClose();
-          io.in(currentRoom.id).emit('gameEvent', event);
-        }
-        catch(error){
-          await room.close();
-          socket.emit('errorResponse', {type: error.type, message: error.message});
-        }
-      });
-  
-      socket.on('disconnect', async() => {
-        console.log('A user disconnected:', socket.id);
-        let room:Room = await roomState.getRoom(currentRoom.id);
-        if(!room){return;}
-  
-        room.userDisconnected(socket.id);
-        socket.to(currentRoom.id).emit('peerDisconnected', { socketId: socket.id });
-        if (room.playerSockets.length === 0) {
-          console.log("deleting room")
-          await roomState.deleteRoom(room)
-        }else{
-          await room.saveAndClose();
-        }
-      });
-  
-      callback(newUser,currentRoom);
-    }catch(error){
-      callback(null,null,{type: error.type, message: error.message})
-    }
-    
-  });
-});
+setupSocketHandlers(io);
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

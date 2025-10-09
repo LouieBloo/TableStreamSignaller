@@ -12,16 +12,16 @@ import { MTGVintage } from "../games/mtg-vintage";
 import { MTGLegacy } from "../games/mtg-legacy";
 import { PokemonStandard } from "../games/pokemon-standard";
 import { MTGPauperCommander } from "../games/mtg-pauper-commander";
-import { updateRoom } from "../../infrastructure/mongo/mongo-repository";
 import { YugiohStandard } from "../games/yugioh-standard";
 import { getIceServerList } from "../../infrastructure/metered/metered-service";
 import { YugiohDomain } from "../games/yugioh-domain";
-import { IAddPlayerParams } from "../interfaces/IPlayer";
 import { getUserIdFromToken } from "../users/services/user-service";
 import User, { IMongoUser } from '../../infrastructure/mongo/models/user-model';
 import { IRoomEvent, IRoomHistoryEvent, RoomEvent } from "../interfaces/IRoom";
 import { scheduleRoomSave } from "../../infrastructure/mongo/services/room-update-scheduler";
 import { OnePiece } from "../games/one-piece";
+import { mongoRepository } from "../../infrastructure/mongo/mongo-repository";
+import { JoinRoomPayload } from "../../app";
 
 const { v4: uuidv4 } = require('uuid');
 
@@ -66,6 +66,14 @@ export class Room {
     this.password = password;
     this.maxPlayers = maxPlayers;
     this.game = Room.createGame(gameType);
+  }
+
+  addPlayerSocket(socketId: string){
+    this.playerSockets.push(socketId);
+  }
+
+  addSpectatorSocket(socketId: string){
+    this.spectatorSockets.push(socketId);
   }
 
   saveAndClose = async (setScheduledTTL:boolean = false) => {
@@ -139,7 +147,7 @@ export class Room {
     return this.password === password;
   }
 
-  public canAddPlayer(playerId:string, socketId:string):boolean{
+  public canAddPlayer(playerId:string):boolean{
     //if a player is rejoining we let them in
     if(playerId){
       let savedPlayer = this.players.find(e => e.id === playerId);
@@ -152,13 +160,13 @@ export class Room {
     return this.players.length < this.maxPlayers;
   }
 
-  public async addPlayer(playerParams:IAddPlayerParams): Promise<Player> {
+  public async addPlayer(joinRoomPayload:JoinRoomPayload, ipAddress: string, socketId: string): Promise<Player> {
 
-    if(this.bannedPlayerIpAddresses.includes(playerParams.ipAddress)){
+    if(this.bannedPlayerIpAddresses.includes(ipAddress)){
       throw new GameError(GameErrorType.EnteringBannedRoom, "You have been banned from this room.", GameErrorSeverity.Error);
     }
 
-    const userId:string | null = await getUserIdFromToken(playerParams.jwtToken);
+    const userId:string | null = getUserIdFromToken(joinRoomPayload.joinerJwtToken);
 
     if(userId && this.bannedUserIds.includes(userId)){
       throw new GameError(GameErrorType.EnteringBannedRoom, "You have been banned from this room.", GameErrorSeverity.Error);
@@ -168,16 +176,16 @@ export class Room {
       throw new GameError(GameErrorType.InvalidAction, "You must be logged in to join a public room.", GameErrorSeverity.Error);
     }
  
-    let player = this.players.find(e => e.id === playerParams.playerId);
+    let player = this.players.find(e => e.id === joinRoomPayload.playerId);
 
     if (!player) {
       //we only check password on new players
-      if(this.password && !this.verifyPassword(playerParams.password)){
+      if(this.password && !this.verifyPassword(joinRoomPayload.password)){
         throw new GameError(GameErrorType.InvalidPassword, "Invalid Password",GameErrorSeverity.Error);
       }
 
       //if logged in user, force name to be the one saved in mongo
-      let name:string = playerParams.playerName;
+      let name:string = joinRoomPayload.playerName;
 
       if(this.public && userId){
         const mongoUser:IMongoUser = await User.findById(userId);
@@ -186,9 +194,9 @@ export class Room {
 
       await this.setIceServerList()
 
-      player = new Player(name, playerParams.socketId, this.players.length, this.game.startingLifeTotal);
-      player.ipAddress = playerParams.ipAddress;
-      player.isSharingImages = playerParams.isSharingImages == false ? false: true;
+      player = new Player(name, socketId, this.players.length, this.game.startingLifeTotal);
+      player.ipAddress = ipAddress;
+      player.isSharingImages = joinRoomPayload.isSharingImages == false ? false: true;
       player.mongoUserId = userId;
       
       if (this.players.length == 0) {
@@ -199,10 +207,9 @@ export class Room {
 
       this.players.push(player)
 
-      //send changes to mongo
-      updateRoom(this);
+      mongoRepository.updateRoom(this);
     } else {
-      player.socketId = playerParams.socketId;
+      player.socketId = socketId;
     }
 
     return player;
@@ -272,8 +279,7 @@ export class Room {
 
     this.userDisconnected(playerToKick.socketId, playerToKick.id);
 
-    //send changes to mongo
-    updateRoom(this);
+    mongoRepository.updateRoom(this);
 
     return playerToKick;
   }
