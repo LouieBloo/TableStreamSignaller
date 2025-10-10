@@ -342,19 +342,23 @@ export class Game {
         return gameEvent.payload;
     }
 
-    createToken = (gameEvent: IGameEvent): any => {
+    createToken = (gameEvent: IGameEvent): IToken => {
         let newToken:IToken = {
             id: uuidv4(),
             ownerId: gameEvent.callingPlayer.id,
             name: gameEvent.callingPlayer.name + "'s token",
             xPosition: 0.5,
-            yPosition: 0.5
+            yPosition: 0.5,
+            power: 0,
+            toughness: 0
         }
 
         if(gameEvent.payload){
             let copyFromToken:IToken = gameEvent.payload;
             newToken.name = copyFromToken.name;
             newToken.card = copyFromToken.card;
+            newToken.power = copyFromToken.power;
+            newToken.toughness = copyFromToken.toughness;
         }
 
         this.tokens.push(newToken)
@@ -365,12 +369,13 @@ export class Game {
     modifyToken = (gameEvent: IGameEvent): any => {
         let payloadTokenToModify:IToken = gameEvent.payload;
         let tokenToModify = this.tokens.find(token=> token.id == payloadTokenToModify.id)
-
         if(tokenToModify){
             // only the owner can change the name and card
             if(tokenToModify.ownerId == gameEvent.callingPlayer.id){
                 tokenToModify.name = payloadTokenToModify.name;
                 tokenToModify.card = payloadTokenToModify.card ? slimCard(payloadTokenToModify.card) : null;
+                tokenToModify.power = payloadTokenToModify.power;
+                tokenToModify.toughness = payloadTokenToModify.toughness;
             }
             
             //all players can change the position and tap it 
@@ -402,21 +407,9 @@ export class Game {
     }
 
     private removeTokenByPlayerId(playerId: string): IToken[]{
-        // Find the tokens that will be removed
         const removedTokens = this.tokens.filter(token => token.ownerId === playerId);
-
-        // Keep only the tokens that do not belong to the player
         this.tokens = this.tokens.filter(token => token.ownerId !== playerId);
-
-        // Return the removed tokens
         return removedTokens;
-    }
-
-    private promoteNewAdmin(room: Room, currentTurnOrder: number) {
-        const newAdmin = room.players.find(player => player.turnOrder === currentTurnOrder + 1);
-        if (newAdmin) {
-            newAdmin.admin = true;
-        }
     }
 
 }
