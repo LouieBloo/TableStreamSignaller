@@ -27,6 +27,7 @@ import { parseIncomingDonation } from "../../infrastructure/kofi/kofi-service";
 import { IKoFiDonation } from "../../infrastructure/kofi/interfaces/IKofiInterface";
 import { getDonations } from "../../infrastructure/mongo/services/donation-service";
 import { IOnePieceCardSearchParams } from "../../domain/interfaces/IOnePieceCard";
+import { PlayerService } from "../../services/player-service";
 
 router.get('/', (req: any, res: any) => {
   res.status(200).send('Beating...');
@@ -50,7 +51,8 @@ router.post('/log', async(req: any, res: any) => {
  */
 router.get('/qrcodetoken', async (req: any, res: any) => {
   try {
-    res.json("abcd");
+    const token = PlayerService.updateQrCodeTokenOnPlayer(req.playerId, req.roomId)
+    res.json(token);
   } catch (error) {
     console.error('Error fetching token:', error);
     res.status(500).json({ message: 'Internal server error' });
