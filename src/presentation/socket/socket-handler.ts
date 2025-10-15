@@ -36,8 +36,9 @@ export function setupSocketHandlers(io: Server) {
           }
 
           if (joinRoomPayload.isPhoneCamera) {
-            currentRoom.addPlayerSocket(socket.id);
-          } else if (joinRoomPayload.userType == UserType.Player || joinRoomPayload.userType == UserType.Spectator) {
+            currentRoom.addPlayerSocket(socket.id)
+          } 
+          else if (joinRoomPayload.userType == UserType.Player || joinRoomPayload.userType == UserType.Spectator){
             try {
               newUser = joinRoomPayload.userType === UserType.Player
                   ? await addNewPlayer(joinRoomPayload, currentRoom, userIp, socket)
@@ -47,12 +48,8 @@ export function setupSocketHandlers(io: Server) {
             } finally {
               await currentRoom.saveAndClose();
             }
-          } else {
-            logConfusedError(joinRoomPayload);
-
-            socket.emit("error");
-            return;
-          }
+          };    
+          
 
           socket.join(currentRoom.id);
 
@@ -260,15 +257,6 @@ function logJoinRoom(joinRoomPayload: JoinRoomPayload) {
       joinRoomPayload.roomId +
       " - " +
       joinRoomPayload.playerId
-  );
-}
-
-function logConfusedError(joinRoomPayload: JoinRoomPayload){
-  console.error(
-    "Idk whats happening here: ",
-    joinRoomPayload.roomName,
-    joinRoomPayload.playerName,
-    joinRoomPayload.userType
   );
 }
 

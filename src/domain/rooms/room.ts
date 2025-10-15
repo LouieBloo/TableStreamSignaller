@@ -194,14 +194,11 @@ export class Room {
 
       await this.setIceServerList()
 
-      player = new Player(name, socketId, this.players.length, this.game.startingLifeTotal);
-      player.ipAddress = ipAddress;
-      player.isSharingImages = joinRoomPayload.isSharingImages == false ? false: true;
+      player = new Player(name, socketId, this.players.length, this.game.startingLifeTotal,joinRoomPayload.roomId, ipAddress, joinRoomPayload.isSharingImages);
       player.mongoUserId = userId;
       
-      if (this.players.length == 0) {
-        player.admin = true;
-      }
+      if (this.players.length == 0)
+        player.setAdmin(true);
 
       this.game.setPlayerDefaults(player, this);
 
@@ -261,7 +258,7 @@ export class Room {
 
 
   public kickPlayer(gameEvent: IGameEvent): Player {
-    if(!gameEvent.callingPlayer.admin || !this.allowPlayerKicking){
+    if(!gameEvent.callingPlayer.isAdmin || !this.allowPlayerKicking){
       throw new GameError(GameErrorType.InvalidAction, "You cant make that action", GameErrorSeverity.Error);
     }
 
@@ -306,7 +303,7 @@ export class Room {
 
   setNewAdmin(id: string, callingPlayer: Player): Player{
 
-    if(!callingPlayer.admin){
+    if(!callingPlayer.isAdmin){
       throw new GameError(GameErrorType.InvalidAction, "Calling player is not admin", GameErrorSeverity.Error);
     }
     

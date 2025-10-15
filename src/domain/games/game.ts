@@ -224,7 +224,7 @@ export class Game {
     }
 
     setPlayerTurnOrders(gameEvent: IGameEvent, room:Room){
-        if(!gameEvent.callingPlayer.admin){
+        if(!gameEvent.callingPlayer.isAdmin){
             throw new GameError(GameErrorType.GenericWarning, "Only admins can change player order!",GameErrorSeverity.Error);
         }
 
