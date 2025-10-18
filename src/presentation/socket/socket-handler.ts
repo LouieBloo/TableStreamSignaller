@@ -41,7 +41,7 @@ export function setupSocketHandlers(io: Server) {
           else if (joinRoomPayload.userType == UserType.Player || joinRoomPayload.userType == UserType.Spectator){
             try {
               newUser = joinRoomPayload.userType === UserType.Player
-                  ? await addNewPlayer(joinRoomPayload, currentRoom, userIp, socket)
+                  ? await addNewPlayer(joinRoomPayload, currentRoom, userIp, socket)//is this the right room being passed?
                   : await addNewSpectator(joinRoomPayload, currentRoom, socket);
             } catch (error) {
               throw error;
