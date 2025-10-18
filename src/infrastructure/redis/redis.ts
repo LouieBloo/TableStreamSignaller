@@ -35,7 +35,7 @@ redlock.on("error", (error) => {
 export async function lockAndGetRoomById(roomId:string = null): Promise<{ lock: any, room: string }> {
   const lockKey = `lock:${roomId}`;
   const key = `game_room:${roomId}`; 
-  const lengthOfLock = 3000;  // milliseconds
+  const lengthOfLock = 3000;  // ms
 
   try {
     const lock = await redlock.acquire([lockKey], lengthOfLock);
