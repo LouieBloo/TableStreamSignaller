@@ -57,7 +57,7 @@ export class Player extends User {
     this.roomId = roomId;
     this.ipAddress = ipAddress;
     this.isSharingImages = isSharingImages == false ? false: true;
-    console.log(`this.mongoUserId = ${this.mongoUserId}`)
+    console.log("roomId: " + this.roomId);
 
   }
 

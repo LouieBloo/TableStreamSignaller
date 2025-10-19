@@ -160,7 +160,7 @@ export class Room {
     return this.players.length < this.maxPlayers;
   }
 
-  public async addPlayer(joinRoomPayload:JoinRoomPayload, ipAddress: string, socketId: string): Promise<Player> {
+  public async addPlayer(joinRoomPayload:JoinRoomPayload, roomId: string, ipAddress: string, socketId: string): Promise<Player> {
 
     if(this.bannedPlayerIpAddresses.includes(ipAddress)){
       throw new GameError(GameErrorType.EnteringBannedRoom, "You have been banned from this room.", GameErrorSeverity.Error);
@@ -194,7 +194,7 @@ export class Room {
 
       await this.setIceServerList()
 
-      player = new Player(name, socketId, this.players.length, this.game.startingLifeTotal,joinRoomPayload.roomId, ipAddress, joinRoomPayload.isSharingImages);
+      player = new Player(name, socketId, this.players.length, this.game.startingLifeTotal, roomId, ipAddress, joinRoomPayload.isSharingImages);
       player.mongoUserId = userId;
       
       if (this.players.length == 0)
