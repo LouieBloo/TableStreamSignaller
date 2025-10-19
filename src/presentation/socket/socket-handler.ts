@@ -145,7 +145,8 @@ async function addNewPlayer(
   userIp: string,
   socket: any
 ) {
-  const newUser = await room.addPlayer(joinRoomPayload, userIp, socket.id);
+
+  const newUser = await room.addPlayer(joinRoomPayload, room.id, userIp, socket.id);
   room.addPlayerSocket(socket.id);
 
   socket.to(room.id).emit(
