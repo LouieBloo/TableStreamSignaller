@@ -6,14 +6,13 @@ import { IAdminAnalytic } from "../domain/interfaces/analytic/IAdminAnalytic";
 import { IMongoAnalytic } from "../domain/interfaces/analytic/IMongoAnalytic";
 import { IGameAnalytic } from "../domain/interfaces/analytic/IGameAnalytic";
 import { IHomeAnalytic } from "../domain/interfaces/analytic/IHomeAnalytic";
-import { getRooms as getMongoRooms } from "../infrastructure/mongo/mongo-repository";
+import { getRooms as getMongoRooms, totalRoomCount } from "../infrastructure/mongo/mongo-repository";
 import mongoose from "mongoose";
 
 
 export const getHomeAnalytic = async (): Promise<IHomeAnalytic> => {
   const redisAnalytic = await getRedisAnalytic();
   const allRoomsCount = await getAllRoomsCount();
-
   return {
     redisAnalytic,
     allRoomsCount
@@ -162,8 +161,8 @@ if (!isMongoConnected()) return null;
 
   const beginningOfTime = new Date(0);
   const now = new Date();
-  const rooms = await getMongoRooms(beginningOfTime, now);
-  return rooms.length;
+  const roomCount = await totalRoomCount(beginningOfTime, now);
+  return roomCount;
 }
 
 const calculateTotalRoomDuration = (rooms: any[], maximumGameLength: number): number => {
