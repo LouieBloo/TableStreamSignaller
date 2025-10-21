@@ -67,6 +67,17 @@ export const getRooms = async (startDate: Date, endDate: Date): Promise<IMongoRo
   return mongoRooms;
 }
 
+export const totalRoomCount = async (startDate: Date, endDate: Date): Promise<number | null> => {
+  const count = await MongoRoom.countDocuments({
+    createdAt: { $gte: startDate, $lte: endDate },
+    scheduledRoom: false,
+    playerIds: { $exists: true, $type: "array" },
+    $expr: { $ne: [{ $size: "$playerIds" }, 1] },
+  });
+
+  return count;
+}
+
 const mapTableStreamRoomToMongoRoom = (room: Room): Partial<IMongoRoom> => {
   let mappedRoom: Partial<IMongoRoom> = {
     name: room.name,
