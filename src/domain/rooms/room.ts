@@ -52,9 +52,7 @@ export class Room {
   reactionsEnabled:boolean = true;
   name: string;
   messages: IMessage[];
-
   iceServerList: any[];
-
   history: IRoomHistoryEvent[] = [];
 
   constructor(roomName: string,password:string, gameType: GameType, maxPlayers:number) {
@@ -319,6 +317,10 @@ export class Room {
 
   getPlayer(socketId: string) {
     return this.players.find(p => p.socketId === socketId);
+  }
+
+  getPlayerByToken(playerToken: string){
+    return this.players.find(p => p.qrCodeToken === playerToken);
   }
 
   gameEvent(socketId: string, gameEvent: IGameEvent): any {

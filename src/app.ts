@@ -11,7 +11,7 @@ import roomRouter from "./presentation/router/room-router";
 import router from "./presentation/router/router";
 import sttRouter from "./presentation/router/stt-router";
 import userRouter from "./presentation/router/user-router";
-import { setupSocketHandlers } from "./presentation/socket/socket-handler";
+import { registerSocketHandlers } from "./presentation/socket/socket-handler";
 const swaggerJSDoc = require("swagger-jsdoc");
 
 const options = {
@@ -76,8 +76,8 @@ export interface JoinRoomPayload {
   isPhoneCamera?: boolean;
 }
 
-setupSocketHandlers(io);
+registerSocketHandlers(io);
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
 });
