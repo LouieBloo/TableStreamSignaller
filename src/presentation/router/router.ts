@@ -51,7 +51,8 @@ router.post('/log', async(req: any, res: any) => {
  */
 router.post('/qrcodetoken', async (req: any, res: any) => {
   try {
-    const token = PlayerService.updateQrCodeTokenOnPlayer(req.playerId, req.roomId)
+    const { playerId, roomId } = req.body;
+    const token = await PlayerService.updateQrCodeTokenOnPlayer(playerId, roomId);
     res.json(token);
   } catch (error) {
     console.error('Error fetching token:', error);

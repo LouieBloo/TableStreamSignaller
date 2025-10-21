@@ -13,14 +13,46 @@ import { User } from "../../domain/users/user";
 import { getClientIp } from "./socket-service";
 import { IRoomHistoryEvent, RoomEvent } from "../../domain/interfaces/IRoom";
 import { JoinRoomPayload } from "../../app";
+import { IPhoneToken } from "../../domain/interfaces/IPhoneToken";
 
-export function setupSocketHandlers(io: Server) {
+export function registerSocketHandlers(io: Server) {
   io.on("connection", (socket: Socket) => {
     console.log("A user connected:", socket.id);
 
     const userIp: string = getClientIp(socket);
+    registerJoinRoom(socket, io, userIp);
+    registerJoinRoomAsPhone(socket, io, userIp);
 
-    socket.on(
+  });
+}
+
+
+function registerJoinRoomAsPhone(socket: Socket, io: Server, userIp: string){
+  socket.on(
+    "joinRoomAsPhone",
+    async (phoneToken: IPhoneToken) => {
+        try {
+        const currentRoom = await RoomManager.getRoom(phoneToken.roomId);
+        const existingPlayer = currentRoom.getPlayerByToken(phoneToken.playerToken);
+        console.log("socketid:", JSON.stringify(socket.id, null, 2));
+        console.log("existingPlayer:", JSON.stringify(existingPlayer, null, 2));
+
+        currentRoom.addPlayerSocket(socket.id)
+        await currentRoom.saveAndClose();
+        socket.join(currentRoom.id);
+        broadcastNewPeerToRoom(socket, currentRoom, existingPlayer);
+        registerDisconnect(socket, io, currentRoom);//should the socket exist in redis still?
+
+        }
+        catch {
+
+        }
+    }
+  )
+}
+
+function registerJoinRoom(socket: Socket, io: Server, userIp: string ){
+      socket.on(
       "joinRoom",
       async (joinRoomPayload: JoinRoomPayload, callback: any) => {
         try {
@@ -35,10 +67,7 @@ export function setupSocketHandlers(io: Server) {
             return;
           }
 
-          if (joinRoomPayload.isPhoneCamera) {
-            currentRoom.addPlayerSocket(socket.id)
-          } 
-          else if (joinRoomPayload.userType == UserType.Player || joinRoomPayload.userType == UserType.Spectator){
+          if (joinRoomPayload.userType == UserType.Player || joinRoomPayload.userType == UserType.Spectator){
             try {
               newUser = joinRoomPayload.userType === UserType.Player
                   ? await addNewPlayer(joinRoomPayload, currentRoom, userIp, socket)//is this the right room being passed?
@@ -54,29 +83,11 @@ export function setupSocketHandlers(io: Server) {
           socket.join(currentRoom.id);
 
           broadcastNewPeerToRoom(socket, currentRoom, newUser);
-          relaySignalToPeer(socket, io, newUser);
-          handleMessageEvent(socket, io, currentRoom);
-
-          socket.on("gameEvent", async (event: IGameEvent) => {
-            await handleGameEvent(event, currentRoom, socket, io);
-          });
-
-          socket.on(
-            "privateGameEvent",
-            async (event: IGameEvent, callback: any) => {
-              await handlePrivateGameEvent(
-                event,
-                callback,
-                currentRoom,
-                socket
-              );
-            }
-          );
-
-          socket.on("disconnect", async () => {
-            await handleSocketDisconnect(socket, currentRoom, io);
-          });
-
+          registerSignalRelay(socket, io, newUser);
+          registerMessageHandler(socket, io, currentRoom);
+          registerGameEventHandler(currentRoom, socket, io)
+          registerPrivateGameEvent(socket, currentRoom);
+          registerDisconnect(socket, io, currentRoom);
           callback(newUser, currentRoom);
         } catch (error) {
           console.log(error);
@@ -88,10 +99,35 @@ export function setupSocketHandlers(io: Server) {
         }
       }
     );
+}
+
+function registerDisconnect(socket: Socket, io: Server, room: Room){
+  socket.on("disconnect", async () => {
+    await handleSocketDisconnect(socket, room, io);
   });
 }
 
-function handleMessageEvent(socket: Socket, io: Server, currentRoom: Room) {
+function registerPrivateGameEvent(socket: Socket, room:Room){
+    socket.on(
+      "privateGameEvent",
+      async (event: IGameEvent, callback: any) => {
+        await handlePrivateGameEvent(
+          event,
+          callback,
+          room,
+          socket
+        );
+      }
+    );
+}
+
+function registerGameEventHandler(room: Room, socket: Socket, io: Server){
+  socket.on("gameEvent", async (event: IGameEvent) => {
+    await handleGameEvent(event, room, socket, io);
+  });
+}
+
+function registerMessageHandler(socket: Socket, io: Server, currentRoom: Room) {
   socket.on("message", async (message: IMessage) => {
     const room: Room = await RoomManager.getRoom(currentRoom.id);
     const newMessage = room.addMessage(socket.id, message.text);
@@ -103,7 +139,7 @@ function handleMessageEvent(socket: Socket, io: Server, currentRoom: Room) {
 }
 
 
-function relaySignalToPeer(socket: Socket, io: Server, user: User) {
+function registerSignalRelay(socket: Socket, io: Server, user: User) {
   socket.on("signal", (data: any) => {
     io.to(data.to).emit("signal", {
       from: socket.id,

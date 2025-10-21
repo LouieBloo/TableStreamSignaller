@@ -57,7 +57,6 @@ export class Player extends User {
     this.roomId = roomId;
     this.ipAddress = ipAddress;
     this.isSharingImages = isSharingImages == false ? false: true;
-    console.log("roomId: " + this.roomId);
 
   }
 
@@ -97,8 +96,7 @@ export class Player extends User {
   }
 
   setQrCodeToken() {
-    const token = uuidv4();
-    this.qrCodeToken = token;
-    return token;
+    this.qrCodeToken = uuidv4();
+    return this.qrCodeToken;
   }
 }
