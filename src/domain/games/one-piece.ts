@@ -16,11 +16,23 @@ export class OnePiece extends Game {
     switch (gameEvent.event) {
       case GameEvent.ModifyPlayerProperty:
         return this.modifyPlayerProperty(gameEvent, room)
+      case GameEvent.StartGame:
+        return this.startGame(room);
       case GameEvent.SetCommander:
         return this.setCommander(gameEvent, room);
     }
 
     return super.event(gameEvent, room);
+  }
+
+  startGame(room: Room): Room {
+    super.startGame(room);
+
+    for (let x = 0; x < room.players.length; x++) {
+      room.players[x].lifeTotal = room.players[x].commanders && room.players[x].commanders.length > 0 ? room.players[x].commanders[0].life_total : this.startingLifeTotal;
+    }
+
+    return room;
   }
 
   modifyPlayerProperty(gameEvent: IGameEvent, room: Room): Player[] {
@@ -47,7 +59,8 @@ export class OnePiece extends Game {
     let newCommander: IPlayingCard = gameEvent.payload.card ? slimCard(gameEvent.payload.card) : null;
     gameEvent.callingPlayer.commanders[gameEvent.payload.index] = newCommander;
     gameEvent.callingPlayer.commanders[gameEvent.payload.index].castAmount = 0;
-    
+    gameEvent.callingPlayer.lifeTotal = newCommander.life_total;
+
     //I dont like this but it keeps parity with mtg 
     return room.players;
   }
