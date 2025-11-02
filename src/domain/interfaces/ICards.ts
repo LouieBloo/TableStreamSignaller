@@ -46,6 +46,7 @@ export interface IPlayingCard {
     card_faces?:IPlayingCard[]
     castAmount?:number;
     allGuesses?:IPlayingCard[];
+    life_total?:number;
 }
 
 export const slimCard = (card:IPlayingCard):IPlayingCard =>{
@@ -70,6 +71,10 @@ export const slimCard = (card:IPlayingCard):IPlayingCard =>{
 
   if(card.allGuesses){
     slimObj.allGuesses = card.allGuesses.map(c => slimCard(c))
+  }
+
+  if(card.life_total){
+    slimObj.life_total = card.life_total;
   }
 
   return slimObj;
