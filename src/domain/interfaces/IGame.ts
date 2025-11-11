@@ -62,6 +62,7 @@ export enum GameEvent{
     ToggleInitiative
 }
 
+// Preserve order of enums!
 export enum GameType{
     Game,
     MTGCommander,
@@ -72,7 +73,8 @@ export enum GameType{
     PokemonStandard,
     MTGPauperCommander,
     YugiohStandard,
-    YugiohDomain
+    YugiohDomain,
+    OnePiece
 }
 
 export interface ICommanderDamage{
