@@ -21,6 +21,7 @@ import { getUserIdFromToken } from "../users/services/user-service";
 import User, { IMongoUser } from '../../infrastructure/mongo/models/user-model';
 import { IRoomEvent, IRoomHistoryEvent, RoomEvent } from "../interfaces/IRoom";
 import { scheduleRoomSave } from "../../infrastructure/mongo/services/room-update-scheduler";
+import { OnePiece } from "../games/one-piece";
 
 const { v4: uuidv4 } = require('uuid');
 
@@ -94,6 +95,8 @@ export class Room {
         return new MTGVintage();
       case GameType.MTGLegacy:
         return new MTGLegacy();
+      case GameType.OnePiece:
+        return new OnePiece();
       case GameType.PokemonStandard:
         return new PokemonStandard();
       case GameType.MTGPauperCommander:
@@ -117,6 +120,8 @@ export class Room {
         return GameType.MTGVintage
       case "MTGLegacy":
         return GameType.MTGLegacy
+      case "OnePiece":
+        return GameType.OnePiece
       case "PokemonStandard":
         return GameType.PokemonStandard;
       case "MTGPauperCommander":

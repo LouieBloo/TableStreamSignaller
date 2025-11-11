@@ -19,12 +19,14 @@ import { logMessage } from "../../infrastructure/mongo/services/log-service";
 import { IMongoLog } from "../../infrastructure/mongo/models/log-model";
 import { search as PokemonSearch } from "../../services/pokemon-search";
 import { search as YugiohSearch } from "../../services/yugioh-search";
+import { search as OnePieceSearch} from "../../services/one-piece-service";
 import { checkBearerToken } from "./bearer-token-check";
 import { getAdminAnalytic, getHomeAnalytic } from "../../services/analytics-service";
 import { getIceServerList } from "../../infrastructure/metered/metered-service";
 import { parseIncomingDonation } from "../../infrastructure/kofi/kofi-service";
 import { IKoFiDonation } from "../../infrastructure/kofi/interfaces/IKofiInterface";
 import { getDonations } from "../../infrastructure/mongo/services/donation-service";
+import { IOnePieceCardSearchParams } from "../../domain/interfaces/IOnePieceCard";
 
 router.get('/', (req: any, res: any) => {
   res.status(200).send('Beating...');
@@ -183,6 +185,24 @@ router.get('/yugioh-cards', async (req: any, res: any) => {
   let response: IPlayingCard[] = await YugiohSearch(fname);
 
   res.status(200).json({ data: response });
+});
+
+/**
+ * @swagger
+ * /one-piece-cards:
+ * get:
+ * summary: Search for One Piece Playing Cards
+ * description: Retrieve a list of playing cards filtered by various criteria. All query parameters are optional.
+ */
+router.get('/one-piece-cards', async (req: any, res: any) => {
+    try {
+        const searchParams: IOnePieceCardSearchParams = req.query as IOnePieceCardSearchParams;
+        const response: IPlayingCard[] = await OnePieceSearch(searchParams);
+        res.status(200).json({ data: response });
+    } catch (error) {
+        console.error("Failed to process card search request:", error);
+        res.status(500).json({ error: "An unexpected error occurred during the search." });
+    }
 });
 
 /**
