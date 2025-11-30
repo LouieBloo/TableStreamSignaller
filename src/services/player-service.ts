@@ -5,7 +5,6 @@ const updateQrCodeTokenOnPlayer = async (
   roomId: string
 ): Promise<any> => {
   const room = await RoomManager.getRoom(roomId);
-  console.log(room);
   if(!room)
     return ""
   

@@ -99,4 +99,9 @@ export class Player extends User {
     this.qrCodeToken = uuidv4();
     return this.qrCodeToken;
   }
+
+  updateSocketId(socketId: string){
+    this.socketId = socketId;
+    console.log(`updated ${this.name} socketId to ${this.socketId}`)
+  }
 }

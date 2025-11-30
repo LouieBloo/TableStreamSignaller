@@ -30,19 +30,21 @@ export function registerSocketHandlers(io: Server) {
 function registerJoinRoomAsPhone(socket: Socket, io: Server, userIp: string){
   socket.on(
     "joinRoomAsPhone",
-    async (phoneToken: IPhoneToken) => {
+    async (phoneToken: IPhoneToken, callback:any) => {
         try {
         const currentRoom = await RoomManager.getRoom(phoneToken.roomId);
         const existingPlayer = currentRoom.getPlayerByToken(phoneToken.playerToken);
+        existingPlayer.updateSocketId(socket.id);
         console.log("socketid:", JSON.stringify(socket.id, null, 2));
         console.log("existingPlayer:", JSON.stringify(existingPlayer, null, 2));
 
         currentRoom.addPlayerSocket(socket.id)
         await currentRoom.saveAndClose();
         socket.join(currentRoom.id);
-        broadcastNewPeerToRoom(socket, currentRoom, existingPlayer);
+        broadcastNewPeerToRoom(socket, currentRoom, existingPlayer, true);
+        registerSignalRelay(socket, io, existingPlayer, true);//TODO should this be a new user or existing user?
         registerDisconnect(socket, io, currentRoom);//should the socket exist in redis still?
-
+        callback(currentRoom);
         }
         catch {
 
@@ -82,8 +84,8 @@ function registerJoinRoom(socket: Socket, io: Server, userIp: string ){
 
           socket.join(currentRoom.id);
 
-          broadcastNewPeerToRoom(socket, currentRoom, newUser);
-          registerSignalRelay(socket, io, newUser);
+          broadcastNewPeerToRoom(socket, currentRoom, newUser, false);
+          registerSignalRelay(socket, io, newUser, false);
           registerMessageHandler(socket, io, currentRoom);
           registerGameEventHandler(currentRoom, socket, io)
           registerPrivateGameEvent(socket, currentRoom);
@@ -139,23 +141,25 @@ function registerMessageHandler(socket: Socket, io: Server, currentRoom: Room) {
 }
 
 
-function registerSignalRelay(socket: Socket, io: Server, user: User) {
+function registerSignalRelay(socket: Socket, io: Server, user: User, isPhone: boolean) {
   socket.on("signal", (data: any) => {
     io.to(data.to).emit("signal", {
       from: socket.id,
       signal: data.signal,
       user: user,
+      isPhone: isPhone
     });
   });
 }
 
 
-function broadcastNewPeerToRoom(socket: Socket, room: Room, user: User){
+function broadcastNewPeerToRoom(socket: Socket, room: Room, user: User, isPhone: boolean){
   socket.to(room.id).emit("newPeer", {
     socketId: socket.id,
     user: user,
     players: room.playerSockets,
     spectators: room.spectatorSockets,
+    isPhone: isPhone
   });
 }
 
@@ -175,11 +179,12 @@ async function addNewSpectator(
   return newUser;
 }
 
+//TODO - when a user refreshes their screen they come in with a new socketId. This messes with the phone camera stream.
 async function addNewPlayer(
   joinRoomPayload: JoinRoomPayload,
   room: Room,
   userIp: string,
-  socket: any
+  socket: Socket
 ) {
 
   const newUser = await room.addPlayer(joinRoomPayload, room.id, userIp, socket.id);
