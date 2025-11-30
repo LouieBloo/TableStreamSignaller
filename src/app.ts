@@ -12,6 +12,9 @@ import router from "./presentation/router/router";
 import sttRouter from "./presentation/router/stt-router";
 import userRouter from "./presentation/router/user-router";
 import { registerSocketHandlers } from "./presentation/socket/socket-handler";
+import fs from 'fs';
+import https from 'https';
+
 const swaggerJSDoc = require("swagger-jsdoc");
 
 const options = {
@@ -34,7 +37,12 @@ const { Server } = require("socket.io");
 
 const app = express();
 
-const server = http.createServer(app);
+const sslOptions = {
+  key: fs.readFileSync('../TableStreamUI/ssl/key.pem'),
+  cert: fs.readFileSync('../TableStreamUI/ssl/cert.pem'),
+};
+const server = https.createServer(sslOptions, app);
+// const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: true, // Allow requests from your client
@@ -78,6 +86,6 @@ export interface JoinRoomPayload {
 
 registerSocketHandlers(io);
 
-server.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
