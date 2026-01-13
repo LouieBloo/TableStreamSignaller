@@ -26,6 +26,7 @@ To run this application, you must configure the following environment variables.
 | :--- | :--- | :--- |
 | `JWT_SECRET` | Secret key for signing JSON Web Tokens | **REQUIRED** |
 | `REDIS_HOST` | Host address for your Redis instance | **REQUIRED** |
+| `REDIS_PORT` | Port for your Redis instance | `19210` |
 | `REDIS_PASSWORD`| Password for your Redis instance | **REQUIRED** |
 | `APP_URL` | The URL of your frontend application | `http://localhost:4200` |
 | `POKEMON_API_KEY`| Private key for Pokemon API integration | **SECRET** |
