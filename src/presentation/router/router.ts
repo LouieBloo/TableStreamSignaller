@@ -49,7 +49,7 @@ router.post('/log', async(req: any, res: any) => {
  *   get:
  *     summary: gets qrcode token
  */
-router.post('/qrcodetoken', async (req: any, res: any) => {
+router.post('/qrcodetoken', checkBearerToken, async (req: any, res: any) => {
   try {
     const { playerId, roomId } = req.body;
     const token = await PlayerService.updateQrCodeTokenOnPlayer(playerId, roomId);
