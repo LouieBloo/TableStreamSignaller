@@ -37,12 +37,7 @@ const { Server } = require("socket.io");
 
 const app = express();
 
-const sslOptions = {
-  key: fs.readFileSync('../TableStreamUI/ssl/key.pem'),
-  cert: fs.readFileSync('../TableStreamUI/ssl/cert.pem'),
-};
-const server = https.createServer(sslOptions, app);
-// const server = http.createServer(app);
+const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: true, // Allow requests from your client
@@ -54,7 +49,7 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3001;
 
-app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use(express.json());
 app.use(cors());
 
@@ -67,22 +62,6 @@ app.use("/transcribe", sttRouter);
 app.use("/users", userRouter);
 app.use("/rooms", roomRouter);
 
-export interface JoinRoomPayload {
-  playerId: string;
-  roomId: string;
-  roomName: string;
-  password: string;
-  gameType: GameType;
-  playerName: string;
-  userType: UserType;
-  maxPlayers: number;
-  reactionEnabled: boolean;
-  isSharingImages: boolean;
-  isPublic: boolean;
-  joinerJwtToken: string;
-  allowSpectators: boolean;
-  isPhoneCamera?: boolean;
-}
 
 registerSocketHandlers(io);
 
