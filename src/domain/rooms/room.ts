@@ -283,8 +283,12 @@ export class Room {
     return this.playerSockets.concat(this.spectatorSockets);
   }
 
-  public addMessage(socketId: string, message: string): IMessage | null {
-    const targetPlayer: Player = this.getPlayer(socketId);
+  public addMessage(socketId: string, message: string, playerId?: string): IMessage | null {
+    let targetPlayer: Player = this.getPlayerBySocketId(socketId);
+
+    if(targetPlayer == undefined && playerId){
+      targetPlayer = this.getPlayerById(playerId);
+    }
 
     if (targetPlayer) {
       let newMessage = {
@@ -315,7 +319,11 @@ export class Room {
     return newAdmin;
   }
 
-  getPlayer(socketId: string) {
+  getPlayerById(id: string){
+    return this.players.find(p => p.id === id);
+  }
+
+  getPlayerBySocketId(socketId: string) {
     return this.players.find(p => p.socketId === socketId);
   }
 
@@ -323,8 +331,14 @@ export class Room {
     return this.players.find(p => p.qrCodeToken === playerToken);
   }
 
-  gameEvent(socketId: string, gameEvent: IGameEvent): any {
-    gameEvent.callingPlayer = this.getPlayer(socketId);
+  gameEvent(socketId: string, gameEvent: IGameEvent, playerId?: string,): any {
+    console.log("socketId: " + socketId);
+    console.log(gameEvent);
+    gameEvent.callingPlayer = this.getPlayerBySocketId(socketId);
+    if(gameEvent.callingPlayer == undefined && playerId){
+      console.log("playerId: " + playerId);
+      gameEvent.callingPlayer = this.getPlayerById(playerId)
+    }
     gameEvent.messages = [];
     if (gameEvent.callingPlayer) {
       return this.game.event(gameEvent, this);
