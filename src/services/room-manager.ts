@@ -1,6 +1,6 @@
 import { GameError, GameErrorSeverity, GameErrorType } from "../domain/interfaces/IGame";
 import { plainToInstance } from 'class-transformer';
-import {lockRoomAndGetState, getRoomUnsafe, deleteRoomAndUnlock} from '../infrastructure/redis/redis';
+import {lockAndGetRoomById, getRoomUnsafe, deleteRoomAndUnlock} from '../infrastructure/redis/redis';
 import { ICreateRoomParams } from "../domain/interfaces/ICreateRoomParams";
 import { addRoom, deleteRoom } from "../infrastructure/mongo/mongo-repository";
 import { Room } from "../domain/rooms/room";
@@ -19,7 +19,7 @@ import {
 class RoomManager {
 
   async getOrCreateRoom(params:ICreateRoomParams):Promise<Room> {
-    let redisResult = await lockRoomAndGetState(params.roomId);
+    let redisResult = await lockAndGetRoomById(params.roomId);
     let room = null;
     if(!redisResult.room){
       if(!params.roomName){
@@ -77,7 +77,7 @@ class RoomManager {
   }
 
   async getRoom(roomId:string):Promise<Room> {
-    let redisResult = await lockRoomAndGetState(roomId);
+    let redisResult = await lockAndGetRoomById(roomId);
     let rawRoom = redisResult.room;
     if(!rawRoom){
       return null;
