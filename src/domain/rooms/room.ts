@@ -195,8 +195,9 @@ export class Room {
       player = new Player(name, socketId, this.players.length, this.game.startingLifeTotal, roomId, ipAddress, joinRoomPayload.isSharingImages);
       player.mongoUserId = userId;
       
-      if (this.players.length == 0)
+      if (this.players.length == 0){
         player.setAdmin(true);
+      }
 
       this.game.setPlayerDefaults(player, this);
 
