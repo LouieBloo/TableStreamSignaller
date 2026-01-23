@@ -86,8 +86,8 @@ function registerJoinRoom(socket: Socket, io: Server, userIp: string ){
 
           broadcastNewPeerToRoom(socket, currentRoom, newUser, false);
           registerSignalRelay(socket, io, newUser, false);
-          registerMessageHandler(socket, io, currentRoom);
-          registerGameEventHandler(currentRoom, socket, io)
+          registerMessageHandler(socket, io, currentRoom, newUser.id);
+          registerGameEventHandler(currentRoom, socket, newUser.id, io)
           registerPrivateGameEvent(socket, currentRoom);
           registerDisconnect(socket, io, currentRoom);
           callback(newUser, currentRoom);
@@ -123,16 +123,18 @@ function registerPrivateGameEvent(socket: Socket, room:Room){
     );
 }
 
-function registerGameEventHandler(room: Room, socket: Socket, io: Server){
+function registerGameEventHandler(room: Room, socket: Socket, playerId: string, io: Server){
   socket.on("gameEvent", async (event: IGameEvent) => {
-    await handleGameEvent(event, room, socket, io);
+    await handleGameEvent(event, room, socket, playerId, io);
   });
 }
 
-function registerMessageHandler(socket: Socket, io: Server, currentRoom: Room) {
+function registerMessageHandler(socket: Socket, io: Server, currentRoom: Room, playerId: string) {
   socket.on("message", async (message: IMessage) => {
     const room: Room = await RoomManager.getRoom(currentRoom.id);
-    const newMessage = room.addMessage(socket.id, message.text);
+    console.log("here with messages")
+    console.log("playerId: " + playerId)//is this mongo Id
+    const newMessage = room.addMessage(socket.id, message.text, playerId);
     if (newMessage) {
       await room.saveAndClose();
       io.in(currentRoom.id).emit("message", newMessage);
@@ -229,16 +231,19 @@ async function handlePrivateGameEvent(
 async function handleGameEvent(
   event: IGameEvent,
   currentRoom: Room,
-  socket: any,
+  socket: Socket,
+  playerId: string,
   io: Server
 ) {
+
   let room: Room = await RoomManager.getRoom(currentRoom.id);
   try {
-    event.response = room.gameEvent(socket.id, event);
+    event.response = room.gameEvent(socket.id, event, playerId);
     //if this event results in messages, add them
+    console.log("# of messages: " + event.messages.length)
     if (event.messages) {
       event.messages.forEach((message: IMessage) => {
-        room.addMessage(event.callingPlayer.socketId, message.text);
+        room.addMessage(event.callingPlayer.socketId, message.text, playerId);
         //I dont like this flip coins check here but its fine for now
         if (event.event == GameEvent.FlipCoins) {
           //for coin flips we add a delay so people can watch the animation instead of looking at chat
